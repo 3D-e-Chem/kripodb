@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import intbitset
+from intbitset import intbitset
 
 
 def read_header(line):
     (format_name, format_version, fp_size, label) = line.split(' ')
     fp_size = int(fp_size)
-    return (format_name, format_version, fp_size, label)
+    return format_name, format_version, fp_size, label
 
 
 def read_bitset(line, fp_size):
@@ -31,14 +31,14 @@ def read_bitset(line, fp_size):
     bitset = intbitset(bits)
     if len(bitset) != nr_onbits:
         raise Exception('On bit checksum incorrect for {}'.format(fid))
-    return (fid, bitset)
+    return fid, bitset
 
 
-def read_file(file):
-    header = file.readline()
+def read_file(infile):
+    header = infile.readline()
     (format_name, format_version, fp_size, label) = read_header(header)
     bitsets = {}
-    for line in file:
+    for line in infile:
         (fid, bitset) = read_bitset(line, fp_size)
         bitsets[fid] = bitset
-    return (bitsets, fp_size)
+    return bitsets, fp_size
