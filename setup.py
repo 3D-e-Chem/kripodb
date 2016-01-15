@@ -10,7 +10,7 @@ setup(
     url='https://github.com/3D-e-Chem/python-modified-tanimoto',
     author='Stefan Verhoeven',
     author_email='s.verhoeven@esciencecenter.nl',
-    install_requires=['intbitset', 'tables', 'nose', 'coverage'],
+    install_requires=['intbitset', 'tables', 'nose', 'coverage', 'mock'],
     entry_points={
         'console_scripts': [
             'modified_tanimoto=modifiedtanimoto.script:main',

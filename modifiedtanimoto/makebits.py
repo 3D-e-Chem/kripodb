@@ -21,6 +21,10 @@ def read_header(line):
     return format_name, format_version, fp_size, label
 
 
+def read_fp_size(header):
+    return header[2]
+
+
 def read_bitset(line, fp_size):
     row = line.split(' ', fp_size + 3)
     fid = row.pop(0)
@@ -42,3 +46,18 @@ def read_file(infile):
         (fid, bitset) = read_bitset(line, fp_size)
         bitsets[fid] = bitset
     return bitsets, fp_size
+
+
+def iter_file(infile):
+    """
+    Yields header first then tuples of idenfitier and intbitset object
+
+    :param infile:
+    :return:
+    """
+    header = read_header(infile.readline())
+    fp_size = read_fp_size(header)
+    yield header
+    for line in infile:
+        (fid, bitset) = read_bitset(line, fp_size)
+        yield fid, bitset

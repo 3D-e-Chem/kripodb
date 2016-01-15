@@ -1,3 +1,17 @@
+# Copyright 2013 Netherlands eScience Center
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import StringIO
 from intbitset import intbitset
 from nose.tools import assert_raises
@@ -32,7 +46,10 @@ def test_read_bitset_toolong():
 
 
 def test_read_file():
-    infile = StringIO.StringIO('MAKEBITS 1.0 574331 BigGrid\n3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9\n')
+    input = '''MAKEBITS 1.0 574331 BigGrid
+3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9
+'''
+    infile = StringIO.StringIO(input)
 
     (bitsets, fp_size) = makebits.read_file(infile)
 
