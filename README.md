@@ -5,6 +5,6 @@ Library to calculate modified tanimoto distance between bit vectors and script t
 # Install
 
 ```
-pip install numpy
+pip install numpy cython
 python setup.py develop
 ```

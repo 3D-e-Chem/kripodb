@@ -1,6 +1,21 @@
 from setuptools import setup, find_packages
+from setuptools.extension import Extension
 
 exec(open('modifiedtanimoto/version.py').read())
+
+# Only use Cython if it is available, else just use the pre-generated files
+try:
+    from Cython.Distutils import build_ext
+    source_ext = '.pyx'
+    cmdclass = {'build_ext': build_ext}
+except ImportError:
+    # If missing can be created with 'cython modifiedtanimoto/algorithm.pyx'
+    source_ext = '.c'
+    cmdclass = {}
+
+ext_modules = [Extension('modifiedtanimoto.algorithm',
+                         ['modifiedtanimoto/algorithm' + source_ext])]
+
 
 setup(
     name='modifiedtanimoto',
@@ -19,5 +34,7 @@ setup(
     license='Apache',
     classifiers=[
         'License :: OSI Approved :: Apache Software License'
-    ]
+    ],
+    cmdclass=cmdclass,
+    ext_modules=ext_modules
 )

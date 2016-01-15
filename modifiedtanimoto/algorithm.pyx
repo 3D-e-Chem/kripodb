@@ -12,22 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-def mean_onbit_density(bitsets, number_of_bits):
+def mean_onbit_density(bitsets, int number_of_bits):
+    cdef float mean_onbit_density
     all_nr_onbits = [len(d) for d in bitsets]
     mean_onbit = sum(all_nr_onbits) / float(len(bitsets))
     mean_onbit_density = mean_onbit / number_of_bits
     return float(mean_onbit_density)
 
 
-def corrections(mean_onbit_density):
+def corrections(float mean_onbit_density):
+    cdef float p0, corr_st, corr_sto
     p0 = mean_onbit_density
     corr_st = (2 - p0) / 3
     corr_sto = (1 + p0) / 3
     return (corr_st, corr_sto)
 
 
-def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
+def distance(bitset1, bitset2, int number_of_bits, corr_st, corr_sto):
+    cdef unsigned int a, b, c, n
+    cdef float st, st0, smt
     a = len(bitset1)
     b = len(bitset2)
     c = len(bitset1 & bitset2)
@@ -38,7 +41,8 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     return smt
 
 
-def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff):
+def distances(bitsets1, bitsets2, int number_of_bits, float corr_st, float corr_sto, float cutoff):
+    cdef float d
     for (label1, bs1) in bitsets1.iteritems():
         for (label2, bs2) in bitsets2.iteritems():
             if label1 >= label2:
