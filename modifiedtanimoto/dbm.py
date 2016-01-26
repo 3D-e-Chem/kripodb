@@ -83,3 +83,27 @@ class IntbitsetDictDbm(IntbitsetDict):
         IntbitsetDict.__init__(self,
                                anydbm.open(filename, flag),
                                number_of_bits)
+
+
+def combine_intbitsetdbms(infiles, outfile):
+    """
+    Combine multiple files into one file
+
+    Parameters
+    ----------
+    infiles : list
+        List of intbitset dbm filenames
+    outfile : str
+        Filename of the output intbitset dbm file.
+
+    Returns
+    -------
+
+    """
+    outdb = anydbm.open(outfile, flag='c')
+    for infile in infiles:
+        indb = anydbm.open(infile, flag='r')
+        for k, v in indb.iteritems():
+            outdb[k] = v
+        indb.close()
+    outdb.close()

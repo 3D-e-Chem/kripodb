@@ -15,9 +15,11 @@ import sys
 import argparse
 import logging
 import tarfile
-from dbm import IntbitsetDictDbm
+from dbm import IntbitsetDictDbm, combine_intbitsetdbms
 from . import makebits
 from . import pairs
+
+DEFAULT_NUMBER_OF_BITS = 574331
 
 
 def make_parser():
@@ -29,6 +31,8 @@ def make_parser():
     makebits2intbitsetdbm_sc(subparsers)
 
     id2label_sc(subparsers)
+
+    combine_intbitsetdbms_sc(subparsers)
 
     return parser
 
@@ -65,7 +69,7 @@ def pairs_sc(subparsers):
                     help="Id to label lookup tsv file")
     sc.add_argument("--number_of_bits",
                     type=int,
-                    default=574331)
+                    default=DEFAULT_NUMBER_OF_BITS)
     sc.add_argument("--mean_onbit_density",
                     type=float,
                     default=0.01)
@@ -154,6 +158,14 @@ def id2label_sc(subparsers):
     sc.add_argument("infile",
                     help="Name of makebits formatted fingerprint tar.gz file")
     sc.set_defaults(func=bitsets2id2label)
+
+
+def combine_intbitsetdbms_sc(subparsers):
+    sc_help = 'Combine multiple intbitset dbm files into a single file'
+    sc = subparsers.add_parser('combineintbitsetdbms', help=sc_help)
+    sc.add_argument("infiles", type=str, nargs='+')
+    sc.add_argument("outfile", type=str)
+    sc.set_defaults(func=combine_intbitsetdbms)
 
 
 def main(argv=sys.argv[1:]):
