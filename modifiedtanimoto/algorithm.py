@@ -38,10 +38,13 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     return smt
 
 
-def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff):
+def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, full_matrix=False):
     for (label1, bs1) in bitsets1.iteritems():
         for (label2, bs2) in bitsets2.iteritems():
-            if label1 >= label2:
+            if label1 == label2:
+                # always skip self
+                continue
+            if not full_matrix and label1 > label2:
                 continue
 
             d = distance(bs1, bs2, number_of_bits, corr_st, corr_sto)

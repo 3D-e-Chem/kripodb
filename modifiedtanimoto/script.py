@@ -34,6 +34,8 @@ def make_parser():
 
     combine_intbitsetdbms_sc(subparsers)
 
+    distance2query_sc(subparsers)
+
     return parser
 
 
@@ -166,6 +168,26 @@ def combine_intbitsetdbms_sc(subparsers):
     sc.add_argument("infiles", type=str, nargs='+')
     sc.add_argument("outfile", type=str)
     sc.set_defaults(func=combine_intbitsetdbms)
+
+
+def distance2query_sc(subparsers):
+    sc_help = 'Find the fragments closests to query'
+    sc = subparsers.add_parser('distance2query', help=sc_help)
+    sc.add_argument("bs_file",
+                    help="Name of reference fingerprint file")
+    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
+    sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
+    sc.add_argument("--number_of_bits",
+                    type=int,
+                    default=DEFAULT_NUMBER_OF_BITS)
+    sc.add_argument("--mean_onbit_density",
+                    type=float,
+                    default=0.01)
+    sc.add_argument("--cutoff",
+                    type=float,
+                    default=0.55,
+                    help="Set Tanimoto cutoff")
+    sc.set_defaults(func=pairs.distance2query)
 
 
 def main(argv=sys.argv[1:]):

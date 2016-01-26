@@ -79,3 +79,31 @@ class TestAlgorithm(object):
             assert r[0] == expected[i][0]
             assert r[1] == expected[i][1]
             assert_almost_equal(r[2], expected[i][2])
+
+    def test_distances_fullmatrix(self):
+        bitsets = {
+            'a': intbitset([1, 2, 3]),
+            'b': intbitset([1, 2, 4, 5, 8]),
+            'c': intbitset([1, 2, 4, 8])
+        }
+
+        iterator = algorithm.distances(bitsets, bitsets,
+                                       self.number_of_bits,
+                                       self.corr_st, self.corr_sto,
+                                       0.55, True)
+        result = [r for r in iterator]
+
+        expected = [
+            ('a', 'c', 0.5779523809525572),
+            ('c', 'a', 0.5779523809525572),
+            ('c', 'b', 0.8357708333333689),
+            ('b', 'c', 0.8357708333333689)]
+        # pair a-c is below cutoff with distance of 0.53
+
+        print result
+
+        assert len(result) == len(expected)
+        for i, r in enumerate(result):
+            assert r[0] == expected[i][0]
+            assert r[1] == expected[i][1]
+            assert_almost_equal(r[2], expected[i][2])
