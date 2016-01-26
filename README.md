@@ -8,3 +8,10 @@ Library to calculate modified tanimoto distance between bit vectors and script t
 pip install numpy
 python setup.py develop
 ```
+
+# Usage
+
+To see available commands
+```
+modified_tanimoto --help
+```
