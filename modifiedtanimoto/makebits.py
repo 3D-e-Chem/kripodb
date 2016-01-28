@@ -16,7 +16,7 @@ from intbitset import intbitset
 
 
 def read_header(line):
-    (format_name, format_version, fp_size, label) = line.split(' ')
+    (format_name, format_version, fp_size, label) = line.strip().split(' ')
     fp_size = int(fp_size)
     return format_name, format_version, fp_size, label
 
@@ -61,3 +61,19 @@ def iter_file(infile):
     for line in infile:
         (fid, bitset) = read_bitset(line, fp_size)
         yield fid, bitset
+
+
+def write_header(fp_size):
+    return "MAKEBITS 1.0 {} BigGrid\n".format(fp_size)
+
+
+def write_bitset(fid, bitset):
+    bits = bitset.extract_finite_list()
+    bits.extend([0, len(bitset)])
+    return fid + " " + " ".join([str(d) for d in bits]) + "\n"
+
+
+def write_file(fp_size, bitsets, fn):
+    fn.write(write_header(fp_size))
+    for fid, bitset in bitsets.iteritems():
+        fn.write(write_bitset(fid, bitset))

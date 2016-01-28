@@ -27,14 +27,14 @@ class TestAlgorithm(object):
         self.corr_st = 0.663333333333
         self.corr_sto = 0.336666666667
 
-    def test_mean_onbit_density(self):
+    def test_calc_mean_onbit_density(self):
         bitsets = [
             intbitset([1, 2, 3]),
             intbitset([1, 2, 4, 5, 8]),
             intbitset([1, 2, 4, 8])
         ]
 
-        result = algorithm.mean_onbit_density(bitsets, self.number_of_bits)
+        result = algorithm.calc_mean_onbit_density(bitsets, self.number_of_bits)
 
         expected = 0.04
         assert result == expected

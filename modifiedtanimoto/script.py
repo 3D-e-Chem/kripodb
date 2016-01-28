@@ -36,6 +36,8 @@ def make_parser():
 
     distance2query_sc(subparsers)
 
+    intbitsetdbm2makebits_sc(subparsers)
+
     return parser
 
 
@@ -131,7 +133,7 @@ def makebits2intbitsetdbm_run(infile):
                 if tarinfo.isfile():
                     outfile = tarinfo.name + '.db'
                     msg = 'Reading {} and writing {}'.format(infile, outfile)
-                    logging.warn()
+                    logging.warn(msg)
                     f = tar.extractfile(tarinfo)
                     makebits2intbitsetdbm(f, outfile)
                     f.close()
@@ -143,6 +145,28 @@ def makebits2intbitsetdbm_run(infile):
     else:
         msg = 'Unable to open {}, format not supported'.format(infile)
         raise Exception(msg)
+
+
+def intbitsetdbm2makebits_sc(subparsers):
+    sc_help = 'Convert intbitset dbm to Makebits file'
+    fc = argparse.RawDescriptionHelpFormatter
+    sc = subparsers.add_parser('intbitsetdbm2makebits',
+                               formatter_class=fc,
+                               help=sc_help)
+    sc.add_argument("--number_of_bits",
+                    type=int,
+                    default=DEFAULT_NUMBER_OF_BITS)
+    sc.add_argument("infile",
+                    help="Name of intbitset dbm file")
+    sc.add_argument("outfile",
+                    type=argparse.FileType('w'),
+                    help="Name of makebits formatted fingerprint file (or - for stdout)")
+    sc.set_defaults(func=intbitsetdbm2makebits_run)
+
+
+def intbitsetdbm2makebits_run(infile, outfile, number_of_bits):
+    bitsets = IntbitsetDictDbm(infile, number_of_bits, 'r')
+    makebits.write_file(number_of_bits, bitsets, outfile)
 
 
 def bitsets2id2label(infile):

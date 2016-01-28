@@ -25,8 +25,8 @@ class IntbitsetDict(UserDict.DictMixin):
     """
     number_of_bits = None
 
-    def __init__(self, dict, number_of_bits):
-        self.dict = dict
+    def __init__(self, thedict, number_of_bits=None):
+        self.dict = thedict
         self.number_of_bits = number_of_bits
 
     def keys(self):
@@ -79,7 +79,7 @@ class IntbitsetDictDbm(IntbitsetDict):
     """Bitset dictionary using dbm as storage instead of memory
 
     """
-    def __init__(self, filename, number_of_bits, flag='c'):
+    def __init__(self, filename, number_of_bits=None, flag='c'):
         IntbitsetDict.__init__(self,
                                anydbm.open(filename, flag),
                                number_of_bits)

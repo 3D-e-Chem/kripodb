@@ -13,18 +13,18 @@
 # limitations under the License.
 
 
-def mean_onbit_density(bitsets, number_of_bits):
+def calc_mean_onbit_density(bitsets, number_of_bits):
     all_nr_onbits = [len(d) for d in bitsets]
     mean_onbit = sum(all_nr_onbits) / float(len(bitsets))
-    mean_onbit_density = mean_onbit / number_of_bits
-    return float(mean_onbit_density)
+    density = mean_onbit / number_of_bits
+    return float(density)
 
 
 def corrections(mean_onbit_density):
     p0 = mean_onbit_density
     corr_st = (2 - p0) / 3
     corr_sto = (1 + p0) / 3
-    return (corr_st, corr_sto)
+    return corr_st, corr_sto
 
 
 def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
