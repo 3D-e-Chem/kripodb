@@ -18,6 +18,7 @@ import tarfile
 from dbm import IntbitsetDictDbm, combine_intbitsetdbms
 from . import makebits
 from . import pairs
+from algorithm import calc_mean_onbit_density
 
 DEFAULT_NUMBER_OF_BITS = 574331
 
@@ -26,17 +27,19 @@ def make_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    pairs_sc(subparsers)
-
     makebits2intbitsetdbm_sc(subparsers)
+
+    intbitsetdbm2makebits_sc(subparsers)
 
     id2label_sc(subparsers)
 
     combine_intbitsetdbms_sc(subparsers)
 
+    meanbitdensity_sc(subparsers)
+
     distance2query_sc(subparsers)
 
-    intbitsetdbm2makebits_sc(subparsers)
+    pairs_sc(subparsers)
 
     return parser
 
@@ -212,6 +215,21 @@ def distance2query_sc(subparsers):
                     default=0.55,
                     help="Set Tanimoto cutoff")
     sc.set_defaults(func=pairs.distance2query)
+
+
+def meanbitdensity_sc(subparsers):
+    sc = subparsers.add_parser('meanbitdensity', help='Compute mean bit density of bitsets')
+    sc.add_argument("bs_file",
+                    help="Name of reference fingerprint file")
+    sc.add_argument("--number_of_bits",
+                    type=int,
+                    default=DEFAULT_NUMBER_OF_BITS)
+    sc.set_defaults(func=meanbitdensity_run)
+
+
+def meanbitdensity_run(bs_file, number_of_bits):
+    bitsets = IntbitsetDictDbm(bs_file, number_of_bits, 'r')
+    print(calc_mean_onbit_density(bitsets, number_of_bits))
 
 
 def main(argv=sys.argv[1:]):

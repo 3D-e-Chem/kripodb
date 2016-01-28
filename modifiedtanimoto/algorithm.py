@@ -14,7 +14,7 @@
 
 
 def calc_mean_onbit_density(bitsets, number_of_bits):
-    all_nr_onbits = [len(d) for d in bitsets]
+    all_nr_onbits = [len(bitsets[k]) for k in bitsets.keys()]
     mean_onbit = sum(all_nr_onbits) / float(len(bitsets))
     density = mean_onbit / number_of_bits
     return float(density)
