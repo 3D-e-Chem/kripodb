@@ -1,4 +1,4 @@
-# Copyright 2013 Netherlands eScience Center
+# Copyright 2016 Netherlands eScience Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version_info__ = ('1', '0', '0')
+__version_info__ = ('1', '1', '0')
 __version__ = '.'.join(__version_info__)
