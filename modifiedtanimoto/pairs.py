@@ -17,7 +17,7 @@ import tables
 
 from algorithm import distances, corrections
 from id2label import read_id2label, swap_label2id
-from modifiedtanimoto.db import FragmentsDb, IntbitsetDict
+from modifiedtanimoto.db import FragmentsDb
 
 
 def dump_pairs(bitsets1,
@@ -200,8 +200,7 @@ def dump_pairs_hdf5_compact(distances_iter,
 
 
 def distance2query(fragmentsdb, query, out, mean_onbit_density, cutoff, memory):
-    frags = FragmentsDb(fragmentsdb)
-    bitsets2 = IntbitsetDict(frags)
+    bitsets2 = FragmentsDb(fragmentsdb).bitsets()
     number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match

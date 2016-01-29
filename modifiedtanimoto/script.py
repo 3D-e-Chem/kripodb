@@ -15,7 +15,7 @@ import argparse
 import gzip
 import sys
 import tarfile
-from modifiedtanimoto.db import FragmentsDb, IntbitsetDict
+from modifiedtanimoto.db import FragmentsDb
 from . import makebits
 from . import pairs
 from algorithm import calc_mean_onbit_density
@@ -96,10 +96,8 @@ def pairs_run(fragmentsfn1, fragmentsfn2,
               id2label_file,
               precision, memory):
 
-    fragmentsdb1 = FragmentsDb(fragmentsfn1)
-    bitsets1 = IntbitsetDict(fragmentsdb1)
-    fragmentsdb2 = FragmentsDb(fragmentsfn2)
-    bitsets2 = IntbitsetDict(fragmentsdb2)
+    bitsets1 = FragmentsDb(fragmentsfn1).bitsets()
+    bitsets2 = FragmentsDb(fragmentsfn2).bitsets()
 
     if bitsets1.number_of_bits != bitsets2.number_of_bits:
         raise Exception('Number of bits is not the same')
@@ -142,8 +140,7 @@ def makebits2fragmentsdb_single(infile, bitsets):
 
 
 def makebits2fragmentsdb(infiles, outfile):
-    fragmentsdb = FragmentsDb(outfile)
-    bitsets = IntbitsetDict(fragmentsdb)
+    bitsets = FragmentsDb(outfile).bitsets()
     for infile in infiles:
         if infile.name.endswith('tar.gz'):
             with tarfile.open(fileobj=infile) as tar:
@@ -170,16 +167,14 @@ def fragmentsdb2makebits_sc(subparsers):
 
 
 def fragmentsdb2makebits(infile, outfile):
-    fragmentsdb = FragmentsDb(infile)
-    bitsets = IntbitsetDict(fragmentsdb)
+    bitsets = FragmentsDb(infile).bitsets()
     makebits.write_file(bitsets.number_of_bits, bitsets, outfile)
 
 
 def bitsets2id2label(infile):
-    with FragmentsDb(infile) as fragmentsdb:
-        bitsets = IntbitsetDict(fragmentsdb)
-        for bsid, bslabel in enumerate(bitsets):
-            print("{}\t{}".format(bsid, bslabel))
+    bitsets = FragmentsDb(infile).bitsets()
+    for bsid, bslabel in enumerate(bitsets):
+        print("{}\t{}".format(bsid, bslabel))
 
 
 def id2label_sc(subparsers):
@@ -224,8 +219,7 @@ def meanbitdensity_sc(subparsers):
 
 
 def meanbitdensity_run(fragmentsdb):
-    frags = FragmentsDb(fragmentsdb)
-    bitsets = IntbitsetDict(frags)
+    bitsets = FragmentsDb(fragmentsdb).bitsets()
     print(calc_mean_onbit_density(bitsets, bitsets.number_of_bits))
 
 

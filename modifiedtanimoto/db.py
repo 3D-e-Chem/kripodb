@@ -72,6 +72,9 @@ class FragmentsDb(object):
     def close(self):
         self.connection.close()
 
+    def bitsets(self):
+        return IntbitsetDict(self)
+
 
 class IntbitsetDict(MutableMapping):
     """
@@ -80,11 +83,11 @@ class IntbitsetDict(MutableMapping):
     Convert dbm to sqlite:
     ```
     from modifiedtanimoto.dbm import IntbitsetDictDbm
-    from modifiedtanimoto import db
+    from modifiedtanimoto.db import FragmentsDb
     dbm = IntbitsetDictDbm('data/fingerprint12.fp.db')
-    frags = db.FragmentsDb('data/fragments12.db')
-    fps = db.IntbitsetDict(frags, 574331)
-    fps.update(dbm)
+    frags = FragmentsDb('data/fragments12.db')
+    bitsets = frags.bitsets()
+    bitsets.update(dbm)
     ```
 
     """
