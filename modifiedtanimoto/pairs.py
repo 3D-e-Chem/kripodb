@@ -12,62 +12,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import gzip
 import logging
 import tables
 
 from algorithm import distances, corrections
-from dbm import IntbitsetDictDbm
 from id2label import read_id2label, swap_label2id
+from modifiedtanimoto.db import FragmentsDb, IntbitsetDict
 
 
-def dump_pairs(bs_file1, bs_file2,
-               out_format, out_file,
+def dump_pairs(bitsets1,
+               bitsets2,
+               out_format,
+               out_file,
+               out,
                number_of_bits,
                mean_onbit_density,
                cutoff,
                id2label_file,
-               precision):
+               precision,
+               memory):
     """Dump pairs of bitset collection
 
-    :param bs_file1: dictionary of bitset identifier as key
+    :param bitsets1: dictionary of bitset identifier as key
         and a intbitset object as value
-    :param bs_file2: dictionary of bitset identifier as key
+    :param bitsets2: dictionary of bitset identifier as key
         and a intbitset object as value
     :param out_format:
     :param out_file:
+    :param out:
     :param number_of_bits: Maximum number of bits in bitset
     :param mean_onbit_density:
     :param cutoff:
     :param id2label_file: dict to translate label to id (string to int)
     :param precision:
+    :param memory:
     :return:
     """
-
-    logging.warn('Reading {}'.format(bs_file1))
-    bitsets1 = IntbitsetDictDbm(bs_file1, number_of_bits, 'r')
-    if bs_file1 == bs_file2:
-        bitsets2 = bitsets1
-    else:
-        logging.warn('Reading {}'.format(bs_file2))
-        bitsets2 = IntbitsetDictDbm(bs_file2, number_of_bits, 'r')
-
-    # load whole dict in memory so it can be reused for each bitset1
-    # deserialization of bitset2 is only done one time
-    bitsets2 = {k: v for k, v in bitsets2.iteritems()}
-
-    out = sys.stdout
-    if out_file != '-' and out_format.startswith('tsv'):
-        if out_file.endswith('gz'):
-            out = gzip.open(out_file, 'w')
-        else:
-            out = open(out_file, 'w')
     if out_file == '-' and out_format.startswith('hdf5'):
         raise Exception("hdf5 formats can't be outputted to stdout")
 
+    if memory:
+        # load whole dict in memory so it can be reused for each bitset1
+        # deserialization of bitsets2 is only done one time
+        bitsets2 = {k: v for k, v in bitsets2.iteritems()}
+
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 
+    label2id = {}
     if id2label_file is not None:
         label2id = swap_label2id(read_id2label(id2label_file))
 
@@ -208,8 +199,10 @@ def dump_pairs_hdf5_compact(distances_iter,
     h5file.close()
 
 
-def distance2query(bs_file, query, out, number_of_bits, mean_onbit_density, cutoff):
-    bitsets2 = IntbitsetDictDbm(bs_file, number_of_bits, 'r')
+def distance2query(fragmentsdb, query, out, mean_onbit_density, cutoff, memory):
+    frags = FragmentsDb(fragmentsdb)
+    bitsets2 = IntbitsetDict(frags)
+    number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match
         query_bitset = bitsets2[query]
@@ -217,11 +210,13 @@ def distance2query(bs_file, query, out, number_of_bits, mean_onbit_density, cuto
             query: query_bitset
         }
     else:
-        # load whole dict in memory so it can be reused for each bitset1
-        # deserialization of bitset2 is only done one time
-        bitsets2 = {k: v for k, v in bitsets2.iteritems()}
         # all bitsets which have a key that starts with query
-        bitsets1 = {k: v for k, v in bitsets2.iteritems() if k.startswith(query)}
+        bitsets1 = {k: v for k, v in bitsets2.iteritems_startswith(query)}
+
+        if memory:
+            # load whole dict in memory so it can be reused for each bitset1
+            # deserialization of bitset2 is only done one time
+            bitsets2 = {k: v for k, v in bitsets2.iteritems()}
 
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 

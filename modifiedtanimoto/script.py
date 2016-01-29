@@ -1,6 +1,6 @@
 # Copyright 2013 Netherlands eScience Center
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -11,29 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import argparse
-import logging
+import gzip
+import sys
 import tarfile
-from dbm import IntbitsetDictDbm, combine_intbitsetdbms
+from modifiedtanimoto.db import FragmentsDb, IntbitsetDict
 from . import makebits
 from . import pairs
 from algorithm import calc_mean_onbit_density
-
-DEFAULT_NUMBER_OF_BITS = 574331
 
 
 def make_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    makebits2intbitsetdbm_sc(subparsers)
+    makebits2fragmentsdb_sc(subparsers)
 
-    intbitsetdbm2makebits_sc(subparsers)
+    fragmentsdb2makebits_sc(subparsers)
 
     id2label_sc(subparsers)
-
-    combine_intbitsetdbms_sc(subparsers)
 
     meanbitdensity_sc(subparsers)
 
@@ -61,10 +57,10 @@ def pairs_sc(subparsers):
     sc = subparsers.add_parser('pairs',
                                help=sc_help,
                                description=sc_description)
-    sc.add_argument("bs_file1",
-                    help="Name of reference fingerprint file")
-    sc.add_argument("bs_file2",
-                    help="Name of query fingerprint file")
+    sc.add_argument("fragmentsfn1",
+                    help="Name of reference fragments db file")
+    sc.add_argument("fragmentsfn2",
+                    help="Name of query fragments db file")
     sc.add_argument("out_file",
                     help="Name of output file (use - for stdout)")
     sc.add_argument("--out_format",
@@ -74,9 +70,6 @@ def pairs_sc(subparsers):
     sc.add_argument("--id2label",
                     dest="id2label_file",
                     help="Id to label lookup tsv file")
-    sc.add_argument("--number_of_bits",
-                    type=int,
-                    default=DEFAULT_NUMBER_OF_BITS)
     sc.add_argument("--mean_onbit_density",
                     type=float,
                     default=0.01)
@@ -90,123 +83,125 @@ def pairs_sc(subparsers):
                     type=int,
                     default=100,
                     help=ph)
-    sc.set_defaults(func=pairs.dump_pairs)
+    sc.add_argument("--memory",
+                    action='store_true',
+                    help='Store query bitsets in memory')
+    sc.set_defaults(func=pairs_run)
 
 
-def makebits2intbitsetdbm_sc(subparsers):
-    sc_help = 'Convert Makebits file to intbitset dbm'
-    sc_desc = '''Creates a dbm with anydbm package where
-    key is the fingerprint identifier and the value is a
-    fastdump-ed intbitset serialization.
+def pairs_run(fragmentsfn1, fragmentsfn2,
+              out_format, out_file,
+              mean_onbit_density,
+              cutoff,
+              id2label_file,
+              precision, memory):
 
-    Creates files in working directory.
+    fragmentsdb1 = FragmentsDb(fragmentsfn1)
+    bitsets1 = IntbitsetDict(fragmentsdb1)
+    fragmentsdb2 = FragmentsDb(fragmentsfn2)
+    bitsets2 = IntbitsetDict(fragmentsdb2)
 
-    The value can be converted back into a intbitset object by
-    ```
-    from intbitset import intbitset
-    db = open('dbfilename')
-    bs = intbitset()
-    bs.fastload(db['some_id'])
-    ```
-    '''
-    fc = argparse.RawDescriptionHelpFormatter
-    sc = subparsers.add_parser('makebits2intbitsetdbm',
-                               formatter_class=fc,
-                               help=sc_help,
-                               description=sc_desc)
-    sc.add_argument("infile",
-                    help="Name of makebits formatted fingerprint tar.gz file")
-    sc.set_defaults(func=makebits2intbitsetdbm_run)
+    if bitsets1.number_of_bits != bitsets2.number_of_bits:
+        raise Exception('Number of bits is not the same')
+
+    out = sys.stdout
+    if out_file != '-' and out_format.startswith('tsv'):
+        if out_file.endswith('gz'):
+            out = gzip.open(out_file, 'w')
+        else:
+            out = open(out_file, 'w')
+
+    pairs.dump_pairs(bitsets1,
+                     bitsets2,
+                     out_format,
+                     out_file,
+                     out,
+                     bitsets1.number_of_bits,
+                     mean_onbit_density,
+                     cutoff,
+                     id2label_file,
+                     precision,
+                     memory
+                     )
 
 
-def makebits2intbitsetdbm(infile, outfile):
+def makebits2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('makebits2fragmentsdb', help='Add Makebits file to fragments db')
+    sc.add_argument('infiles', nargs='+', type=argparse.FileType('r'), metavar='infile',
+                    help='Name of makebits formatted fingerprint file (.tar.gz or not packed)')
+    sc.add_argument('outfile', help='Name of fragments db file', default='fragments.db')
+    sc.set_defaults(func=makebits2fragmentsdb)
+
+
+def makebits2fragmentsdb_single(infile, bitsets):
     gen = makebits.iter_file(infile)
     header = next(gen)
-    fp_size = makebits.read_fp_size(header)
-    logging.warn('Fingerprint size is {}'.format(fp_size))
-    with IntbitsetDictDbm(outfile, fp_size) as bitsets:
-        for fid, bitset in gen:
-            bitsets[fid] = bitset
+    number_of_bits = makebits.read_fp_size(header)
+    bitsets.number_of_bits = number_of_bits
+    bitsets.update(gen)
 
 
-def makebits2intbitsetdbm_run(infile):
-    if infile.endswith('tar.gz'):
-        with tarfile.open(infile) as tar:
-            for tarinfo in tar:
-                if tarinfo.isfile():
-                    outfile = tarinfo.name + '.db'
-                    msg = 'Reading {} and writing {}'.format(infile, outfile)
-                    logging.warn(msg)
-                    f = tar.extractfile(tarinfo)
-                    makebits2intbitsetdbm(f, outfile)
-                    f.close()
-    elif infile.endswith('.fp'):
-        f = open(infile)
-        outfile = infile + '.db'
-        logging.warn('Reading {} and writing {}'.format(infile, outfile))
-        makebits2intbitsetdbm(f, outfile)
-    else:
-        msg = 'Unable to open {}, format not supported'.format(infile)
-        raise Exception(msg)
+def makebits2fragmentsdb(infiles, outfile):
+    fragmentsdb = FragmentsDb(outfile)
+    bitsets = IntbitsetDict(fragmentsdb)
+    for infile in infiles:
+        if infile.name.endswith('tar.gz'):
+            with tarfile.open(fileobj=infile) as tar:
+                for tarinfo in tar:
+                    if tarinfo.isfile():
+                        f = tar.extractfile(tarinfo)
+                        makebits2fragmentsdb_single(f, bitsets)
+                        f.close()
+        else:
+            makebits2fragmentsdb_single(infile, bitsets)
 
 
-def intbitsetdbm2makebits_sc(subparsers):
-    sc_help = 'Convert intbitset dbm to Makebits file'
-    fc = argparse.RawDescriptionHelpFormatter
-    sc = subparsers.add_parser('intbitsetdbm2makebits',
-                               formatter_class=fc,
-                               help=sc_help)
-    sc.add_argument("--number_of_bits",
-                    type=int,
-                    default=DEFAULT_NUMBER_OF_BITS)
-    sc.add_argument("infile",
-                    help="Name of intbitset dbm file")
-    sc.add_argument("outfile",
+def fragmentsdb2makebits_sc(subparsers):
+    sc = subparsers.add_parser('fragmentsdb2makebits',
+                               help='Dump bitsets in fragments db to makebits file')
+
+    sc.add_argument('infile',
+                    default='fragments.db',
+                    help='Name of fragments db file')
+    sc.add_argument('outfile',
                     type=argparse.FileType('w'),
-                    help="Name of makebits formatted fingerprint file (or - for stdout)")
-    sc.set_defaults(func=intbitsetdbm2makebits_run)
+                    help='Name of makebits formatted fingerprint file (or - for stdout)')
+    sc.set_defaults(func=fragmentsdb2makebits)
 
 
-def intbitsetdbm2makebits_run(infile, outfile, number_of_bits):
-    bitsets = IntbitsetDictDbm(infile, number_of_bits, 'r')
-    makebits.write_file(number_of_bits, bitsets, outfile)
+def fragmentsdb2makebits(infile, outfile):
+    fragmentsdb = FragmentsDb(infile)
+    bitsets = IntbitsetDict(fragmentsdb)
+    makebits.write_file(bitsets.number_of_bits, bitsets, outfile)
 
 
 def bitsets2id2label(infile):
-    with IntbitsetDictDbm(infile, 0) as bitsets:
+    with FragmentsDb(infile) as fragmentsdb:
+        bitsets = IntbitsetDict(fragmentsdb)
         for bsid, bslabel in enumerate(bitsets):
             print("{}\t{}".format(bsid, bslabel))
 
 
 def id2label_sc(subparsers):
-    sc_help = 'Create id2file from fingerprint/bitset file'
+    sc_help = 'Create id2file from fragments db file'
     sc_desc = '''Write bitset id and label to stdout'''
     sc = subparsers.add_parser('id2label',
                                help=sc_help,
                                description=sc_desc)
-    sc.add_argument("infile",
-                    help="Name of makebits formatted fingerprint tar.gz file")
+    sc.add_argument('infile',
+                    default='fragments.db',
+                    help='Name of fragments db file')
     sc.set_defaults(func=bitsets2id2label)
-
-
-def combine_intbitsetdbms_sc(subparsers):
-    sc_help = 'Combine multiple intbitset dbm files into a single file'
-    sc = subparsers.add_parser('combineintbitsetdbms', help=sc_help)
-    sc.add_argument("infiles", type=str, nargs='+')
-    sc.add_argument("outfile", type=str)
-    sc.set_defaults(func=combine_intbitsetdbms)
 
 
 def distance2query_sc(subparsers):
     sc_help = 'Find the fragments closests to query'
     sc = subparsers.add_parser('distance2query', help=sc_help)
-    sc.add_argument("bs_file",
-                    help="Name of reference fingerprint file")
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
     sc.add_argument("query", type=str, help='Query identifier or beginning of it')
     sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
-    sc.add_argument("--number_of_bits",
-                    type=int,
-                    default=DEFAULT_NUMBER_OF_BITS)
     sc.add_argument("--mean_onbit_density",
                     type=float,
                     default=0.01)
@@ -214,22 +209,24 @@ def distance2query_sc(subparsers):
                     type=float,
                     default=0.55,
                     help="Set Tanimoto cutoff")
+    sc.add_argument("--memory",
+                    action='store_true',
+                    help='Store bitsets in memory')
     sc.set_defaults(func=pairs.distance2query)
 
 
 def meanbitdensity_sc(subparsers):
     sc = subparsers.add_parser('meanbitdensity', help='Compute mean bit density of bitsets')
-    sc.add_argument("bs_file",
-                    help="Name of reference fingerprint file")
-    sc.add_argument("--number_of_bits",
-                    type=int,
-                    default=DEFAULT_NUMBER_OF_BITS)
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
     sc.set_defaults(func=meanbitdensity_run)
 
 
-def meanbitdensity_run(bs_file, number_of_bits):
-    bitsets = IntbitsetDictDbm(bs_file, number_of_bits, 'r')
-    print(calc_mean_onbit_density(bitsets, number_of_bits))
+def meanbitdensity_run(fragmentsdb):
+    frags = FragmentsDb(fragmentsdb)
+    bitsets = IntbitsetDict(frags)
+    print(calc_mean_onbit_density(bitsets, bitsets.number_of_bits))
 
 
 def main(argv=sys.argv[1:]):
