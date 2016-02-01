@@ -14,7 +14,9 @@
 
 from collections import MutableMapping
 import sqlite3
+import zlib
 from intbitset import intbitset
+from rdkit.Chem import MolToMolBlock, MolFromMolBlock, Mol, MolToSmiles
 
 ATTR_NUMBER_OF_BITS = 'number_of_bits'
 
@@ -27,6 +29,29 @@ def convert_intbitset(s):
     ibs = intbitset()
     ibs.fastload(s)
     return ibs
+
+
+def adapt_molblockgz(mol):
+    return zlib.compress(MolToMolBlock(mol))
+
+
+def convert_molblockgz(molgz):
+    return MolFromMolBlock(zlib.decompress(molgz))
+
+
+class FastInserter(object):
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def __enter__(self):
+        # increase insert speed, this is less safe
+        self.cursor.execute('PRAGMA journal_mode=WAL')
+        self.cursor.execute('PRAGMA synchronous=OFF')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # switch back to default journal, so db file can be read-only and is safe again
+        self.cursor.execute('PRAGMA journal_mode=DELETE')
+        self.cursor.execute('PRAGMA synchronous=FULL')
 
 
 class FragmentsDb(object):
@@ -43,6 +68,8 @@ class FragmentsDb(object):
 
         sqlite3.register_adapter(intbitset, adapt_intbitset)
         sqlite3.register_converter('intbitset', convert_intbitset)
+        sqlite3.register_adapter(Mol, adapt_molblockgz)
+        sqlite3.register_converter('molblockgz', convert_molblockgz)
         self.connection = sqlite3.connect(filename, detect_types=sqlite3.PARSE_DECLTYPES)
         self.connection.text_factory = str
 
@@ -57,6 +84,27 @@ class FragmentsDb(object):
         self.close()
 
     def create_tables(self):
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
+            frag_id TEXT PRIMARY KEY,
+            pdb_code TEXT,
+            het_code TEXT,
+            atom_codes TEXT
+            hash_code TEXT,
+            ligand_id TEXT,
+            nr_r_groups INT,
+            smile TEXT,
+            molfile molblockgz
+        )''');
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS sites (
+            site_id TEXT PRIMARY KEY,
+            pdb_code TEXT,
+            het_code TEXT,
+            contact_residues TEXT,
+            scop_family TEXT,
+            scop_fold TEXT,
+            scop_species TEXT
+            ligand_id TEXT
+        )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS bitsets (
             frag_id TEXT PRIMARY KEY,
             bitset intbitset
@@ -74,6 +122,30 @@ class FragmentsDb(object):
 
     def bitsets(self):
         return IntbitsetDict(self)
+
+    def add_molecules(self, mols):
+        with FastInserter(self.cursor):
+            for mol in mols:
+                self.add_molecule(mol)
+
+    def add_fragments_from_shelve(self, myshelve):
+        with FastInserter(self.cursor):
+            for k, v in myshelve.iteritems():
+                self.add_fragment_from_shelve(k, v)
+
+    def add_molecule(self, mol):
+        sql = '''UPDATE fragments SET smile=?, molfile=? WHERE frag_id=?'''
+
+        self.cursor.execute(sql, (
+            MolToSmiles(mol),
+            mol,
+            mol.GetProp('_Name')
+        ))
+
+        self.db.commit()
+
+    def add_fragment_from_shelve(self, frag_id, fragment):
+        sql = '''INSERT OR REPLACE INTO bitsets (frag_id, bitset) VALUES (?, ?)'''
 
 
 class IntbitsetDict(MutableMapping):
@@ -150,17 +222,10 @@ class IntbitsetDict(MutableMapping):
     def update(*args, **kwds):
         self = args[0]
 
-        # increase insert speed, this is less safe
-        self.cursor.execute('PRAGMA journal_mode=WAL')
-        self.cursor.execute('PRAGMA synchronous=OFF')
-
-        MutableMapping.update(*args, **kwds)
-
-        # make table and index stored contiguously
-        self.cursor.execute('VACUUM')
-        # switch back to default journal, so db file can be read-only and is safe again
-        self.cursor.execute('PRAGMA journal_mode=DELETE')
-        self.cursor.execute('PRAGMA synchronous=FULL')
+        with FastInserter(self.cursor):
+            MutableMapping.update(*args, **kwds)
+            # make table and index stored contiguously
+            self.cursor.execute('VACUUM')
 
     def iteritems_startswith(self, prefix):
         """item iterator over keys with prefix

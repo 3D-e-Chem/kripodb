@@ -223,6 +223,39 @@ def meanbitdensity_run(fragmentsdb):
     print(calc_mean_onbit_density(bitsets, bitsets.number_of_bits))
 
 
+def shelve2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('shelve2fragmentsdb', help='Add fragments from shelve to sqlite')
+    sc.add_argument('shelvefn', type='str')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+    sc.set_defaults(func=shelve2fragmentsdb_run)
+
+
+def shelve2fragmentsdb_run(shelvefn, fragmentsdb):
+    import shelve
+    myshelve = shelve.open(shelvefn)
+    frags = FragmentsDb(fragmentsdb)
+    frags.add_fragments_from_shelve(myshelve)
+
+
+def sdf2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('sdf2fragmentsdb', help='Add fragments sdf to sqlite')
+    sc.add_argument('sdffn', type='str', help='SDF filename')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+
+    sc.set_defaults(func=sdf2fragmentsdb_run)
+
+
+def sdf2fragmentsdb_run(sdffn, fragmentsdb):
+    from rdkit import Chem
+    suppl = Chem.SDMolSupplier(sdffn)
+    frags = FragmentsDb(fragmentsdb)
+    frags.add_molecules(suppl)
+
+
 def main(argv=sys.argv[1:]):
     parser = make_parser()
     args = parser.parse_args(argv)
