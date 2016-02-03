@@ -15,9 +15,8 @@
 import logging
 import tables
 
-from algorithm import distances, corrections
-from id2label import read_id2label, swap_label2id
-from modifiedtanimoto.db import FragmentsDb
+from modifiedtanimoto import distances, corrections
+from kripodb.db import FingerprintsDb, FragmentsDb
 
 
 def dump_pairs(bitsets1,
@@ -28,7 +27,7 @@ def dump_pairs(bitsets1,
                number_of_bits,
                mean_onbit_density,
                cutoff,
-               id2label_file,
+               label2id,
                precision,
                memory):
     """Dump pairs of bitset collection
@@ -57,10 +56,6 @@ def dump_pairs(bitsets1,
         bitsets2 = {k: v for k, v in bitsets2.iteritems()}
 
     (corr_st, corr_sto) = corrections(mean_onbit_density)
-
-    label2id = {}
-    if id2label_file is not None:
-        label2id = swap_label2id(read_id2label(id2label_file))
 
     logging.warn('Generating pairs')
 
@@ -164,6 +159,8 @@ class PairCompact(tables.IsDescription):
     score = tables.UInt8Col()
 
 
+def
+
 def dump_pairs_hdf5_compact(distances_iter,
                             label2id, precision,
                             out_file):
@@ -200,7 +197,7 @@ def dump_pairs_hdf5_compact(distances_iter,
 
 
 def distance2query(fragmentsdb, query, out, mean_onbit_density, cutoff, memory):
-    bitsets2 = FragmentsDb(fragmentsdb).bitsets()
+    bitsets2 = FingerprintsDb(fragmentsdb).as_dict()
     number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match

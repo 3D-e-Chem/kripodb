@@ -14,6 +14,7 @@
 
 from collections import MutableMapping
 import sqlite3
+import logging
 import zlib
 from intbitset import intbitset
 from rdkit.Chem import MolToMolBlock, MolFromMolBlock, Mol, MolToSmiles
@@ -39,8 +40,26 @@ def convert_molblockgz(molgz):
     return MolFromMolBlock(zlib.decompress(molgz))
 
 
+sqlite3.register_adapter(intbitset, adapt_intbitset)
+sqlite3.register_converter('intbitset', convert_intbitset)
+sqlite3.register_adapter(Mol, adapt_molblockgz)
+sqlite3.register_converter('molblockgz', convert_molblockgz)
+
+
 class FastInserter(object):
     def __init__(self, cursor):
+        """
+
+        Use with to make inserting faster, but less sage
+
+        Parameters
+        ----------
+        cursor sqlite3 cursor
+
+        Returns
+        -------
+
+        """
         self.cursor = cursor
 
     def __enter__(self):
@@ -54,8 +73,7 @@ class FastInserter(object):
         self.cursor.execute('PRAGMA synchronous=FULL')
 
 
-class FragmentsDb(object):
-    """Fragments database"""
+class SqliteDb(object):
     def __init__(self, filename):
         """Connect to fragment db.
 
@@ -65,13 +83,9 @@ class FragmentsDb(object):
         :return:
         """
         self.filename = filename
-
-        sqlite3.register_adapter(intbitset, adapt_intbitset)
-        sqlite3.register_converter('intbitset', convert_intbitset)
-        sqlite3.register_adapter(Mol, adapt_molblockgz)
-        sqlite3.register_converter('molblockgz', convert_molblockgz)
         self.connection = sqlite3.connect(filename, detect_types=sqlite3.PARSE_DECLTYPES)
         self.connection.text_factory = str
+        self.connection.row_factory = sqlite3.Row
 
         self.cursor = self.connection.cursor()
 
@@ -83,45 +97,37 @@ class FragmentsDb(object):
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def create_tables(self):
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
-            frag_id TEXT PRIMARY KEY,
-            pdb_code TEXT,
-            het_code TEXT,
-            atom_codes TEXT
-            hash_code TEXT,
-            ligand_id TEXT,
-            nr_r_groups INT,
-            smile TEXT,
-            molfile molblockgz
-        )''');
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS sites (
-            site_id TEXT PRIMARY KEY,
-            pdb_code TEXT,
-            het_code TEXT,
-            contact_residues TEXT,
-            scop_family TEXT,
-            scop_fold TEXT,
-            scop_species TEXT
-            ligand_id TEXT
-        )''')
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS bitsets (
-            frag_id TEXT PRIMARY KEY,
-            bitset intbitset
-        )''')
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS attributes (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )''')
-
     def commit(self):
         self.connection.commit()
 
     def close(self):
         self.connection.close()
 
-    def bitsets(self):
-        return IntbitsetDict(self)
+
+class FragmentsDb(SqliteDb):
+    """Fragments database"""
+
+    def create_tables(self):
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
+            frag_id TEXT PRIMARY KEY,
+            frag_nr INT,
+            pdb_code TEXT,
+            het_code TEXT,
+            atomCodes TEXT,
+            hashcode TEXT,
+            ligID TEXT,
+            numRgroups INT,
+            ContactReses TEXT,
+            SCOP_family TEXT,
+            SCOP_fold TEXT,
+            SCOP_species TEXT,
+            SCOP_super TEXT
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS molecules (
+            frag_id TEXT PRIMARY KEY,
+            smiles TEXT,
+            molfile molblockgz
+        )''')
 
     def add_molecules(self, mols):
         with FastInserter(self.cursor):
@@ -134,18 +140,124 @@ class FragmentsDb(object):
                 self.add_fragment_from_shelve(k, v)
 
     def add_molecule(self, mol):
-        sql = '''UPDATE fragments SET smile=?, molfile=? WHERE frag_id=?'''
+        sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, molfile) VALUES (?, ?, ?)'''
+
+        if mol is None:
+            return
 
         self.cursor.execute(sql, (
+            mol.GetProp('_Name'),
             MolToSmiles(mol),
             mol,
-            mol.GetProp('_Name')
         ))
 
-        self.db.commit()
+        self.connection.commit()
 
     def add_fragment_from_shelve(self, frag_id, fragment):
-        sql = '''INSERT OR REPLACE INTO bitsets (frag_id, bitset) VALUES (?, ?)'''
+        sql = '''INSERT OR REPLACE INTO fragments (
+            frag_id,
+            pdb_code,
+            het_code,
+            frag_nr,
+            atomCodes,
+            hashcode,
+            ligID,
+            numRgroups,
+            ContactReses,
+            SCOP_family,
+            SCOP_fold,
+            SCOP_species,
+            SCOP_super
+        ) VALUES (
+            :frag_id,
+            :pdb_code,
+            :het_code,
+            :frag_nr,
+            :atomCodes,
+            :hashcode,
+            :ligID,
+            :numRgroups,
+            :ContactReses,
+            :SCOP_family,
+            :SCOP_fold,
+            :SCOP_species,
+            :SCOP_super
+        )'''
+
+        splitted_frag_id = frag_id.split('-')
+        try:
+            frag_nr = int(splitted_frag_id[2].replace('frag', ''))
+        except IndexError:
+            frag_nr = None
+        except ValueError as e:
+            logging.warn('Weird id {}, skipping'.format(frag_id))
+            return
+
+        row = {
+            'frag_id': frag_id.replace('-', '_'),
+            'pdb_code': splitted_frag_id[0],
+            'het_code': splitted_frag_id[1],
+            'frag_nr': frag_nr,
+            'hashcode': None,
+            'atomCodes': None,
+            'ligID': None,
+            'numRgroups': None,
+            'ContactReses': None,
+            'SCOP_family': None,
+            'SCOP_fold': None,
+            'SCOP_species': None,
+            'SCOP_super': None
+        }
+        for k, v in fragment.iteritems():
+            row[k] = v
+
+        if row['numRgroups'] is not None:
+            row['numRgroups'] = int(row['numRgroups'])
+
+        self.cursor.execute(sql, row)
+
+    def __getitem__(self, key):
+        sql = '''SELECT * FROM fragments LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
+        self.cursor.execute(sql, (key,))
+        row = self.cursor.fetchone()
+
+        if row is None:
+            raise KeyError("'{}' not found".format(key))
+
+        fragment = {}
+        for idx, v in enumerate(row.keys()):
+            fragment[v] = row[idx]
+        return fragment
+
+    def _to_dict(self, sql):
+        lookup = {}
+        for k, v in self.cursor.execute(sql):
+            lookup[k] = v
+        return lookup
+
+    def id2label(self):
+        sql = '''SELECT rowid, frag_id FROM molecules'''
+        return self._to_dict(sql)
+
+    def label2id(self):
+        sql = '''SELECT frag_id, rowid FROM molecules'''
+        return self._to_dict(sql)
+
+
+class FingerprintsDb(SqliteDb):
+
+    def create_tables(self):
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS bitsets (
+            frag_id TEXT PRIMARY KEY,
+            bitset intbitset
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS attributes (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )''')
+
+    def as_dict(self):
+        return IntbitsetDict(self)
 
 
 class IntbitsetDict(MutableMapping):
@@ -154,8 +266,8 @@ class IntbitsetDict(MutableMapping):
 
     Convert dbm to sqlite:
     ```
-    from modifiedtanimoto.dbm import IntbitsetDictDbm
-    from modifiedtanimoto.db import FragmentsDb
+    from kripodb.dbm import IntbitsetDictDbm
+    from kripodb.db import FragmentsDb
     dbm = IntbitsetDictDbm('data/fingerprint12.fp.db')
     frags = FragmentsDb('data/fragments12.db')
     bitsets = frags.bitsets()

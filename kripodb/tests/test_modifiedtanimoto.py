@@ -14,7 +14,7 @@
 
 from nose.tools import assert_almost_equal
 from intbitset import intbitset
-import modifiedtanimoto.algorithm as algorithm
+from kripodb import modifiedtanimoto
 
 
 class TestAlgorithm(object):
@@ -34,13 +34,13 @@ class TestAlgorithm(object):
             'c': intbitset([1, 2, 4, 8])
         }
 
-        result = algorithm.calc_mean_onbit_density(bitsets, self.number_of_bits)
+        result = modifiedtanimoto.calc_mean_onbit_density(bitsets, self.number_of_bits)
 
         expected = 0.04
         assert result == expected
 
     def test_corrections(self):
-        corr_st, corr_sto = algorithm.corrections(0.01)
+        corr_st, corr_sto = modifiedtanimoto.corrections(0.01)
 
         assert_almost_equal(corr_st, 0.663333333333)
         assert_almost_equal(corr_sto, 0.336666666667)
@@ -49,7 +49,7 @@ class TestAlgorithm(object):
         bitset1 = intbitset([1, 2, 3])
         bitset2 = intbitset([1, 2, 4, 8])
 
-        result = algorithm.distance(bitset1, bitset2,
+        result = modifiedtanimoto.distance(bitset1, bitset2,
                                     self.number_of_bits,
                                     self.corr_st, self.corr_sto)
 
@@ -63,7 +63,7 @@ class TestAlgorithm(object):
             'c': intbitset([1, 2, 4, 8])
         }
 
-        iterator = algorithm.distances(bitsets, bitsets,
+        iterator = modifiedtanimoto.distances(bitsets, bitsets,
                                        self.number_of_bits,
                                        self.corr_st, self.corr_sto,
                                        0.55)
@@ -87,7 +87,7 @@ class TestAlgorithm(object):
             'c': intbitset([1, 2, 4, 8])
         }
 
-        iterator = algorithm.distances(bitsets, bitsets,
+        iterator = modifiedtanimoto.distances(bitsets, bitsets,
                                        self.number_of_bits,
                                        self.corr_st, self.corr_sto,
                                        0.55, True)

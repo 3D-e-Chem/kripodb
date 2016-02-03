@@ -15,7 +15,7 @@
 import StringIO
 from intbitset import intbitset
 from nose.tools import assert_raises, eq_
-from modifiedtanimoto import makebits as makebits
+from kripodb import makebits as makebits
 
 
 def test_read_header():
