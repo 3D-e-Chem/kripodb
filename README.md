@@ -1,14 +1,15 @@
-# python-modified-tanimoto
+# Kripo DB
 
-Library to calculate modified tanimoto distance between bit vectors and script to precalculate distances
+Library to interact with Kripo fragment, fingerprint and similarity data files. 
 
 # Install
 
 Requirements:
 
-* rdkit, http://rdkit.org
+* rdkit, http://rdkit.org, to read SDF files and generate smile strings from molecules
 
 ```
+pip install -U setuptools
 pip install numpy
 python setup.py develop
 ```
@@ -17,5 +18,5 @@ python setup.py develop
 
 To see available commands
 ```
-modified_tanimoto --help
+kripodb --help
 ```

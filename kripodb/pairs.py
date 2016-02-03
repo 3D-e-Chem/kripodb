@@ -159,8 +159,6 @@ class PairCompact(tables.IsDescription):
     score = tables.UInt8Col()
 
 
-def
-
 def dump_pairs_hdf5_compact(distances_iter,
                             label2id, precision,
                             out_file):
