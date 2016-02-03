@@ -29,7 +29,7 @@ def dump_pairs(bitsets1,
                cutoff,
                label2id,
                precision,
-               memory):
+               nomemory):
     """Dump pairs of bitset collection
 
     :param bitsets1: dictionary of bitset identifier as key
@@ -50,7 +50,7 @@ def dump_pairs(bitsets1,
     if out_file == '-' and out_format.startswith('hdf5'):
         raise Exception("hdf5 formats can't be outputted to stdout")
 
-    if memory:
+    if not nomemory:
         # load whole dict in memory so it can be reused for each bitset1
         # deserialization of bitsets2 is only done one time
         bitsets2 = {k: v for k, v in bitsets2.iteritems()}
@@ -67,15 +67,10 @@ def dump_pairs(bitsets1,
 
     if out_format == 'tsv':
         dump_pairs_tsv(distances_iter, out)
-    elif out_format == 'tsv_compact':
-        dump_pairs_tsv_compact(distances_iter,
-                               label2id, precision,
-                               out)
-    elif out_format == 'hdf5':
-        dump_pairs_hdf5(distances_iter, expectedrows, out_file)
     elif out_format == 'hdf5_compact':
         dump_pairs_hdf5_compact(distances_iter,
-                                label2id, precision,
+                                label2id,
+                                precision,
                                 expectedrows,
                                 out_file)
     else:
@@ -99,62 +94,6 @@ def dump_pairs_tsv(distances_iter, out):
         out.write('{}\t{}\t{}\n'.format(label1, label2, distance))
 
 
-def dump_pairs_tsv_compact(distances_iter,
-                           label2id, precision,
-                           out):
-    """
-    Pro:
-    * more compact, because label string is replaced with a integer
-    * when stored in sqlite can be used outside of Python
-    Con:
-    * Requires a lookup table
-
-    :param distances_iter:
-    :param label2id: dict to translate label to id (string to int)
-    :param precision:
-    :param out:
-    :return:
-    """
-    for label1, label2, distance in distances_iter:
-        id1 = label2id[label1]
-        id2 = label2id[label2]
-        cd = int(distance * precision)
-        out.write('{}\t{}\t{}\n'.format(id1, id2, cd))
-
-
-class Pair(tables.IsDescription):
-    a = tables.StringCol(15)
-    b = tables.StringCol(15)
-    score = tables.Float32Col()
-
-
-def dump_pairs_hdf5(distances_iter, expectedrows, out_file):
-    """
-    Pro:
-    * small
-    * index on pair ids
-    Con:
-    * requires hdf5 library to access
-
-    :param distances_iter:
-    :param out_file:
-    :return:
-    """
-    filters = tables.Filters(complevel=6, complib='blosc')
-    h5file = tables.open_file(out_file, mode='w', filters=filters)
-    table = h5file.create_table('/', 'pairs', Pair, 'Distance pairs', expectedrows=expectedrows)
-    hit = table.row
-    for label1, label2, distance in distances_iter:
-        hit['a'] = label1
-        hit['b'] = label2
-        hit['score'] = distance
-        hit.append()
-    table.flush()
-    table.cols.a.create_index(filters=filters)
-    table.cols.b.create_index(filters=filters)
-    h5file.close()
-
-
 class PairCompact(tables.IsDescription):
     a = tables.UInt32Col()
     b = tables.UInt32Col()
@@ -162,7 +101,8 @@ class PairCompact(tables.IsDescription):
 
 
 def dump_pairs_hdf5_compact(distances_iter,
-                            label2id, precision,
+                            label2id,
+                            precision,
                             expectedrows,
                             out_file):
     """

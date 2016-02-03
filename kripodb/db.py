@@ -84,6 +84,7 @@ class SqliteDb(object):
         """
         self.filename = filename
         self.connection = sqlite3.connect(filename, detect_types=sqlite3.PARSE_DECLTYPES)
+        # sqlite3 defaults to unicode as text_factory, unicode can't be used for byte string
         self.connection.text_factory = str
         self.connection.row_factory = sqlite3.Row
 
@@ -116,12 +117,7 @@ class FragmentsDb(SqliteDb):
             atomCodes TEXT,
             hashcode TEXT,
             ligID TEXT,
-            numRgroups INT,
-            ContactReses TEXT,
-            SCOP_family TEXT,
-            SCOP_fold TEXT,
-            SCOP_species TEXT,
-            SCOP_super TEXT
+            numRgroups INT
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS molecules (
             frag_id TEXT PRIMARY KEY,
@@ -139,10 +135,13 @@ class FragmentsDb(SqliteDb):
             for k, v in myshelve.iteritems():
                 self.add_fragment_from_shelve(k, v)
 
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
+
     def add_molecule(self, mol):
         sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, molfile) VALUES (?, ?, ?)'''
 
         if mol is None:
+            logging.warn('Empty molecule, skipping')
             return
 
         self.cursor.execute(sql, (
@@ -162,12 +161,7 @@ class FragmentsDb(SqliteDb):
             atomCodes,
             hashcode,
             ligID,
-            numRgroups,
-            ContactReses,
-            SCOP_family,
-            SCOP_fold,
-            SCOP_species,
-            SCOP_super
+            numRgroups
         ) VALUES (
             :frag_id,
             :pdb_code,
@@ -176,20 +170,17 @@ class FragmentsDb(SqliteDb):
             :atomCodes,
             :hashcode,
             :ligID,
-            :numRgroups,
-            :ContactReses,
-            :SCOP_family,
-            :SCOP_fold,
-            :SCOP_species,
-            :SCOP_super
+            :numRgroups
         )'''
 
         splitted_frag_id = frag_id.split('-')
+        if len(splitted_frag_id) != 3:
+            logging.warn('Weird id {}, skipping'.format(frag_id))
+            return
+
         try:
             frag_nr = int(splitted_frag_id[2].replace('frag', ''))
-        except IndexError:
-            frag_nr = None
-        except ValueError as e:
+        except ValueError:
             logging.warn('Weird id {}, skipping'.format(frag_id))
             return
 
@@ -201,18 +192,12 @@ class FragmentsDb(SqliteDb):
             'hashcode': None,
             'atomCodes': None,
             'ligID': None,
-            'numRgroups': None,
-            'ContactReses': None,
-            'SCOP_family': None,
-            'SCOP_fold': None,
-            'SCOP_species': None,
-            'SCOP_super': None
+            'numRgroups': None
         }
         for k, v in fragment.iteritems():
             row[k] = v
 
-        if row['numRgroups'] is not None:
-            row['numRgroups'] = int(row['numRgroups'])
+        row['numRgroups'] = int(row['numRgroups'])
 
         self.cursor.execute(sql, row)
 
@@ -224,10 +209,21 @@ class FragmentsDb(SqliteDb):
         if row is None:
             raise KeyError("'{}' not found".format(key))
 
+        return self._row2fragment(row)
+
+    def _row2fragment(self, row):
         fragment = {}
         for idx, v in enumerate(row.keys()):
             fragment[v] = row[idx]
         return fragment
+
+    def by_pdb_code(self, pdb_code):
+        fragments = []
+        sql = '''SELECT m.rowid, * FROM fragments JOIN molecules m USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
+        for row in self.cursor.execute(sql, (pdb_code,)):
+            fragments.append(self._row2fragment(row))
+
+        return fragments
 
     def _to_dict(self, sql):
         lookup = {}
@@ -243,6 +239,10 @@ class FragmentsDb(SqliteDb):
         sql = '''SELECT frag_id, rowid FROM molecules'''
         return self._to_dict(sql)
 
+    def __len__(self):
+        self.cursor.execute('SELECT count(*) FROM molecules')
+        row = self.cursor.fetchone()
+        return row[0]
 
 class FingerprintsDb(SqliteDb):
 
@@ -256,8 +256,8 @@ class FingerprintsDb(SqliteDb):
             value TEXT
         )''')
 
-    def as_dict(self):
-        return IntbitsetDict(self)
+    def as_dict(self, number_of_bits=None):
+        return IntbitsetDict(self, number_of_bits)
 
 
 class IntbitsetDict(MutableMapping):
@@ -299,7 +299,7 @@ class IntbitsetDict(MutableMapping):
         row = self.cursor.fetchone()
 
         if row is None:
-            raise KeyError("'{}' not found".format(key))
+            raise KeyError(key)
 
         return row[0]
 

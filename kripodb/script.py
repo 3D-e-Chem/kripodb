@@ -13,16 +13,23 @@
 # limitations under the License.
 import argparse
 import gzip
+import logging
+import shelve
 import sys
 import tarfile
+
+from rdkit.Chem.rdmolfiles import SDMolSupplier
+
 from kripodb.db import FragmentsDb, FingerprintsDb
 from . import makebits
 from . import pairs
 from modifiedtanimoto import calc_mean_onbit_density
+from version import __version__
 
 
 def make_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version=__version__)
     subparsers = parser.add_subparsers()
 
     makebits2fingerprintsdb_sc(subparsers)
@@ -51,13 +58,10 @@ def pairs_sc(subparsers):
 
     Output formats:
     * tsv, tab seperated id1,id2, distance
-    * tsv_compact, same format as tsv, but id1 and id2 have been replaced
+    * hdf5_compact, hdf5 file contstructed with pytables with a, b and score, but but a and b have been replaced
       by numbers and distance has been converted to scaled int
-    * hdf5, hdf5 file contstructed with pytables with id1, id2 and distance
-    * hdf5_compact, same format as hdf5, but same compacting tsv_distance
-
     '''
-    out_formats = ['tsv', 'tsv_compact', 'hdf5', 'hdf5_compact']
+    out_formats = ['tsv', 'hdf5_compact']
     sc = subparsers.add_parser('pairs',
                                help=sc_help,
                                description=sc_description)
@@ -86,9 +90,9 @@ def pairs_sc(subparsers):
                     type=int,
                     default=65535,
                     help=ph)
-    sc.add_argument("--memory",
+    sc.add_argument("--nomemory",
                     action='store_true',
-                    help='Store query fingerprints in memory')
+                    help='Do not store query fingerprints in memory')
     sc.set_defaults(func=pairs_run)
 
 
@@ -97,10 +101,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
               mean_onbit_density,
               cutoff,
               fragmentsdbfn,
-              precision, memory):
-
-    bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
-    bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
+              precision, nomemory):
 
     if 'compact' in out_format and fragmentsdbfn is None:
         raise Exception('Compact output formats require fragments db')
@@ -108,6 +109,9 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
     label2id = {}
     if fragmentsdbfn is not None:
         label2id = FragmentsDb(fragmentsdbfn).label2id()
+
+    bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
+    bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
 
     if bitsets1.number_of_bits != bitsets2.number_of_bits:
         raise Exception('Number of bits is not the same')
@@ -129,7 +133,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
                      cutoff,
                      label2id,
                      precision,
-                     memory
+                     nomemory
                      )
 
 
@@ -202,27 +206,6 @@ def distance2query_sc(subparsers):
     sc.set_defaults(func=pairs.distance2query)
 
 
-def distance2query_sc(subparsers):
-    sc_help = 'Find the fragments closests to query based on fingerprints'
-    sc = subparsers.add_parser('distance2query', help=sc_help)
-    sc.add_argument("fingerprintsdb",
-                    default='fingerprints.db',
-                    help="Name of fingerprints db file")
-    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
-    sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
-    sc.add_argument("--mean_onbit_density",
-                    type=float,
-                    default=0.01)
-    sc.add_argument("--cutoff",
-                    type=float,
-                    default=0.55,
-                    help="Set Tanimoto cutoff")
-    sc.add_argument("--memory",
-                    action='store_true',
-                    help='Store bitsets in memory')
-    sc.set_defaults(func=pairs.distance2query)
-
-
 def similar_sc(subparsers):
     sc_help = 'Find the fragments closests to query based on distance matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
@@ -261,7 +244,6 @@ def shelve2fragmentsdb_sc(subparsers):
 
 
 def shelve2fragmentsdb_run(shelvefn, fragmentsdb):
-    import shelve
     myshelve = shelve.open(shelvefn, 'r')
     frags = FragmentsDb(fragmentsdb)
     frags.add_fragments_from_shelve(myshelve)
@@ -278,9 +260,9 @@ def sdf2fragmentsdb_sc(subparsers):
 
 
 def sdf2fragmentsdb_run(sdffns, fragmentsdb):
-    from rdkit.Chem import SDMolSupplier
     frags = FragmentsDb(fragmentsdb)
     for sdffn in sdffns:
+        logging.warn('Parsing {}'.format(sdffn))
         suppl = SDMolSupplier(sdffn)
         frags.add_molecules(suppl)
 

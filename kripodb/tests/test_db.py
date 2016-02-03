@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from intbitset import intbitset
-from nose.tools import eq_
+from nose.tools import eq_, raises, assert_raises
 from mock import call, Mock
+from rdkit.Chem import MolFromSmiles, MolToSmiles
 
 import kripodb.db as db
 
@@ -50,15 +51,101 @@ class TestFastInserter(object):
                                               call('PRAGMA synchronous=FULL')])
 
 
-class TestFragmentsDB(object):
+class TestFragmentsDBEmpty(object):
     def setUp(self):
         self.fdb = db.FragmentsDb(':memory:')
+
+    def test_id2label(self):
+        eq_(self.fdb.id2label(), {})
+
+    def test_label2id(self):
+        eq_(self.fdb.label2id(), {})
+
+    @raises(KeyError)
+    def test_getitem_keyerror(self):
+        key = 'id1'
+        self.fdb[key]
+
+    def test_by_pdb_code(self):
+        pdb_code = '1kvm'
+
+        fragments = self.fdb.by_pdb_code(pdb_code)
+
+        eq_(fragments, [])
+
+    def test_add_fragments_from_shelve_weirdid(self):
+        result = self.fdb.add_fragment_from_shelve('1muu-GDX', {})
+        eq_(result, None)
+
+    def test_add_fragments_from_shelve_weirdid2(self):
+        result = self.fdb.add_fragment_from_shelve('1muu-GDX-B', {})
+        eq_(result, None)
+
+    def test_add_molecule_none(self):
+        self.fdb.add_molecule(None)
+
+        eq_(len(self.fdb), 0)
+
+
+class TestFragmentsDBFilled(object):
+    def setUp(self):
+        self.fdb = db.FragmentsDb(':memory:')
+        self.myshelve ={
+            '1muu-GDX-frag7': {
+                'atomCodes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+                'hashcode': '0d6ced7ce686f4da',
+                'ligID': '1muu-A-GDX-1005-B',
+                'numRgroups': '1'
+            }
+        }
+        self.fdb.add_fragments_from_shelve(self.myshelve)
+
+        self.mol = MolFromSmiles('[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
+        self.mol.SetProp('_Name', '1muu_GDX_frag7')
+        self.fdb.add_molecule(self.mol)
+        self.expected_fragment = {
+            'numRgroups': 1,
+            'smiles': '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O',
+            'pdb_code': '1muu',
+            'atomCodes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+            'het_code': 'GDX',
+            'hashcode': '0d6ced7ce686f4da',
+            'frag_nr': 7,
+            'frag_id': '1muu_GDX_frag7',
+            'rowid': 1,
+            'ligID': '1muu-A-GDX-1005-B'
+        }
+
+    def test_getitem(self):
+        fragment = self.fdb['1muu_GDX_frag7']
+
+        eq_(MolToSmiles(fragment['molfile']), '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
+        del fragment['molfile']
+
+        eq_(fragment, self.expected_fragment)
+
+    def test_id2label(self):
+        eq_(self.fdb.id2label(), {1: '1muu_GDX_frag7'})
+
+    def test_label2id(self):
+        eq_(self.fdb.label2id(), {'1muu_GDX_frag7': 1})
+
+    def test_by_pdb_code(self):
+        pdb_code = '1muu'
+
+        fragments = self.fdb.by_pdb_code(pdb_code)
+
+        del fragments[0]['molfile']
+        eq_(fragments, [self.expected_fragment])
+
+    def test_len(self):
+        eq_(len(self.fdb), 1)
 
 
 class TestIntbitsetDictEmpty(object):
     def setUp(self):
         self.fdb = db.FingerprintsDb(':memory:')
-        self.bitsets = db.IntbitsetDict(self.fdb, 100)
+        self.bitsets = self.fdb.as_dict(100)
         self.bid = 'id1'
         self.bs = intbitset([1, 3, 5, 8])
 
@@ -97,6 +184,12 @@ class TestIntbitsetDictEmpty(object):
 
         result = {k: v for k, v in self.bitsets.iteritems()}
         eq_(result, other)
+
+    def test_getitem_keyerror(self):
+        with assert_raises(KeyError) as e:
+            self.bitsets['id1']
+        eq_(e.exception.message, 'id1')
+
 
 
 class TestIntbitsetDictFilled(object):
