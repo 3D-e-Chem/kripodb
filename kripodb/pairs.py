@@ -55,6 +55,8 @@ def dump_pairs(bitsets1,
         # deserialization of bitsets2 is only done one time
         bitsets2 = {k: v for k, v in bitsets2.iteritems()}
 
+    expectedrows = len(bitsets1) * len(bitsets2) * cutoff * 0.025
+
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 
     logging.warn('Generating pairs')
@@ -70,10 +72,11 @@ def dump_pairs(bitsets1,
                                label2id, precision,
                                out)
     elif out_format == 'hdf5':
-        dump_pairs_hdf5(distances_iter, out_file)
+        dump_pairs_hdf5(distances_iter, expectedrows, out_file)
     elif out_format == 'hdf5_compact':
         dump_pairs_hdf5_compact(distances_iter,
                                 label2id, precision,
+                                expectedrows,
                                 out_file)
     else:
         raise LookupError('Invalid output format')
@@ -122,10 +125,10 @@ def dump_pairs_tsv_compact(distances_iter,
 class Pair(tables.IsDescription):
     a = tables.StringCol(15)
     b = tables.StringCol(15)
-    distance = tables.Float32Col()
+    score = tables.Float32Col()
 
 
-def dump_pairs_hdf5(distances_iter, out_file):
+def dump_pairs_hdf5(distances_iter, expectedrows, out_file):
     """
     Pro:
     * small
@@ -139,13 +142,12 @@ def dump_pairs_hdf5(distances_iter, out_file):
     """
     filters = tables.Filters(complevel=6, complib='blosc')
     h5file = tables.open_file(out_file, mode='w', filters=filters)
-    group = h5file.create_group('/', 'pairs', 'Distance pairs')
-    table = h5file.create_table(group, 'pairs', Pair, 'Distance pairs pairs')
+    table = h5file.create_table('/', 'pairs', Pair, 'Distance pairs', expectedrows=expectedrows)
     hit = table.row
     for label1, label2, distance in distances_iter:
         hit['a'] = label1
         hit['b'] = label2
-        hit['distance'] = distance
+        hit['score'] = distance
         hit.append()
     table.flush()
     table.cols.a.create_index(filters=filters)
@@ -156,11 +158,12 @@ def dump_pairs_hdf5(distances_iter, out_file):
 class PairCompact(tables.IsDescription):
     a = tables.UInt32Col()
     b = tables.UInt32Col()
-    score = tables.UInt8Col()
+    score = tables.UInt16Col()
 
 
 def dump_pairs_hdf5_compact(distances_iter,
                             label2id, precision,
+                            expectedrows,
                             out_file):
     """
 
@@ -174,6 +177,7 @@ def dump_pairs_hdf5_compact(distances_iter,
     :param distances_iter:
     :param label2id: dict to translate label to id (string to int)
     :param precision:
+    :param expectedrows:
     :param out_file:
     :return:
     """
@@ -182,20 +186,22 @@ def dump_pairs_hdf5_compact(distances_iter,
     table = h5file.create_table('/',
                                 'pairs',
                                 PairCompact,
-                                'Distance pairs pairs')
+                                'Distance pairs',
+                                expectedrows=expectedrows)
+    table.attrs['score_precision'] = precision
     hit = table.row
     for label1, label2, distance in distances_iter:
         hit['a'] = label2id[label1]
-        hit['b'] = label2id[label1]
-        hit['distance'] = int(distance * precision)
+        hit['b'] = label2id[label2]
+        hit['score'] = int(distance * precision)
         hit.append()
     table.cols.a.create_index(filters=filters)
     table.cols.b.create_index(filters=filters)
     h5file.close()
 
 
-def distance2query(fragmentsdb, query, out, mean_onbit_density, cutoff, memory):
-    bitsets2 = FingerprintsDb(fragmentsdb).as_dict()
+def distance2query(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
+    bitsets2 = FingerprintsDb(fingerprintsdb).as_dict()
     number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match
@@ -219,3 +225,39 @@ def distance2query(fragmentsdb, query, out, mean_onbit_density, cutoff, memory):
                                cutoff, True)
     sorted_distances = sorted(distances_iter, key=lambda row: row[2], reverse=True)
     dump_pairs_tsv(sorted_distances, out)
+
+
+def similar_run(query, pairsdbfn, fragmentsdbfn, cutoff, out):
+    fragments = FragmentsDb(fragmentsdbfn)
+    id2label = fragments.id2label()
+    frag_id = fragments[query]['rowid']
+    h5file = tables.open_file(pairsdbfn)
+    pairs = h5file.root.pairs
+
+    hits = similar(frag_id, pairs, id2label, cutoff)
+    dump_pairs_tsv(hits, out)
+
+
+def similar(frag_id, pairsdb, id2label, cutoff):
+    hits = []
+
+    query = id2label[frag_id]
+    precision = float(pairsdb.attrs['score_precision'])
+    scutoff = int(cutoff * precision)
+
+    query1 = '(a == {}) & (score >= {})'.format(frag_id, scutoff)
+    for row in pairsdb.where(query1):
+        score = row[2] / precision
+        label = id2label[row[1]]
+        hits.append((query, score, label))
+
+    query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
+    for row in pairsdb.where(query2):
+        score = row[2] / precision
+        label = id2label[row[0]]
+        hits.append((query, score, label))
+
+    # most similar first
+    sorted_hits = sorted(hits, reverse=True)
+
+    return sorted_hits

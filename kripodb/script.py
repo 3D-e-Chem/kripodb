@@ -33,6 +33,8 @@ def make_parser():
 
     distance2query_sc(subparsers)
 
+    similar_sc(subparsers)
+
     pairs_sc(subparsers)
 
     shelve2fragmentsdb_sc(subparsers)
@@ -69,8 +71,7 @@ def pairs_sc(subparsers):
                     choices=out_formats,
                     default='tsv',
                     help="Format of output")
-    sc.add_argument("--fragmentsdbdb",
-                    default='fragments.db',
+    sc.add_argument("--fragmentsdbfn",
                     help='Name of fragments db file (only required for compact formats)')
     sc.add_argument("--mean_onbit_density",
                     type=float,
@@ -83,7 +84,7 @@ def pairs_sc(subparsers):
     distance range from 0..<precision>'''
     sc.add_argument("--precision",
                     type=int,
-                    default=100,
+                    default=65535,
                     help=ph)
     sc.add_argument("--memory",
                     action='store_true',
@@ -100,6 +101,9 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
 
     bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
     bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
+
+    if 'compact' in out_format and fragmentsdbfn is None:
+        raise Exception('Compact output formats require fragments db')
 
     label2id = {}
     if fragmentsdbfn is not None:
@@ -132,7 +136,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
 def makebits2fingerprintsdb_sc(subparsers):
     sc = subparsers.add_parser('makebits2fingerprintsdb', help='Add Makebits file to fingerprints db')
     sc.add_argument('infiles', nargs='+', type=argparse.FileType('r'), metavar='infile',
-                    help='Name of makebits formatted fingerprint file (.tar.gz or not packed)')
+                    help='Name of makebits formatted fingerprint file (.tar.gz or not packed or - for stdin)')
     sc.add_argument('outfile', help='Name of fingerprints db file', default='fingerprints.db')
     sc.set_defaults(func=makebits2fingerprintsdb)
 
@@ -196,6 +200,42 @@ def distance2query_sc(subparsers):
                     action='store_true',
                     help='Store bitsets in memory')
     sc.set_defaults(func=pairs.distance2query)
+
+
+def distance2query_sc(subparsers):
+    sc_help = 'Find the fragments closests to query based on fingerprints'
+    sc = subparsers.add_parser('distance2query', help=sc_help)
+    sc.add_argument("fingerprintsdb",
+                    default='fingerprints.db',
+                    help="Name of fingerprints db file")
+    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
+    sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
+    sc.add_argument("--mean_onbit_density",
+                    type=float,
+                    default=0.01)
+    sc.add_argument("--cutoff",
+                    type=float,
+                    default=0.55,
+                    help="Set Tanimoto cutoff")
+    sc.add_argument("--memory",
+                    action='store_true',
+                    help='Store bitsets in memory')
+    sc.set_defaults(func=pairs.distance2query)
+
+
+def similar_sc(subparsers):
+    sc_help = 'Find the fragments closests to query based on distance matrix'
+    sc = subparsers.add_parser('similar', help=sc_help)
+    sc.add_argument("pairsdbfn", type=str, help='Compact hdf5 distance matrix file')
+    sc.add_argument("--fragmentsdbfn", required=True,
+                    help='Name of fragments db file (only required for compact formats)')
+    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
+    sc.add_argument("--out", type=argparse.FileType('w'), default='-', help='Output file tabdelimited (query, score, hit)')
+    sc.add_argument("--cutoff",
+                    type=float,
+                    default=0.55,
+                    help="Distance cutoff")
+    sc.set_defaults(func=pairs.similar_run)
 
 
 def meanbitdensity_sc(subparsers):

@@ -217,7 +217,7 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
-        sql = '''SELECT * FROM fragments LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
+        sql = '''SELECT m.rowid, * FROM fragments LEFT JOIN molecules m USING (frag_id) WHERE frag_id=?'''
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
 
