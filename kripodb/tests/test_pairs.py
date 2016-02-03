@@ -14,7 +14,7 @@
 
 import StringIO
 from intbitset import intbitset
-import modifiedtanimoto.pairs as pairs
+import kripodb.pairs as pairs
 
 
 class Testpairs(object):

@@ -4,6 +4,10 @@ Library to calculate modified tanimoto distance between bit vectors and script t
 
 # Install
 
+Requirements:
+
+* rdkit, http://rdkit.org
+
 ```
 pip install numpy
 python setup.py develop

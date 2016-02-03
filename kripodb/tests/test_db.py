@@ -14,8 +14,9 @@
 
 from intbitset import intbitset
 from nose.tools import eq_
+from mock import call, Mock
 
-import modifiedtanimoto.db as db
+import kripodb.db as db
 
 
 def test_adapt_intbitset():
@@ -35,9 +36,28 @@ def test_convert_intbitset():
     eq_(result, bs)
 
 
-class TestIntbitsetDictEmpty(object):
+class TestFastInserter(object):
+    def setUp(self):
+        self.cursor = Mock()
+        self.unit = db.FastInserter(self.cursor)
+
+    def testWith(self):
+        with self.unit:
+            self.cursor.execute.assert_has_calls([call('PRAGMA journal_mode=WAL'),
+                                                  call('PRAGMA synchronous=OFF')])
+
+        self.cursor.execute.assert_has_calls([call('PRAGMA journal_mode=DELETE'),
+                                              call('PRAGMA synchronous=FULL')])
+
+
+class TestFragmentsDB(object):
     def setUp(self):
         self.fdb = db.FragmentsDb(':memory:')
+
+
+class TestIntbitsetDictEmpty(object):
+    def setUp(self):
+        self.fdb = db.FingerprintsDb(':memory:')
         self.bitsets = db.IntbitsetDict(self.fdb, 100)
         self.bid = 'id1'
         self.bs = intbitset([1, 3, 5, 8])
@@ -46,7 +66,7 @@ class TestIntbitsetDictEmpty(object):
         self.fdb.close()
 
     def test_default_number_of_bits(self):
-        fdb = db.FragmentsDb(':memory:')
+        fdb = db.FingerprintsDb(':memory:')
         bitsets = db.IntbitsetDict(fdb)
 
         eq_(bitsets.number_of_bits, None)
@@ -81,7 +101,7 @@ class TestIntbitsetDictEmpty(object):
 
 class TestIntbitsetDictFilled(object):
     def setUp(self):
-        self.fdb = db.FragmentsDb(':memory:')
+        self.fdb = db.FingerprintsDb(':memory:')
         self.bitsets = db.IntbitsetDict(self.fdb, 100)
         self.bid = 'id1'
         self.bs = intbitset([1, 3, 5, 8])

@@ -15,27 +15,29 @@ import argparse
 import gzip
 import sys
 import tarfile
-from modifiedtanimoto.db import FragmentsDb
+from kripodb.db import FragmentsDb, FingerprintsDb
 from . import makebits
 from . import pairs
-from algorithm import calc_mean_onbit_density
+from modifiedtanimoto import calc_mean_onbit_density
 
 
 def make_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    makebits2fragmentsdb_sc(subparsers)
+    makebits2fingerprintsdb_sc(subparsers)
 
-    fragmentsdb2makebits_sc(subparsers)
-
-    id2label_sc(subparsers)
+    fingerprintsdb2makebits_sc(subparsers)
 
     meanbitdensity_sc(subparsers)
 
     distance2query_sc(subparsers)
 
     pairs_sc(subparsers)
+
+    shelve2fragmentsdb_sc(subparsers)
+
+    sdf2fragmentsdb_sc(subparsers)
 
     return parser
 
@@ -57,19 +59,19 @@ def pairs_sc(subparsers):
     sc = subparsers.add_parser('pairs',
                                help=sc_help,
                                description=sc_description)
-    sc.add_argument("fragmentsfn1",
-                    help="Name of reference fragments db file")
-    sc.add_argument("fragmentsfn2",
-                    help="Name of query fragments db file")
+    sc.add_argument("fingerprintsfn1",
+                    help="Name of reference fingerprints db file")
+    sc.add_argument("fingerprintsfn2",
+                    help="Name of query fingerprints db file")
     sc.add_argument("out_file",
                     help="Name of output file (use - for stdout)")
     sc.add_argument("--out_format",
                     choices=out_formats,
                     default='tsv',
                     help="Format of output")
-    sc.add_argument("--id2label",
-                    dest="id2label_file",
-                    help="Id to label lookup tsv file")
+    sc.add_argument("--fragmentsdbdb",
+                    default='fragments.db',
+                    help='Name of fragments db file (only required for compact formats)')
     sc.add_argument("--mean_onbit_density",
                     type=float,
                     default=0.01)
@@ -85,19 +87,23 @@ def pairs_sc(subparsers):
                     help=ph)
     sc.add_argument("--memory",
                     action='store_true',
-                    help='Store query bitsets in memory')
+                    help='Store query fingerprints in memory')
     sc.set_defaults(func=pairs_run)
 
 
-def pairs_run(fragmentsfn1, fragmentsfn2,
+def pairs_run(fingerprintsfn1, fingerprintsfn2,
               out_format, out_file,
               mean_onbit_density,
               cutoff,
-              id2label_file,
+              fragmentsdbfn,
               precision, memory):
 
-    bitsets1 = FragmentsDb(fragmentsfn1).bitsets()
-    bitsets2 = FragmentsDb(fragmentsfn2).bitsets()
+    bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
+    bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
+
+    label2id = {}
+    if fragmentsdbfn is not None:
+        label2id = FragmentsDb(fragmentsdbfn).label2id()
 
     if bitsets1.number_of_bits != bitsets2.number_of_bits:
         raise Exception('Number of bits is not the same')
@@ -117,21 +123,21 @@ def pairs_run(fragmentsfn1, fragmentsfn2,
                      bitsets1.number_of_bits,
                      mean_onbit_density,
                      cutoff,
-                     id2label_file,
+                     label2id,
                      precision,
                      memory
                      )
 
 
-def makebits2fragmentsdb_sc(subparsers):
-    sc = subparsers.add_parser('makebits2fragmentsdb', help='Add Makebits file to fragments db')
+def makebits2fingerprintsdb_sc(subparsers):
+    sc = subparsers.add_parser('makebits2fingerprintsdb', help='Add Makebits file to fingerprints db')
     sc.add_argument('infiles', nargs='+', type=argparse.FileType('r'), metavar='infile',
                     help='Name of makebits formatted fingerprint file (.tar.gz or not packed)')
-    sc.add_argument('outfile', help='Name of fragments db file', default='fragments.db')
-    sc.set_defaults(func=makebits2fragmentsdb)
+    sc.add_argument('outfile', help='Name of fingerprints db file', default='fingerprints.db')
+    sc.set_defaults(func=makebits2fingerprintsdb)
 
 
-def makebits2fragmentsdb_single(infile, bitsets):
+def makebits2fingerprintsdb_single(infile, bitsets):
     gen = makebits.iter_file(infile)
     header = next(gen)
     number_of_bits = makebits.read_fp_size(header)
@@ -139,62 +145,44 @@ def makebits2fragmentsdb_single(infile, bitsets):
     bitsets.update(gen)
 
 
-def makebits2fragmentsdb(infiles, outfile):
-    bitsets = FragmentsDb(outfile).bitsets()
+def makebits2fingerprintsdb(infiles, outfile):
+    bitsets = FingerprintsDb(outfile).as_dict()
     for infile in infiles:
         if infile.name.endswith('tar.gz'):
             with tarfile.open(fileobj=infile) as tar:
                 for tarinfo in tar:
                     if tarinfo.isfile():
                         f = tar.extractfile(tarinfo)
-                        makebits2fragmentsdb_single(f, bitsets)
+                        makebits2fingerprintsdb_single(f, bitsets)
                         f.close()
         else:
-            makebits2fragmentsdb_single(infile, bitsets)
+            makebits2fingerprintsdb_single(infile, bitsets)
 
 
-def fragmentsdb2makebits_sc(subparsers):
-    sc = subparsers.add_parser('fragmentsdb2makebits',
-                               help='Dump bitsets in fragments db to makebits file')
+def fingerprintsdb2makebits_sc(subparsers):
+    sc = subparsers.add_parser('fingerprintsdb2makebits',
+                               help='Dump bitsets in fingerprints db to makebits file')
 
     sc.add_argument('infile',
-                    default='fragments.db',
-                    help='Name of fragments db file')
+                    default='fingerprints.db',
+                    help='Name of fingerprints db file')
     sc.add_argument('outfile',
                     type=argparse.FileType('w'),
                     help='Name of makebits formatted fingerprint file (or - for stdout)')
-    sc.set_defaults(func=fragmentsdb2makebits)
+    sc.set_defaults(func=fingerprintsdb2makebits)
 
 
-def fragmentsdb2makebits(infile, outfile):
-    bitsets = FragmentsDb(infile).bitsets()
+def fingerprintsdb2makebits(infile, outfile):
+    bitsets = FingerprintsDb(infile).as_dict()
     makebits.write_file(bitsets.number_of_bits, bitsets, outfile)
 
 
-def bitsets2id2label(infile):
-    bitsets = FragmentsDb(infile).bitsets()
-    for bsid, bslabel in enumerate(bitsets):
-        print("{}\t{}".format(bsid, bslabel))
-
-
-def id2label_sc(subparsers):
-    sc_help = 'Create id2file from fragments db file'
-    sc_desc = '''Write bitset id and label to stdout'''
-    sc = subparsers.add_parser('id2label',
-                               help=sc_help,
-                               description=sc_desc)
-    sc.add_argument('infile',
-                    default='fragments.db',
-                    help='Name of fragments db file')
-    sc.set_defaults(func=bitsets2id2label)
-
-
 def distance2query_sc(subparsers):
-    sc_help = 'Find the fragments closests to query'
+    sc_help = 'Find the fragments closests to query based on fingerprints'
     sc = subparsers.add_parser('distance2query', help=sc_help)
-    sc.add_argument("fragmentsdb",
-                    default='fragments.db',
-                    help="Name of fragments db file")
+    sc.add_argument("fingerprintsdb",
+                    default='fingerprints.db',
+                    help="Name of fingerprints db file")
     sc.add_argument("query", type=str, help='Query identifier or beginning of it')
     sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
     sc.add_argument("--mean_onbit_density",
@@ -211,16 +199,50 @@ def distance2query_sc(subparsers):
 
 
 def meanbitdensity_sc(subparsers):
-    sc = subparsers.add_parser('meanbitdensity', help='Compute mean bit density of bitsets')
-    sc.add_argument("fragmentsdb",
-                    default='fragments.db',
-                    help="Name of fragments db file")
+    sc = subparsers.add_parser('meanbitdensity', help='Compute mean bit density of fingerprints')
+    sc.add_argument("fingerprintsdb",
+                    default='fingerprints.db',
+                    help="Name of fingerprints db file")
     sc.set_defaults(func=meanbitdensity_run)
 
 
-def meanbitdensity_run(fragmentsdb):
-    bitsets = FragmentsDb(fragmentsdb).bitsets()
+def meanbitdensity_run(fingerprintsdb):
+    bitsets = FingerprintsDb(fingerprintsdb).as_dict()
     print(calc_mean_onbit_density(bitsets, bitsets.number_of_bits))
+
+
+def shelve2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('shelve2fragmentsdb', help='Add fragments from shelve to sqlite')
+    sc.add_argument('shelvefn', type=str)
+    sc.add_argument('fragmentsdb',
+                    default='fragments.db',
+                    help="Name of fragments db file")
+    sc.set_defaults(func=shelve2fragmentsdb_run)
+
+
+def shelve2fragmentsdb_run(shelvefn, fragmentsdb):
+    import shelve
+    myshelve = shelve.open(shelvefn, 'r')
+    frags = FragmentsDb(fragmentsdb)
+    frags.add_fragments_from_shelve(myshelve)
+
+
+def sdf2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('sdf2fragmentsdb', help='Add fragments sdf to sqlite')
+    sc.add_argument('sdffns', help='SDF filename', nargs='+')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+
+    sc.set_defaults(func=sdf2fragmentsdb_run)
+
+
+def sdf2fragmentsdb_run(sdffns, fragmentsdb):
+    from rdkit.Chem import SDMolSupplier
+    frags = FragmentsDb(fragmentsdb)
+    for sdffn in sdffns:
+        suppl = SDMolSupplier(sdffn)
+        frags.add_molecules(suppl)
 
 
 def main(argv=sys.argv[1:]):
