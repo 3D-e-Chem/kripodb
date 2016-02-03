@@ -59,3 +59,10 @@ target/
 
 # Idea/PyCharm
 .idea
+
+# Anaconda
+conda/
+Miniconda*
+
+# Data
+data/

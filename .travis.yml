@@ -1,0 +1,15 @@
+language: python
+before_install:
+  - wget -nc https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+  - bash Miniconda-latest-Linux-x86_64.sh -b -p conda
+  - source conda/bin/activate root
+  - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb
+install:
+  - python setup.py develop
+script:
+  - nosetests
+cache:
+  - conda
+  - Miniconda-latest-Linux-x86_64.sh
+sudo: false
+
