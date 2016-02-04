@@ -15,26 +15,18 @@
 from collections import Mapping
 import StringIO
 
+import kripodb.hdf5
 import tables
 
 import os
 import tempfile
 
 from intbitset import intbitset
-from kripodb.db import FragmentsDb
-from mock import Mock, call, patch
+from kripodb.hdf5 import PairsTable
+from mock import Mock
 from nose.tools import eq_, assert_raises
-from tables.table import Table
 
 import kripodb.pairs as pairs
-
-
-def mypairs(query):
-    return_values = {
-        '(a == 1) & (score >= 55)': [(1, 3, 75)],
-        '(b == 3) & (score >= 55)': [(2, 3, 85)]
-    }
-    return return_values.get(query, [])
 
 
 def tmpname():
@@ -62,20 +54,8 @@ class MockedIntbitsetDict(Mapping):
         return self.dict
 
 
-class MockedLookup(object):
-    def __init__(self, thedict):
-        self.lookup = {}
-        for k, v in thedict.iteritems():
-            self.lookup['frag_id == {}'.format(k)] = iter([(k, v)])
-            self.lookup['label == "{}"'.format(v)] = iter([(k, v)])
-        print self.lookup
-
-    def where(self, query):
-        return self.lookup[query]
-
-
 class Testpairs(object):
-    def setup(self):
+    def setUp(self):
         self.number_of_bits = 8
         self.bitsets = MockedIntbitsetDict({
             'a': intbitset([1, 2, 3]),
@@ -97,7 +77,11 @@ class Testpairs(object):
         }
         self.compact_pairs = [(1, 3, 75), (2, 3, 83)]
         self.precision = 100
-        self.lookup = MockedLookup(self.id2label)
+        self.h5filename = tmpname()
+
+    def tearDown(self):
+        if os.path.isfile(self.h5filename):
+            os.remove(self.h5filename)
 
     def test_dump_pairs_tsv(self):
         out = StringIO.StringIO()
@@ -108,84 +92,54 @@ class Testpairs(object):
         expected = "a\tc\t0.7523\nb\tc\t0.8342\n"
         eq_(result, expected)
 
-    def mock_pairsdb(self):
-        pairsdb = Mock(Table)
-        pairsdb.attrs = {'score_precision': self.precision}
-        pairsdb.where = Mock(return_value=[])
-        return pairsdb
+    def fill_matrix(self):
+        kripodb.pairs.dump_pairs_hdf5(self.pairs,
+                                      self.label2id,
+                                      self.precision,
+                                      2,
+                                      self.h5filename)
+
+    def empty_matrix(self):
+        kripodb.pairs.dump_pairs_hdf5([],
+                                      {},
+                                      self.precision,
+                                      0,
+                                      self.h5filename)
 
     def test_similar_run(self):
-        h5file = tmpname()
-        try:
-            pairs.dump_pairs_hdf5_compact(self.pairs,
-                                          self.label2id,
-                                          self.precision,
-                                          2,
-                                          h5file)
+        self.fill_matrix()
+        out = StringIO.StringIO()
 
-            fragments = Mock(FragmentsDb)
-            fragments.label2id.return_value = self.label2id
-            fragments.id2label.return_value = self.id2label
-            out = StringIO.StringIO()
+        pairs.similar_run('a', self.h5filename, 0.55, out)
 
-            pairs.similar_run('a', h5file, 0.55, out)
+        result = out.getvalue()
+        expected = "a\tc\t0.75\n"
+        eq_(result, expected)
 
-            result = out.getvalue()
-            expected = "a\tc\t0.75\n"
-            eq_(result, expected)
-        finally:
-            os.remove(h5file)
+    def test_similar_run_nohits(self):
+        self.fill_matrix()
+        out = StringIO.StringIO()
 
-    def test_similar_nohits(self):
-        pairsdb = self.mock_pairsdb()
+        hits = pairs.similar_run('a', self.h5filename, 0.99, out)
 
-        hits = pairs.similar(1, pairsdb, self.lookup, 0.55)
+        result = out.getvalue()
+        expected = ""
+        eq_(result, expected)
 
-        eq_(hits, [])
-        pairsdb.where.assert_has_calls([
-            call('(a == 1) & (score >= 55)'),
-            call('(b == 1) & (score >= 55)')
-        ])
-
-    def test_similar_hitsleft(self):
-        pairsdb = Mock(Table)
-        pairsdb.attrs = {'score_precision': self.precision}
-        pairsdb.where.side_effect = mypairs
-
-        hits = pairs.similar(1, pairsdb, self.lookup, 0.55)
-
-        expected = [('a', 'c', 0.75)]
-        eq_(hits, expected)
-
-    def test_similar_hitsright(self):
-        pairsdb = Mock(Table)
-        pairsdb.attrs = {'score_precision': self.precision}
-        pairsdb.where.side_effect = mypairs
-
-        hits = pairs.similar(3, pairsdb, self.lookup, 0.55)
-
-        expected = [('c', 'b', 0.85)]
-        eq_(hits, expected)
-
-    def test_dump_pairs_ashdf5_compact(self):
+    def test_dump_pairs_ashdf5(self):
         expectedrows = 2
-        out_file = tmpname()
+        kripodb.pairs.dump_pairs_hdf5(self.pairs,
+                                      self.label2id,
+                                      self.precision,
+                                      expectedrows,
+                                      self.h5filename)
 
-        try:
-            pairs.dump_pairs_hdf5_compact(self.pairs,
-                                          self.label2id,
-                                          self.precision,
-                                          expectedrows,
-                                          out_file)
-
-            h5file = tables.open_file(out_file)
-            mypairs = []
-            for row in h5file.root.pairs:
-                mypairs.append((row[0], row[1], row[2]))
-            eq_(mypairs, self.compact_pairs)
-            h5file.close()
-        finally:
-            os.remove(out_file)
+        h5file = tables.open_file(self.h5filename)
+        mypairs = []
+        for row in h5file.root.pairs:
+            mypairs.append((row[0], row[1], row[2]))
+        eq_(mypairs, self.compact_pairs)
+        h5file.close()
 
     def test_dump_pairs_badformat(self):
         with assert_raises(LookupError) as cm:
@@ -261,32 +215,27 @@ class Testpairs(object):
         expected = "a\tc\t0.135555555556\n"
         eq_(result, expected)
 
-    def test_dump_pairs_ashdf5_compact(self):
-        out_file = tmpname()
+    def test_dump_pairs_ashdf5(self):
+        pairs.dump_pairs(self.bitsets,
+                         self.bitsets,
+                         'hdf5',
+                         self.h5filename,
+                         None,
+                         self.number_of_bits,
+                         0.4,
+                         0.05,
+                         self.label2id,
+                         self.precision,
+                         True
+                         )
 
-        try:
-            pairs.dump_pairs(self.bitsets,
-                             self.bitsets,
-                             'hdf5_compact',
-                             out_file,
-                             None,
-                             self.number_of_bits,
-                             0.4,
-                             0.05,
-                             self.label2id,
-                             self.precision,
-                             True
-                             )
-
-            h5file = tables.open_file(out_file)
-            mypairs = []
-            for row in h5file.root.pairs:
-                mypairs.append((row[0], row[1], row[2]))
-            expected = [(1, 3, 13)]
-            eq_(mypairs, expected)
-            h5file.close()
-        finally:
-            os.remove(out_file)
+        h5file = tables.open_file(self.h5filename)
+        mypairs = []
+        for row in h5file.root.pairs:
+            mypairs.append((row[0], row[1], row[2]))
+        expected = [(1, 3, 13)]
+        eq_(mypairs, expected)
+        h5file.close()
 
     def test_distance2query(self):
         out = StringIO.StringIO()

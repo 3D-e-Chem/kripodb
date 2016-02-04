@@ -20,17 +20,17 @@ import kripodb.script as script
 def test_pairs_subcommand_defaults():
     parser = script.make_parser()
 
-    args = parser.parse_args(['pairs', 'fp1', 'fp2', 'outfn'])
+    args = parser.parse_args(['pairs', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
 
     eq_(args.func, script.pairs_run)
 
     fargs = vars(args)
     del(fargs['func'])
     expected = {
-        'out_format': 'tsv',
+        'out_format': 'hdf5',
         'cutoff': 0.45,
         'out_file': 'outfn',
-        'fragmentsdbfn': None,
+        'fragmentsdbfn': 'fragdb',
         'mean_onbit_density': 0.01,
         'precision': 65535,
         'nomemory': False,

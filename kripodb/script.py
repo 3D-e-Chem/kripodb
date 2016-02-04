@@ -52,8 +52,7 @@ def make_parser():
 
 
 def pairs_sc(subparsers):
-    sc_help = '''Generate pairs from 2 bitset dicts
-    with modified tanimoto distance'''
+    sc_help = '''Calculate modified tanimoto distance between fingerprints'''
     sc_description = '''
 
     Output formats:
@@ -61,7 +60,7 @@ def pairs_sc(subparsers):
     * hdf5_compact, hdf5 file contstructed with pytables with a, b and score, but but a and b have been replaced
       by numbers and distance has been converted to scaled int
     '''
-    out_formats = ['tsv', 'hdf5_compact']
+    out_formats = ['tsv', 'hdf5']
     sc = subparsers.add_parser('pairs',
                                help=sc_help,
                                description=sc_description)
@@ -73,10 +72,10 @@ def pairs_sc(subparsers):
                     help="Name of output file (use - for stdout)")
     sc.add_argument("--out_format",
                     choices=out_formats,
-                    default='tsv',
+                    default='hdf5',
                     help="Format of output")
     sc.add_argument("--fragmentsdbfn",
-                    help='Name of fragments db file (only required for compact formats)')
+                    help='Name of fragments db file (only required for hdf5 format)')
     sc.add_argument("--mean_onbit_density",
                     type=float,
                     default=0.01)
@@ -274,6 +273,13 @@ def sdf2fragmentsdb_run(sdffns, fragmentsdb):
         logging.warn('Parsing {}'.format(sdffn))
         suppl = SDMolSupplier(sdffn)
         frags.add_molecules(suppl)
+
+
+def merge_pairs_sc(subparsers):
+    sc = subparsers.add_parser('mergepairs', help='Combine pairs files into a new file')
+    sc.add_argument('ins', help='Input pair file in hdf5_compact format', nargs='+')
+    sc.add_argument('out', help='Output pair file in hdf5_compact format')
+    sc.set_defaults(func=pairs.merge)
 
 
 def main(argv=sys.argv[1:]):

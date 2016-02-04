@@ -13,10 +13,9 @@
 # limitations under the License.
 
 import logging
-import tables
 
+from kripodb.hdf5 import DistanceMatrix
 from modifiedtanimoto import distances, corrections
-from kripodb.db import FingerprintsDb, FragmentsDb
 
 
 def dump_pairs(bitsets1,
@@ -67,12 +66,12 @@ def dump_pairs(bitsets1,
 
     if out_format == 'tsv':
         dump_pairs_tsv(distances_iter, out)
-    elif out_format == 'hdf5_compact':
-        dump_pairs_hdf5_compact(distances_iter,
-                                label2id,
-                                precision,
-                                expectedrows,
-                                out_file)
+    elif out_format == 'hdf5':
+        dump_pairs_hdf5(distances_iter,
+                        label2id,
+                        precision,
+                        expectedrows,
+                        out_file)
     else:
         raise LookupError('Invalid output format')
 
@@ -94,25 +93,17 @@ def dump_pairs_tsv(distances_iter, out):
         out.write('{}\t{}\t{}\n'.format(label1, label2, distance))
 
 
-class PairCompact(tables.IsDescription):
-    a = tables.UInt32Col()
-    b = tables.UInt32Col()
-    score = tables.UInt16Col()
-
-
-def dump_pairs_hdf5_compact(distances_iter,
-                            label2id,
-                            precision,
-                            expectedrows,
-                            out_file):
+def dump_pairs_hdf5(distances_iter,
+                    label2id,
+                    precision,
+                    expectedrows,
+                    out_file):
     """
 
     Pro:
-    * very small, 9 bytes for each pair
-    * index on pair ids
+    * very small, 10 bytes for each pair + compression
     Con:
     * requires hdf5 library to access
-    * Requires a lookup table
 
     :param distances_iter:
     :param label2id: dict to translate label to id (string to int)
@@ -121,61 +112,16 @@ def dump_pairs_hdf5_compact(distances_iter,
     :param out_file:
     :return:
     """
-    filters = tables.Filters(complevel=6, complib='blosc')
-    h5file = tables.open_file(out_file, mode='w', filters=filters)
-    table = h5file.create_table('/',
-                                'pairs',
-                                PairCompact,
-                                'Distance pairs',
-                                expectedrows=expectedrows)
-    table.attrs['score_precision'] = precision
-    hit = table.row
-    for label1, label2, distance in distances_iter:
-        hit['a'] = label2id[label1]
-        hit['b'] = label2id[label2]
-        hit['score'] = int(distance * precision)
-        hit.append()
-    table.cols.a.create_index(filters=filters)
-    table.cols.b.create_index(filters=filters)
+    matrix = DistanceMatrix(out_file, 'w')
 
-    add_lookup2h5(h5file, filters, label2id)
+    pairs = matrix.pairs(expectedrows, precision)
+    pairs.update(distances_iter, label2id)
+    pairs.add_indexes()
 
-    h5file.close()
+    labels = matrix.labels(len(label2id))
+    labels.update(label2id)
 
-
-class Id2Label(tables.IsDescription):
-    frag_id = tables.UInt32Col()
-    label = tables.StringCol(16)
-
-
-def add_lookup2h5(h5file, filters, label2id):
-    """
-    Parameters
-    ----------
-    h5file
-    filters
-    label2id
-
-    Returns
-    -------
-
-    """
-    expectedrows = len(label2id)
-    table = h5file.create_table('/',
-                                'labels',
-                                Id2Label,
-                                'Labels lookup',
-                                expectedrows=expectedrows)
-
-    for label, frag_id in label2id.iteritems():
-        table.row['frag_id'] = frag_id
-        table.row['label'] = label
-        table.row.append()
-
-    table.cols.frag_id.create_index(filters=filters)
-    table.cols.label.create_index(filters=filters)
-    table.flush()
-    return table
+    matrix.close()
 
 
 def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
@@ -205,37 +151,70 @@ def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
 
 
 def similar_run(query, pairsdbfn, cutoff, out):
-    h5file = tables.open_file(pairsdbfn)
-    pairs = h5file.root.pairs
-    labels = h5file.root.labels
-    frag_id = labels.where('label == "{}"'.format(query)).next()[0]
+    matrix = DistanceMatrix(pairsdbfn)
+    pairs = matrix.pairs()
+    labels = matrix.labels()
 
-    hits = similar(frag_id, pairs, labels, cutoff)
+    hits = similar(query, pairs, labels, cutoff)
     dump_pairs_tsv(hits, out)
 
-    h5file.close()
+    matrix.close()
 
 
-def similar(frag_id, pairsdb, labels, cutoff):
+def similar(query, pairsdb, labels, cutoff):
     hits = []
 
-    query = labels.where('label == "{}"'.format(frag_id)).next()[0]
-    precision = float(pairsdb.attrs['score_precision'])
-    scutoff = int(cutoff * precision)
+    frag_id = labels.by_label(query)
+    raw_hits = pairsdb.find(frag_id, cutoff)
 
-    query1 = '(a == {}) & (score >= {})'.format(frag_id, scutoff)
-    for row in pairsdb.where(query1):
-        score = row[2] / precision
-        label = labels.where('frag_id == {}'.format(row[1])).next()[1]
-        hits.append((query, label, score))
-
-    query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
-    for row in pairsdb.where(query2):
-        score = row[2] / precision
-        label = labels.where('frag_id == {}'.format(row[0])).next()[1]
-        hits.append((query, label, score))
+    # replace ids with labels + add query column
+    for hit_id, score in raw_hits.iteritems():
+        hit = (query, labels.by_id(hit_id), score)
+        hits.append(hit)
 
     # most similar first
     sorted_hits = sorted(hits, reverse=True, key=lambda r: (r[1], r[2]))
 
     return sorted_hits
+
+
+def total_number_of_pairs(fingerprintfilenames):
+    sizes = []
+    for filename in fingerprintfilenames:
+        matrix = DistanceMatrix(filename)
+        pairs = matrix.pairs()
+        sizes.append(len(pairs))
+        matrix.close()
+    return sum(sizes)
+
+
+def labels_consistency_check(fingerprintfilenames):
+    nr_labels = set()
+    for filename in fingerprintfilenames:
+        matrix = DistanceMatrix(filename)
+        labels = matrix.labels()
+        nr_labels.add(len(labels))
+        # TODO implement more checks
+        matrix.close()
+    assert len(nr_labels) == 1
+
+
+def merge(ins, out):
+    expectedrows = total_number_of_pairs(ins)
+    labels_consistency_check(ins)
+
+    out_matrix = DistanceMatrix(out, 'w')
+    first_in_matrix = DistanceMatrix(ins[0])
+    first_in_labels = first_in_matrix.labels()
+    out_labels = out_matrix.labels(len(first_in_labels))
+    out_labels.append(first_in_labels)
+
+    out_pairs = out_matrix.pairs(expectedrows)
+    for filename in ins:
+        matrix = DistanceMatrix(filename)
+        pairs = matrix.pairs()
+        out_pairs.append(pairs)
+
+    out_pairs.add_indexes()
+
+    out_matrix.close()
