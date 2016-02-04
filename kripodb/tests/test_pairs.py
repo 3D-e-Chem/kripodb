@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import Mapping
 import StringIO
 
 import tables
@@ -20,7 +21,8 @@ import os
 import tempfile
 
 from intbitset import intbitset
-from mock import Mock, call
+from kripodb.db import FragmentsDb
+from mock import Mock, call, patch
 from nose.tools import eq_, assert_raises
 from tables.table import Table
 
@@ -34,6 +36,7 @@ def mypairs(query):
     }
     return return_values.get(query, [])
 
+
 def tmpname():
     tmpf = tempfile.NamedTemporaryFile()
     out_file = tmpf.name
@@ -41,17 +44,35 @@ def tmpname():
     return out_file
 
 
+class MockedIntbitsetDict(Mapping):
+    def __init__(self, thedict, number_of_bits):
+        self.dict = thedict
+        self.number_of_bits = number_of_bits
+
+    def __len__(self):
+        return len(self.dict)
+
+    def __getitem__(self, key):
+        return self.dict[key]
+
+    def __iter__(self):
+        return self.dict.__iter__()
+
+    def materialize(self):
+        return self.dict
+
+
 class Testpairs(object):
     def setup(self):
-        self.bitsets = {
+        self.number_of_bits = 8
+        self.bitsets = MockedIntbitsetDict({
             'a': intbitset([1, 2, 3]),
             'b': intbitset([1, 2, 4, 5, 8]),
             'c': intbitset([1, 2, 4, 8])
-        }
+        }, 8)
         self.pairs = [
             ('a', 'c', 0.7523),
             ('b', 'c', 0.8342)]
-        self.number_of_bits = 8
         self.id2label = {
             1: 'a',
             2: 'b',
@@ -74,10 +95,36 @@ class Testpairs(object):
         expected = "a\tc\t0.7523\nb\tc\t0.8342\n"
         eq_(result, expected)
 
-    def test_similar_nohits(self):
+    def mock_pairsdb(self):
         pairsdb = Mock(Table)
         pairsdb.attrs = {'score_precision': self.precision}
         pairsdb.where = Mock(return_value=[])
+        return pairsdb
+
+    def test_similar_run(self):
+        h5file = tmpname()
+        try:
+            pairs.dump_pairs_hdf5_compact(self.pairs,
+                                          self.label2id,
+                                          self.precision,
+                                          2,
+                                          h5file)
+
+            fragments = Mock(FragmentsDb)
+            fragments.label2id.return_value = self.label2id
+            fragments.id2label.return_value = self.id2label
+            out = StringIO.StringIO()
+
+            pairs.similar_run('a', h5file, fragments, 0.55, out, False)
+
+            result = out.getvalue()
+            expected = "a\tc\t0.75\n"
+            eq_(result, expected)
+        finally:
+            os.remove(h5file)
+
+    def test_similar_nohits(self):
+        pairsdb = self.mock_pairsdb()
 
         hits = pairs.similar(1, pairsdb, self.id2label, 0.55)
 
@@ -94,7 +141,7 @@ class Testpairs(object):
 
         hits = pairs.similar(1, pairsdb, self.id2label, 0.55)
 
-        expected = [('a', 0.75, 'c')]
+        expected = [('a', 'c', 0.75)]
         eq_(hits, expected)
 
     def test_similar_hitsright(self):
@@ -104,11 +151,10 @@ class Testpairs(object):
 
         hits = pairs.similar(3, pairsdb, self.id2label, 0.55)
 
-        expected = [('c', 0.85, 'b')]
+        expected = [('c', 'b', 0.85)]
         eq_(hits, expected)
 
-    def test_dump_pairs_hdf5_compact(self):
-
+    def test_dump_pairs_ashdf5_compact(self):
         expectedrows = 2
         out_file = tmpname()
 
@@ -162,8 +208,7 @@ class Testpairs(object):
 
         eq_(cm.exception.message, "hdf5 formats can't be outputted to stdout")
 
-
-    def test_dump_pairs_tsv(self):
+    def test_dump_pairs_astsv(self):
         out = StringIO.StringIO()
 
         pairs.dump_pairs(self.bitsets,
@@ -183,7 +228,7 @@ class Testpairs(object):
         expected = "a\tc\t0.135555555556\n"
         eq_(result, expected)
 
-    def test_dump_pairs_tsv_nomem(self):
+    def test_dump_pairs_astsv_nomem(self):
         out = StringIO.StringIO()
 
         pairs.dump_pairs(self.bitsets,
@@ -198,6 +243,48 @@ class Testpairs(object):
                          self.precision,
                          True
                          )
+        result = out.getvalue()
+
+        expected = "a\tc\t0.135555555556\n"
+        eq_(result, expected)
+
+    def test_dump_pairs_ashdf5_compact(self):
+        out_file = tmpname()
+
+        try:
+            pairs.dump_pairs(self.bitsets,
+                             self.bitsets,
+                             'hdf5_compact',
+                             out_file,
+                             None,
+                             self.number_of_bits,
+                             0.4,
+                             0.05,
+                             self.label2id,
+                             self.precision,
+                             True
+                             )
+
+            h5file = tables.open_file(out_file)
+            mypairs = []
+            for row in h5file.root.pairs:
+                mypairs.append((row[0], row[1], row[2]))
+            expected = [(1, 3, 13)]
+            eq_(mypairs, expected)
+            h5file.close()
+        finally:
+            os.remove(out_file)
+
+    def test_distance2query(self):
+        out = StringIO.StringIO()
+
+        pairs.distance2query(self.bitsets,
+                             'a',
+                             out,
+                             0.4,
+                             0.05,
+                             True
+                             )
         result = out.getvalue()
 
         expected = "a\tc\t0.135555555556\n"

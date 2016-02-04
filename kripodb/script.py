@@ -108,7 +108,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
 
     label2id = {}
     if fragmentsdbfn is not None:
-        label2id = FragmentsDb(fragmentsdbfn).label2id()
+        label2id = FragmentsDb(fragmentsdbfn).label2id().materialize()
 
     bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
     bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
@@ -206,19 +206,33 @@ def distance2query_sc(subparsers):
     sc.set_defaults(func=pairs.distance2query)
 
 
+def distance2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
+    bitsets = FingerprintsDb(fingerprintsdb).as_dict()
+    pairs.distance2query(bitsets, query, out, mean_onbit_density, cutoff, memory)
+
+
 def similar_sc(subparsers):
-    sc_help = 'Find the fragments closests to query based on distance matrix'
+    sc_help = 'Find the fragments closets to query based on distance matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
     sc.add_argument("pairsdbfn", type=str, help='Compact hdf5 distance matrix file')
     sc.add_argument("--fragmentsdbfn", required=True,
-                    help='Name of fragments db file (only required for compact formats)')
-    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
-    sc.add_argument("--out", type=argparse.FileType('w'), default='-', help='Output file tabdelimited (query, score, hit)')
+                    help='Name of fragments db file')
+    sc.add_argument("query", type=str, help='Query fragment identifier')
+    sc.add_argument("--out", type=argparse.FileType('w'), default='-',
+                    help='Output file tab delimited (query, hit, distance score)')
     sc.add_argument("--cutoff",
                     type=float,
                     default=0.55,
                     help="Distance cutoff")
-    sc.set_defaults(func=pairs.similar_run)
+    sc.add_argument("--memory",
+                    action='store_true',
+                    help='Store fragments lookup table in memory')
+    sc.set_defaults(func=similar_run)
+
+
+def similar_run(query, pairsdbfn, fragmentsdbfn, cutoff, out, memory):
+    fragments = FragmentsDb(fragmentsdbfn)
+    pairs.similar_run(query, pairsdbfn, fragments, cutoff, out, memory)
 
 
 def meanbitdensity_sc(subparsers):

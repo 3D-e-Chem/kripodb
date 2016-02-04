@@ -42,9 +42,9 @@ def dump_pairs(bitsets1,
     :param number_of_bits: Maximum number of bits in bitset
     :param mean_onbit_density:
     :param cutoff:
-    :param id2label_file: dict to translate label to id (string to int)
+    :param label2id: dict to translate label to id (string to int)
     :param precision:
-    :param memory:
+    :param nomemory: If true bitset2 is not loaded into memory
     :return:
     """
     if out_file == '-' and out_format.startswith('hdf5'):
@@ -53,7 +53,7 @@ def dump_pairs(bitsets1,
     if not nomemory:
         # load whole dict in memory so it can be reused for each bitset1
         # deserialization of bitsets2 is only done one time
-        bitsets2 = {k: v for k, v in bitsets2.iteritems()}
+        bitsets2 = bitsets2.materialize()
 
     expectedrows = len(bitsets1) * len(bitsets2) * cutoff * 0.025
 
@@ -140,8 +140,31 @@ def dump_pairs_hdf5_compact(distances_iter,
     h5file.close()
 
 
-def distance2query(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
-    bitsets2 = FingerprintsDb(fingerprintsdb).as_dict()
+class Id2Label(tables.IsDescription):
+    frag_id = tables.UInt32Col()
+    label = tables.StringCol(16)
+
+
+def add_lookup2h5(h5file, filters, label2id):
+    expectedrows = len(label2id)
+    table = h5file.create_table('/',
+                                'labels',
+                                Id2Label,
+                                'Labels lookup',
+                                expectedrows=expectedrows)
+
+    for label, frag_id in label2id.iteritems():
+        table.row['frag_id'] = frag_id
+        table.row['label'] = label
+        table.row.append()
+
+    table.cols.frag_id.create_index(filters=filters)
+    table.cols.label.create_index(filters=filters)
+    table.flush()
+    return table
+
+
+def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
     number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match
@@ -156,7 +179,7 @@ def distance2query(fingerprintsdb, query, out, mean_onbit_density, cutoff, memor
         if memory:
             # load whole dict in memory so it can be reused for each bitset1
             # deserialization of bitset2 is only done one time
-            bitsets2 = {k: v for k, v in bitsets2.iteritems()}
+            bitsets2 = bitsets2.materialize()
 
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 
@@ -167,15 +190,21 @@ def distance2query(fingerprintsdb, query, out, mean_onbit_density, cutoff, memor
     dump_pairs_tsv(sorted_distances, out)
 
 
-def similar_run(query, pairsdbfn, fragmentsdbfn, cutoff, out):
-    fragments = FragmentsDb(fragmentsdbfn)
+def similar_run(query, pairsdbfn, fragments, cutoff, out, memory):
     id2label = fragments.id2label()
-    frag_id = fragments[query]['rowid']
+    if memory:
+        # when there are many hits,
+        # it is more efficient to fetch all with a single query
+        # instead of many queries
+        id2label = id2label.materialize()
+    frag_id = fragments.label2id()[query]
     h5file = tables.open_file(pairsdbfn)
     pairs = h5file.root.pairs
 
     hits = similar(frag_id, pairs, id2label, cutoff)
     dump_pairs_tsv(hits, out)
+
+    h5file.close()
 
 
 def similar(frag_id, pairsdb, id2label, cutoff):
@@ -189,15 +218,15 @@ def similar(frag_id, pairsdb, id2label, cutoff):
     for row in pairsdb.where(query1):
         score = row[2] / precision
         label = id2label[row[1]]
-        hits.append((query, score, label))
+        hits.append((query, label, score))
 
     query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
     for row in pairsdb.where(query2):
         score = row[2] / precision
         label = id2label[row[0]]
-        hits.append((query, score, label))
+        hits.append((query, label, score))
 
     # most similar first
-    sorted_hits = sorted(hits, reverse=True)
+    sorted_hits = sorted(hits, reverse=True, key=lambda r: (r[1], r[2]))
 
     return sorted_hits

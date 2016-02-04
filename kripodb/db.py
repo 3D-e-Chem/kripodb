@@ -225,24 +225,17 @@ class FragmentsDb(SqliteDb):
 
         return fragments
 
-    def _to_dict(self, sql):
-        lookup = {}
-        for k, v in self.cursor.execute(sql):
-            lookup[k] = v
-        return lookup
-
     def id2label(self):
-        sql = '''SELECT rowid, frag_id FROM molecules'''
-        return self._to_dict(sql)
+        return SqliteDict(self.connection, 'molecules', 'rowid', 'frag_id')
 
     def label2id(self):
-        sql = '''SELECT frag_id, rowid FROM molecules'''
-        return self._to_dict(sql)
+        return SqliteDict(self.connection, 'molecules', 'frag_id', 'rowid')
 
     def __len__(self):
         self.cursor.execute('SELECT count(*) FROM molecules')
         row = self.cursor.fetchone()
         return row[0]
+
 
 class FingerprintsDb(SqliteDb):
 
@@ -260,7 +253,100 @@ class FingerprintsDb(SqliteDb):
         return IntbitsetDict(self, number_of_bits)
 
 
-class IntbitsetDict(MutableMapping):
+class SqliteDict(MutableMapping):
+    def __init__(self, connection, table_name, key_column, value_column):
+        self.connection = connection
+        self.cursor = connection.cursor()
+        kwargs = {
+            'key_column': key_column,
+            'table_name': table_name,
+            'value_column': value_column
+        }
+        self.sqls = {
+            'iter': 'SELECT {key_column} FROM {table_name}'.format(**kwargs),
+            'getitem': 'SELECT {value_column} FROM {table_name} WHERE {key_column}=?'.format(**kwargs),
+            'delitem': 'DELETE FROM {table_name} WHERE {key_column}=?'.format(**kwargs),
+            'setitem': '''INSERT OR REPLACE INTO {table_name}
+                          ({key_column}, {value_column}) VALUES (?, ?)'''.format(**kwargs),
+            'len': 'SELECT count(*) FROM {table_name}'.format(**kwargs),
+            'iteritems': 'SELECT {key_column}, {value_column} FROM {table_name}'.format(**kwargs),
+            'itervalues': 'SELECT {value_column} FROM {table_name}'.format(**kwargs),
+            'contains': 'SELECT count(*) FROM {table_name} WHERE {key_column}=?'.format(**kwargs),
+            'iteritems_startswith': '''SELECT {key_column}, {value_column} FROM {table_name}
+                                    WHERE {key_column} LIKE ?'''.format(**kwargs),
+        }
+
+    def __iter__(self):
+        sql = self.sqls['iter']
+        for row in self.cursor.execute(sql):
+            yield row[0]
+
+    def __getitem__(self, key):
+        sql = self.sqls['getitem']
+        self.cursor.execute(sql, (key,))
+        row = self.cursor.fetchone()
+
+        if row is None:
+            raise KeyError(key)
+
+        return row[0]
+
+    def __delitem__(self, key):
+        sql = self.sqls['delitem']
+        self.cursor.execute(sql, (key,))
+        self.connection.commit()
+
+    def __setitem__(self, key, value):
+        sql = '''INSERT OR REPLACE INTO bitsets (frag_id, bitset) VALUES (?, ?)'''
+        self.cursor.execute(sql, (key, value))
+        self.connection.commit()
+
+    def __len__(self):
+        sql = self.sqls['len']
+        self.cursor.execute(sql)
+        row = self.cursor.fetchone()
+        return row[0]
+
+    def iteritems(self):
+        sql = self.sqls['iteritems']
+        for row in self.cursor.execute(sql):
+            yield row
+
+    def itervalues(self):
+        sql = self.sqls['itervalues']
+        for row in self.cursor.execute(sql):
+            yield row[0]
+
+    def __contains__(self, key):
+        sql = self.sqls['contains']
+        self.cursor.execute(sql, (key,))
+        row = self.cursor.fetchone()
+        return row[0] == 1
+
+    def iteritems_startswith(self, prefix):
+        """item iterator over keys with prefix
+
+        :param prefix: Prefix of key
+        :return:
+        """
+        sql = self.sqls['iteritems_startswith']
+        for row in self.cursor.execute(sql, (prefix + '%',)):
+            yield row
+
+    def materialize(self):
+        """Fetches all kev/value pairs from the sqlite database.
+
+        Useful when dictionary is iterated multiple times and the cost of fetching is to high.
+
+        Returns
+        -------
+        Dictionary with all kev/value pairs
+
+        """
+        return {k: v for k, v in self.iteritems()}
+
+
+class IntbitsetDict(SqliteDict):
     """
     Dictionary of intbitset with sqlite3 backend.
 
@@ -277,59 +363,9 @@ class IntbitsetDict(MutableMapping):
     """
 
     def __init__(self, db, number_of_bits=None):
-        self.db = db
-        self.cursor = db.cursor
+        super(IntbitsetDict, self).__init__(db.connection, 'bitsets', 'frag_id', 'bitset')
         if number_of_bits is not None:
             self.number_of_bits = number_of_bits
-
-    def __delitem__(self, key):
-        sql = '''DELETE FROM bitsets WHERE frag_id=?'''
-
-        self.cursor.execute(sql, (key,))
-        self.db.commit()
-
-    def __iter__(self):
-        sql = '''SELECT frag_id FROM bitsets'''
-        for row in self.cursor.execute(sql):
-            yield row[0]
-
-    def __getitem__(self, key):
-        sql = '''SELECT bitset FROM bitsets WHERE frag_id=?'''
-        self.cursor.execute(sql, (key,))
-        row = self.cursor.fetchone()
-
-        if row is None:
-            raise KeyError(key)
-
-        return row[0]
-
-    def __setitem__(self, key, value):
-        sql = '''INSERT OR REPLACE INTO bitsets (frag_id, bitset) VALUES (?, ?)'''
-
-        self.cursor.execute(sql, (key, value))
-
-        self.db.commit()
-
-    def __len__(self):
-        self.cursor.execute('SELECT count(*) FROM bitsets')
-        row = self.cursor.fetchone()
-        return row[0]
-
-    def iteritems(self):
-        sql = '''SELECT frag_id, bitset FROM bitsets'''
-        for row in self.cursor.execute(sql):
-            yield row
-
-    def itervalues(self):
-        sql = '''SELECT bitset FROM bitsets'''
-        for row in self.cursor.execute(sql):
-            yield row[0]
-
-    def __contains__(self, key):
-        sql = '''SELECT count(*) FROM bitsets WHERE frag_id=?'''
-        self.cursor.execute(sql, (key,))
-        row = self.cursor.fetchone()
-        return row[0] == 1
 
     def update(*args, **kwds):
         self = args[0]
@@ -338,16 +374,6 @@ class IntbitsetDict(MutableMapping):
             MutableMapping.update(*args, **kwds)
             # make table and index stored contiguously
             self.cursor.execute('VACUUM')
-
-    def iteritems_startswith(self, prefix):
-        """item iterator over keys with prefix
-
-        :param prefix: Prefix of key
-        :return:
-        """
-        sql = '''SELECT frag_id, bitset FROM bitsets WHERE frag_id LIKE ?'''
-        for row in self.cursor.execute(sql, (prefix + '%',)):
-            yield row
 
     @property
     def number_of_bits(self):
@@ -365,10 +391,10 @@ class IntbitsetDict(MutableMapping):
     def number_of_bits(self, value):
         sql = 'INSERT OR REPLACE INTO attributes (key, value) VALUES (?, ?)'
         self.cursor.execute(sql, (ATTR_NUMBER_OF_BITS, str(value)))
-        self.db.commit()
+        self.connection.commit()
 
     @number_of_bits.deleter
     def number_of_bits(self):
         sql = 'DELETE FROM attributes WHERE key=?'
         self.cursor.execute(sql, (ATTR_NUMBER_OF_BITS,))
-        self.db.commit()
+        self.connection.commit()

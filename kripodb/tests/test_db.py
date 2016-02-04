@@ -242,3 +242,9 @@ class TestIntbitsetDictFilled(object):
 
         expected = [self.bs]
         eq_(result, expected)
+
+    def test_materialize(self):
+        result = self.bitsets.materialize()
+
+        expected = {self.bid: self.bs}
+        eq_(result, expected)
