@@ -62,6 +62,18 @@ class MockedIntbitsetDict(Mapping):
         return self.dict
 
 
+class MockedLookup(object):
+    def __init__(self, thedict):
+        self.lookup = {}
+        for k, v in thedict.iteritems():
+            self.lookup['frag_id == {}'.format(k)] = iter([(k, v)])
+            self.lookup['label == "{}"'.format(v)] = iter([(k, v)])
+        print self.lookup
+
+    def where(self, query):
+        return self.lookup[query]
+
+
 class Testpairs(object):
     def setup(self):
         self.number_of_bits = 8
@@ -85,6 +97,7 @@ class Testpairs(object):
         }
         self.compact_pairs = [(1, 3, 75), (2, 3, 83)]
         self.precision = 100
+        self.lookup = MockedLookup(self.id2label)
 
     def test_dump_pairs_tsv(self):
         out = StringIO.StringIO()
@@ -115,7 +128,7 @@ class Testpairs(object):
             fragments.id2label.return_value = self.id2label
             out = StringIO.StringIO()
 
-            pairs.similar_run('a', h5file, fragments, 0.55, out, False)
+            pairs.similar_run('a', h5file, 0.55, out)
 
             result = out.getvalue()
             expected = "a\tc\t0.75\n"
@@ -126,7 +139,7 @@ class Testpairs(object):
     def test_similar_nohits(self):
         pairsdb = self.mock_pairsdb()
 
-        hits = pairs.similar(1, pairsdb, self.id2label, 0.55)
+        hits = pairs.similar(1, pairsdb, self.lookup, 0.55)
 
         eq_(hits, [])
         pairsdb.where.assert_has_calls([
@@ -139,7 +152,7 @@ class Testpairs(object):
         pairsdb.attrs = {'score_precision': self.precision}
         pairsdb.where.side_effect = mypairs
 
-        hits = pairs.similar(1, pairsdb, self.id2label, 0.55)
+        hits = pairs.similar(1, pairsdb, self.lookup, 0.55)
 
         expected = [('a', 'c', 0.75)]
         eq_(hits, expected)
@@ -149,7 +162,7 @@ class Testpairs(object):
         pairsdb.attrs = {'score_precision': self.precision}
         pairsdb.where.side_effect = mypairs
 
-        hits = pairs.similar(3, pairsdb, self.id2label, 0.55)
+        hits = pairs.similar(3, pairsdb, self.lookup, 0.55)
 
         expected = [('c', 'b', 0.85)]
         eq_(hits, expected)

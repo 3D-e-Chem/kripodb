@@ -137,6 +137,9 @@ def dump_pairs_hdf5_compact(distances_iter,
         hit.append()
     table.cols.a.create_index(filters=filters)
     table.cols.b.create_index(filters=filters)
+
+    add_lookup2h5(h5file, filters, label2id)
+
     h5file.close()
 
 
@@ -146,6 +149,17 @@ class Id2Label(tables.IsDescription):
 
 
 def add_lookup2h5(h5file, filters, label2id):
+    """
+    Parameters
+    ----------
+    h5file
+    filters
+    label2id
+
+    Returns
+    -------
+
+    """
     expectedrows = len(label2id)
     table = h5file.create_table('/',
                                 'labels',
@@ -190,40 +204,35 @@ def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
     dump_pairs_tsv(sorted_distances, out)
 
 
-def similar_run(query, pairsdbfn, fragments, cutoff, out, memory):
-    id2label = fragments.id2label()
-    if memory:
-        # when there are many hits,
-        # it is more efficient to fetch all with a single query
-        # instead of many queries
-        id2label = id2label.materialize()
-    frag_id = fragments.label2id()[query]
+def similar_run(query, pairsdbfn, cutoff, out):
     h5file = tables.open_file(pairsdbfn)
     pairs = h5file.root.pairs
+    labels = h5file.root.labels
+    frag_id = labels.where('label == "{}"'.format(query)).next()[0]
 
-    hits = similar(frag_id, pairs, id2label, cutoff)
+    hits = similar(frag_id, pairs, labels, cutoff)
     dump_pairs_tsv(hits, out)
 
     h5file.close()
 
 
-def similar(frag_id, pairsdb, id2label, cutoff):
+def similar(frag_id, pairsdb, labels, cutoff):
     hits = []
 
-    query = id2label[frag_id]
+    query = labels.where('label == "{}"'.format(frag_id)).next()[0]
     precision = float(pairsdb.attrs['score_precision'])
     scutoff = int(cutoff * precision)
 
     query1 = '(a == {}) & (score >= {})'.format(frag_id, scutoff)
     for row in pairsdb.where(query1):
         score = row[2] / precision
-        label = id2label[row[1]]
+        label = labels.where('frag_id == {}'.format(row[1])).next()[1]
         hits.append((query, label, score))
 
     query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
     for row in pairsdb.where(query2):
         score = row[2] / precision
-        label = id2label[row[0]]
+        label = labels.where('frag_id == {}'.format(row[0])).next()[1]
         hits.append((query, label, score))
 
     # most similar first

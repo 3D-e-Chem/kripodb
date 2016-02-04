@@ -215,8 +215,6 @@ def similar_sc(subparsers):
     sc_help = 'Find the fragments closets to query based on distance matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
     sc.add_argument("pairsdbfn", type=str, help='Compact hdf5 distance matrix file')
-    sc.add_argument("--fragmentsdbfn", required=True,
-                    help='Name of fragments db file')
     sc.add_argument("query", type=str, help='Query fragment identifier')
     sc.add_argument("--out", type=argparse.FileType('w'), default='-',
                     help='Output file tab delimited (query, hit, distance score)')
@@ -224,9 +222,6 @@ def similar_sc(subparsers):
                     type=float,
                     default=0.55,
                     help="Distance cutoff")
-    sc.add_argument("--memory",
-                    action='store_true',
-                    help='Store fragments lookup table in memory')
     sc.set_defaults(func=similar_run)
 
 
