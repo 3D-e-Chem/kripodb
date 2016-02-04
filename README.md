@@ -25,6 +25,28 @@ To see available commands
 kripodb --help
 ```
 
+## Create all
+
+Commands to create all data files
+```
+kripodb shelve2fragmentsdb fragments.shelve fragments.sqlite
+kripodb sdf2fragmentsdb fragment??.sdf fragments.sqlite
+kripodb makebits2fingerprintsdb 01.fp 01.fp.db
+kripodb makebits2fingerprintsdb 02.fp 02.fp.db
+kripodb pairs --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
+kripodb pairs --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
+kripodb pairs --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
+kripodb pairs --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
+kripodb mergepairs dist_*_*.h5  dist_all.h5
+```
+
+## Search for most similar fragments
+
+Command to find fragments most similar to `3kxm_K74_frag1` fragment.
+```
+kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
+```
+
 # Docker
 
 ## Create image
