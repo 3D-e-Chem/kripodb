@@ -6,6 +6,8 @@
 
 Library to interact with Kripo fragment, fingerprint and similarity data files.
 
+KRIPO stands for Key Representation of Interaction in POckets, see [reference](http://dx.doi.org/10.1186/1758-2946-6-S1-O26) for more information.
+
 # Install
 
 Requirements:
@@ -61,3 +63,9 @@ To calculate the mean bit density of the fingerprints in the `fingerprints.sqlit
 ```
 docker run --rm -u $UID -v $PWD:/data nlesc/kripodb kripodb meanbitdensity /data/fingerprints.sqlite
 ```
+
+# Reference
+
+KRIPO – a structure-based pharmacophores approach explains polypharmacological effects;
+Tina Ritschel, Tom JJ Schirris, and Frans GM Russel; J Cheminform. 2014; 6(Suppl 1): O26;
+Published online 2014 Mar 11; http://dx.doi.org/10.1186/1758-2946-6-S1-O26
