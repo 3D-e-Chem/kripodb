@@ -48,6 +48,8 @@ def make_parser():
 
     sdf2fragmentsdb_sc(subparsers)
 
+    merge_pairs_sc(subparsers)
+
     return parser
 
 
@@ -57,7 +59,7 @@ def pairs_sc(subparsers):
 
     Output formats:
     * tsv, tab seperated id1,id2, distance
-    * hdf5_compact, hdf5 file contstructed with pytables with a, b and score, but but a and b have been replaced
+    * hdf5, hdf5 file contstructed with pytables with a, b and score, but but a and b have been replaced
       by numbers and distance has been converted to scaled int
     '''
     out_formats = ['tsv', 'hdf5']
@@ -102,8 +104,8 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
               fragmentsdbfn,
               precision, nomemory):
 
-    if 'compact' in out_format and fragmentsdbfn is None:
-        raise Exception('Compact output formats require fragments db')
+    if 'hdf5' in out_format and fragmentsdbfn is None:
+        raise Exception('Hdf5 format requires fragments db')
 
     label2id = {}
     if fragmentsdbfn is not None:
@@ -221,12 +223,7 @@ def similar_sc(subparsers):
                     type=float,
                     default=0.55,
                     help="Distance cutoff")
-    sc.set_defaults(func=similar_run)
-
-
-def similar_run(query, pairsdbfn, fragmentsdbfn, cutoff, out, memory):
-    fragments = FragmentsDb(fragmentsdbfn)
-    pairs.similar_run(query, pairsdbfn, fragments, cutoff, out, memory)
+    sc.set_defaults(func=pairs.similar_run)
 
 
 def meanbitdensity_sc(subparsers):

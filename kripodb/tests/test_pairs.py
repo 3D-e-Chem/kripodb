@@ -251,3 +251,16 @@ class Testpairs(object):
 
         expected = "a\tc\t0.135555555556\n"
         eq_(result, expected)
+
+    def test_total_number_of_pairs(self):
+        self.fill_matrix()
+
+        result = pairs.total_number_of_pairs([self.h5filename])
+
+        eq_(result, 2)
+
+    def test_labels_consistency_check_ok(self):
+        self.fill_matrix()
+
+        pairs.labels_consistency_check([self.h5filename])
+        assert True

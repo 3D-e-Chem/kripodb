@@ -202,7 +202,7 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
-        sql = '''SELECT m.rowid, * FROM fragments LEFT JOIN molecules m USING (frag_id) WHERE frag_id=?'''
+        sql = '''SELECT f.rowid, * FROM fragments f LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
 
@@ -226,13 +226,13 @@ class FragmentsDb(SqliteDb):
         return fragments
 
     def id2label(self):
-        return SqliteDict(self.connection, 'molecules', 'rowid', 'frag_id')
+        return SqliteDict(self.connection, 'fragments', 'rowid', 'frag_id')
 
     def label2id(self):
-        return SqliteDict(self.connection, 'molecules', 'frag_id', 'rowid')
+        return SqliteDict(self.connection, 'fragments', 'frag_id', 'rowid')
 
     def __len__(self):
-        self.cursor.execute('SELECT count(*) FROM molecules')
+        self.cursor.execute('SELECT count(*) FROM fragments')
         row = self.cursor.fetchone()
         return row[0]
 

@@ -32,13 +32,29 @@ class DistanceMatrix(object):
         self.h5file.close()
 
 
+class AbstractSimpleTable(object):
+    def append(self, other):
+        col_names = [col_name for col_name in self.table.colpathnames]
+        nrows = 0
+        for srcRow in other.table.iterrows():
+            for col_name in col_names:
+                self.table.row[col_name] = srcRow[col_name]
+            self.table.row.append()
+            nrows += 1
+        self.table.flush()
+        return nrows
+
+    def __len__(self):
+        return len(self.table)
+
+
 class DistancePair(tables.IsDescription):
     a = tables.UInt32Col()
     b = tables.UInt32Col()
     score = tables.UInt16Col()
 
 
-class PairsTable(object):
+class PairsTable(AbstractSimpleTable):
     table_name = 'pairs'
     filters = tables.Filters(complevel=6, complib='blosc')
 
@@ -77,9 +93,6 @@ class PairsTable(object):
             hit.append()
         self.table.flush()
 
-    def append(self, other):
-        other.table.append_where(self.table)
-
     def find(self, frag_id, cutoff):
         precision = float(self.score_precision)
         ndigits = int(ceil(log10(precision)))
@@ -106,7 +119,7 @@ class Id2Label(tables.IsDescription):
     label = tables.StringCol(16)
 
 
-class LabelsLookup(object):
+class LabelsLookup(AbstractSimpleTable):
     table_name = 'labels'
     filters = tables.Filters(complevel=6, complib='blosc')
 
@@ -130,9 +143,6 @@ class LabelsLookup(object):
     def by_label(self, label):
         return self.table.where('label == "{}"'.format(label)).next()[0]
 
-    def __len__(self):
-        return len(self.table)
-
     def update(self, label2id):
         for label, frag_id in label2id.iteritems():
             self.table.row['frag_id'] = frag_id
@@ -140,5 +150,4 @@ class LabelsLookup(object):
             self.table.row.append()
         self.table.flush()
 
-    def append(self, other):
-        other.table.append_where(self.table)
+

@@ -162,18 +162,17 @@ def similar_run(query, pairsdbfn, cutoff, out):
 
 
 def similar(query, pairsdb, labels, cutoff):
-    hits = []
-
     frag_id = labels.by_label(query)
     raw_hits = pairsdb.find(frag_id, cutoff)
 
     # replace ids with labels + add query column
+    hits = []
     for hit_id, score in raw_hits.iteritems():
         hit = (query, labels.by_id(hit_id), score)
         hits.append(hit)
 
-    # most similar first
-    sorted_hits = sorted(hits, reverse=True, key=lambda r: (r[1], r[2]))
+    # highest score/most similar first
+    sorted_hits = sorted(hits, reverse=True, key=lambda r: r[2])
 
     return sorted_hits
 
@@ -202,18 +201,26 @@ def labels_consistency_check(fingerprintfilenames):
 def merge(ins, out):
     expectedrows = total_number_of_pairs(ins)
     labels_consistency_check(ins)
-
     out_matrix = DistanceMatrix(out, 'w')
+
+    # copy labels
     first_in_matrix = DistanceMatrix(ins[0])
     first_in_labels = first_in_matrix.labels()
     out_labels = out_matrix.labels(len(first_in_labels))
     out_labels.append(first_in_labels)
 
-    out_pairs = out_matrix.pairs(expectedrows)
+    # copy precision
+    first_in_pairs = first_in_matrix.pairs()
+    out_pairs = out_matrix.pairs(expectedrows, first_in_pairs.score_precision)
+
+    first_in_matrix.close()
+
+    # copy pairs
     for filename in ins:
         matrix = DistanceMatrix(filename)
         pairs = matrix.pairs()
         out_pairs.append(pairs)
+        matrix.close()
 
     out_pairs.add_indexes()
 
