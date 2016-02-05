@@ -13,6 +13,7 @@ KRIPO stands for Key Representation of Interaction in POckets, see [reference](h
 Requirements:
 
 * rdkit, http://rdkit.org, to read SDF files and generate smile strings from molecules
+* libhdf5 headers, to read/write distance matrix in hdf5 format
 
 ```
 pip install -U setuptools
