@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2016 Netherlands eScience Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,16 +12,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module to calculate modified tanimoto distance"""
 
 
 def calc_mean_onbit_density(bitsets, number_of_bits):
-    all_nr_onbits = [len(v) for v in bitsets.itervalues()]
+    """Calculate the mean density of bits that are on in bitsets collection.
+
+    Args:
+        bitsets (list[intbitset.intbitset]): List of fingerprints
+        number_of_bits: Number of bits for all fingerprints
+
+    Returns:
+        float: Mean on bit density
+
+    """
+    all_nr_onbits = [len(v) for v in bitsets]
     mean_onbit = sum(all_nr_onbits) / float(len(bitsets))
     density = mean_onbit / number_of_bits
     return float(density)
 
 
 def corrections(mean_onbit_density):
+    """Calculate corrections
+
+    See :func:`distance` for explanation of corrections.
+
+    Args:
+        mean_onbit_density (float): Mean on bit density
+
+    Returns:
+        S\ :sub:`T` correction, S\ :sub:`T0` correction
+    """
     p0 = mean_onbit_density
     corr_st = (2 - p0) / 3
     corr_sto = (1 + p0) / 3
@@ -28,6 +50,39 @@ def corrections(mean_onbit_density):
 
 
 def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
+    """Calculate modified Tanimoto distance between two fingerprints
+
+    Given two fingerprints of length n with a and b bits set in each fingerprint,
+    respectively, and c bits set in both fingerprint,
+    selected from a data set of fingerprint with a mean bit density of ρ\ :sub:`0`,
+    the modified Tanimoto similarity S\ :sub:`MT` is calculated as
+
+    .. math::
+
+        S_{MT} = (\\frac{2 - ρ_0}{3}) S_T + (\\frac{1 + ρ_0}{3}) S_{T0}
+
+    where ST is the standard Tanimoto coefficient
+
+    .. math::
+
+        S_T = \\frac{c}{a + b - c}
+
+    and Sr0 is the inverted Tanimoto coefficient
+
+    .. math::
+
+        S_{T0} = \\frac{n - a - b - c}{n -c}
+
+    Args:
+        bitset1 (intbitset.intbitset): First fingerprint
+        bitset2 (intbitset.intbitset): Second fingerprint
+        number_of_bits (int): Number of bits for all fingerprints
+        corr_st (float): St correction
+        corr_sto (float): Sto correction
+
+    Returns:
+        float: modified Tanimoto distance
+    """
     a = len(bitset1)
     b = len(bitset2)
     c = len(bitset1 & bitset2)
@@ -39,6 +94,26 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
 
 
 def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, full_matrix=False):
+    """Calculate modified tanimoto distance between two collections of fingerprints
+
+    Excludes distance of the same fingerprint.
+
+    Args:
+        bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
+            with fingerprint label as key and intbitset as value
+        bitsets2 (Dict{str, intbitset.intbitset}): Second dict of fingerprints
+            with fingerprint label as key and intbitset as value
+        number_of_bits (int): Number of bits for all fingerprints
+        corr_st (float): St correction
+        corr_sto (float): Sto correction
+        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        full_matrix (Optional[bool]): When false returns distance where label1 > label2,
+            when true returns all distances
+
+    Yields:
+        (fingerprint label 1, fingerprint label2, distance)
+
+    """
     for (label1, bs1) in bitsets1.iteritems():
         for (label2, bs2) in bitsets2.iteritems():
             if label1 == label2:

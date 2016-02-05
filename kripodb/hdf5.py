@@ -11,29 +11,71 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Distance matrix using hdf5 as storage backend."""
 from math import log10, ceil
 
 import tables
 
 
 class DistanceMatrix(object):
+    """Distance matrix
+
+    Args:
+        filename (str): File name of hdf5 file to write or read distance matrix from
+        mode (str): Can be 'r' for reading or 'w' for writing
+
+    Attributes:
+        h5file (tables.File): Object representing an open hdf5 file
+
+    """
     filters = tables.Filters(complevel=6, complib='blosc')
 
     def __init__(self, filename, mode='r'):
         self.h5file = tables.open_file(filename, mode, filters=self.filters)
 
     def pairs(self, expectedrows=0, precision=None):
+        """Pairs table
+
+        Args:
+            expectedrows (int): Expected number of pairs to be added.
+                Required when distance matrix is opened in write mode, helps optimize storage
+            precision (int): Distance score is a fraction,
+                the score is converted to an int by multiplying it with the precision
+
+        Returns:
+            PairsTable: HDF5 Table that contains pairs
+        """
         return PairsTable(self.h5file, expectedrows, precision)
 
     def labels(self, expectedrows=0):
+        """Labels table
+
+        Args:
+            expectedrows (int): Expected number of labels to be added.
+                Required when distance matrix is opened in write mode, helps optimize storage
+
+        Returns:
+            LabelsLookup: Table to look up label of fragment by id or id of fragment by label
+        """
         return LabelsLookup(self.h5file, expectedrows)
 
     def close(self):
+        """Closes the hdf5file"""
         self.h5file.close()
 
 
 class AbstractSimpleTable(object):
+    """Abstract wrapper around a HDF5 table"""
+
     def append(self, other):
+        """Append rows of other table to self
+
+        Args:
+            other: Table of same type as self
+
+        Returns:
+            int: Number of rows added
+        """
         col_names = [col_name for col_name in self.table.colpathnames]
         nrows = 0
         for srcRow in other.table.iterrows():
@@ -45,6 +87,11 @@ class AbstractSimpleTable(object):
         return nrows
 
     def __len__(self):
+        """
+
+        Returns:
+            int: Number of rows in table
+        """
         return len(self.table)
 
 
@@ -55,6 +102,21 @@ class DistancePair(tables.IsDescription):
 
 
 class PairsTable(AbstractSimpleTable):
+    """Tabel to store distance score of a pair of fragment fingerprints
+
+    When table does not exist in h5file it is created.
+
+    Args:
+        h5file (tables.File): Object representing an open hdf5 file
+        expectedrows (int): Expected number of pairs to be added.
+            Required when distance matrix is opened in write mode, helps optimize storage
+        precision (int): Distance score is a fraction,
+                the score is converted to an int by multiplying it with the precision
+
+    Attributes:
+        score_precision (int): Distance score is a fraction,
+            the score is converted to an int by multiplying it with the precision
+    """
     table_name = 'pairs'
     filters = tables.Filters(complevel=6, complib='blosc')
 
@@ -81,10 +143,21 @@ class PairsTable(AbstractSimpleTable):
         self.table.attrs['score_precision'] = value
 
     def add_indexes(self):
+        """Add indexes on identifier columns
+
+        Best done after calling update().
+        """
         self.table.cols.a.create_index(filters=self.filters)
         self.table.cols.b.create_index(filters=self.filters)
 
     def update(self, distances_iter, label2id):
+        """Store pairs of fragment identifier with their distance score
+
+        Args:
+            distances_iter (Iterator): Iterator which yields (label1, label2, distance_score)
+            label2id (Dict): Lookup with fragment label as key and fragment identifier as value
+
+        """
         hit = self.table.row
         for label1, label2, distance in distances_iter:
             hit['a'] = label2id[label1]
@@ -94,6 +167,16 @@ class PairsTable(AbstractSimpleTable):
         self.table.flush()
 
     def find(self, frag_id, cutoff):
+        """Find fragment hits which has a distance score with frag_id above cutoff.
+
+        Args:
+            frag_id (int): query fragment identifier
+            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+
+        Returns:
+            Dict: Where key is hit fragment identifier and value is distance score
+
+        """
         precision = float(self.score_precision)
         ndigits = int(ceil(log10(precision)))
         scutoff = int(cutoff * precision)
@@ -120,6 +203,15 @@ class Id2Label(tables.IsDescription):
 
 
 class LabelsLookup(AbstractSimpleTable):
+    """Table to look up label of fragment by id or id of fragment by label
+
+    When table does not exist in h5file it is created.
+
+    Args:
+        h5file (tables.File): Object representing an open hdf5 file
+        expectedrows (int): Expected number of pairs to be added.
+            Required when distance matrix is opened in write mode, helps optimize storage
+    """
     table_name = 'labels'
     filters = tables.Filters(complevel=6, complib='blosc')
 
@@ -138,12 +230,40 @@ class LabelsLookup(AbstractSimpleTable):
         self.table = table
 
     def by_id(self, frag_id):
+        """Look up label of fragment by id
+
+        Args:
+            frag_id (int): Fragment identifier
+
+        Raises:
+            IndexError: When id of fragment is not found
+
+        Returns:
+            str: Label of fragment
+        """
         return self.table.where('frag_id == {}'.format(frag_id)).next()[1]
 
     def by_label(self, label):
+        """Look up id of fragment by label
+
+        Args:
+            label (str): Fragment label
+
+        Raises:
+            IndexError: When label of fragment is not found
+
+        Returns:
+            int: Fragment identifier
+        """
         return self.table.where('label == "{}"'.format(label)).next()[0]
 
     def update(self, label2id):
+        """Update labels lookup by adding labels in label2id.
+
+        Args:
+            label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
+
+        """
         for label, frag_id in label2id.iteritems():
             self.table.row['frag_id'] = frag_id
             self.table.row['label'] = label

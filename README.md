@@ -27,6 +27,10 @@ To see available commands
 kripodb --help
 ```
 
+An example data set is available in [data/](data/) directory.
+
+An example [Knime](htt) workflow using this library is at [docs/knime-kripodb-example.zip](docs/knime-kripodb-example.zip).
+
 ## Create all
 
 Commands to create all data files

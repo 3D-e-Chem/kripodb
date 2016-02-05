@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module to read/write Makebits file format"""
 
 from intbitset import intbitset
 
@@ -49,11 +50,25 @@ def read_file(infile):
 
 
 def iter_file(infile):
-    """
+    """Reads Makebits formatted file
     Yields header first then tuples of idenfitier and intbitset object
 
-    :param infile:
-    :return:
+    Yields:
+        first header (format name, format version, number of bits, description),
+        then tuples of the fingerprint identifier and an intbitset object
+
+    Args:
+        infile (File): File object of Makebits formatted file to read
+
+    Examples:
+        Read a file
+
+        >>> f = iter_file(open('fingerprints01.fp'))
+        >>> read_fp_size(next(f))
+        4
+        >>> {frag_id: fp for frag_id, fp in f}
+        {'id1': intbitset([1, 2, 3, 4])}
+
     """
     header = read_header(infile.readline())
     fp_size = read_fp_size(header)
@@ -74,6 +89,19 @@ def write_bitset(fid, bitset):
 
 
 def write_file(fp_size, bitsets, fn):
+    """Write makebits formatted file
+
+    Args:
+        fp_size (int): Number of bits
+        bitsets (dict): Dict with fingerprint identifier as key and intbitset object as value
+        fn (File): File object to write to
+
+    Examples:
+        Write a file
+
+        >>> write_file(4, {'id1': intbitset([1, 2, 3, 4])}, open('fingerprints01.fp', 'w'))
+
+    """
     fn.write(write_header(fp_size))
     for fid, bitset in bitsets.iteritems():
         fn.write(write_bitset(fid, bitset))

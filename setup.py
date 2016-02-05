@@ -10,7 +10,7 @@ setup(
     url='https://github.com/3D-e-Chem/kripodb',
     author='Stefan Verhoeven',
     author_email='s.verhoeven@esciencecenter.nl',
-    install_requires=['intbitset', 'tables', 'nose', 'coverage', 'mock'],
+    install_requires=['intbitset', 'tables'],
     entry_points={
         'console_scripts': [
             'kripodb=kripodb.script:main',

@@ -1,3 +1,9 @@
 # requirements are installed within setup.py
 
 -e .
+nose
+coverage
+setuptools>=18.8.1
+six>=1.7
+mock
+sphinx

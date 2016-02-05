@@ -1,5 +1,9 @@
 # Example data set
 
+* fragments.sqlite - Fragments sqlite database containing a small number of fragments with their smiles string and molblock.
+* fingerprints.sqlite - Fingerprints sqlite database with fingerprint stored as [fastdumped intbitset](http://intbitset.readthedocs.org/en/latest/index.html#intbitset.intbitset.fastdump)
+* distances.h5 - HDF5 file with distance matrix of fingerprints using modified tanimoto coefficient 
+
 ## Creating tiny data set
 
 1. Create fingerprints db with 1000 fingerprints

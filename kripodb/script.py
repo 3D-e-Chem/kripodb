@@ -20,11 +20,11 @@ import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
 
-from kripodb.db import FragmentsDb, FingerprintsDb
+from .db import FragmentsDb, FingerprintsDb
 from . import makebits
 from . import pairs
-from modifiedtanimoto import calc_mean_onbit_density
-from version import __version__
+from .modifiedtanimoto import calc_mean_onbit_density
+from .version import __version__
 
 
 def make_parser():
@@ -236,7 +236,7 @@ def meanbitdensity_sc(subparsers):
 
 def meanbitdensity_run(fingerprintsdb):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
-    print(calc_mean_onbit_density(bitsets, bitsets.number_of_bits))
+    print(calc_mean_onbit_density(bitsets.itervalues(), bitsets.number_of_bits))
 
 
 def shelve2fragmentsdb_sc(subparsers):
@@ -280,6 +280,14 @@ def merge_pairs_sc(subparsers):
 
 
 def main(argv=sys.argv[1:]):
+    """Main script function.
+
+    Calls run method of selected sub commandos.
+
+    Args:
+        argv (list[str]): List of command line arguments
+
+    """
     parser = make_parser()
     args = parser.parse_args(argv)
     fargs = vars(args)

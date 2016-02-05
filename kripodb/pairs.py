@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module handling generation and retrieval of distance matrix"""
 
 import logging
 
-from kripodb.hdf5 import DistanceMatrix
-from modifiedtanimoto import distances, corrections
+from .hdf5 import DistanceMatrix
+from .modifiedtanimoto import distances, corrections
 
 
 def dump_pairs(bitsets1,
@@ -77,7 +78,7 @@ def dump_pairs(bitsets1,
 
 
 def dump_pairs_tsv(distances_iter, out):
-    """Dump pairs as
+    """Dump pairs in tab delimited file
 
     Pro:
     * when stored in sqlite can be used outside of Python
@@ -98,7 +99,7 @@ def dump_pairs_hdf5(distances_iter,
                     precision,
                     expectedrows,
                     out_file):
-    """
+    """Dump pairs in hdf5 file
 
     Pro:
     * very small, 10 bytes for each pair + compression
@@ -125,6 +126,17 @@ def dump_pairs_hdf5(distances_iter,
 
 
 def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
+    """Calculate distance of query against all fingerprints in bitsets2 and write to tab delimited file.
+
+    Args:
+        bitsets2 (kripodb.db.IntbitsetDict):
+        query (str): Query identifier or beginning of it
+        out (File): File object to write output to
+        mean_onbit_density (flaot): Mean on bit density
+        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        memory (Optional[bool]): When true will load bitset2 into memory, when false it doesn't
+
+    """
     number_of_bits = bitsets2.number_of_bits
     if query in bitsets2:
         # exact match
@@ -151,6 +163,15 @@ def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
 
 
 def similar_run(query, pairsdbfn, cutoff, out):
+    """Find similar fragments to query based on distance matrix and write to tab delimited file.
+
+    Args:
+        query (str): Query fragment identifier
+        pairsdbfn (str): Filename of distance matrix file
+        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        out (File): File object to write output to
+
+    """
     matrix = DistanceMatrix(pairsdbfn)
     pairs = matrix.pairs()
     labels = matrix.labels()
@@ -162,6 +183,18 @@ def similar_run(query, pairsdbfn, cutoff, out):
 
 
 def similar(query, pairsdb, labels, cutoff):
+    """Find similar fragments to query based on distance matrix.
+
+    Args:
+        query (str): Query fragment identifier
+        pairsdb (kripodb.db.PairsTable): Pairs table
+        labels (kripodb.db.LabelsLookup): Labels lookup table
+        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+
+    Returns:
+        List[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, distance score) sorted on distance score
+
+    """
     frag_id = labels.by_label(query)
     raw_hits = pairsdb.find(frag_id, cutoff)
 
@@ -199,6 +232,16 @@ def labels_consistency_check(fingerprintfilenames):
 
 
 def merge(ins, out):
+    """Concatenate distance matrix files into a single one.
+
+    Args:
+        ins (list[str]): List of input distance matrix filenames
+        out (str):  Output distance matrix filenames
+
+    Raises:
+        AssertionError: When nr of labels of input files is not the same
+
+    """
     expectedrows = total_number_of_pairs(ins)
     labels_consistency_check(ins)
     out_matrix = DistanceMatrix(out, 'w')

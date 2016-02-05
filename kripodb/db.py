@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Fragments and fingerprints sqlite based data storage.
+
+Registers `intbitset` and `molblockgz` data types in sqlite.
+"""
 
 from collections import MutableMapping
 import sqlite3
@@ -23,20 +27,64 @@ ATTR_NUMBER_OF_BITS = 'number_of_bits'
 
 
 def adapt_intbitset(ibs):
+    """Convert intbitset to fast dumped intbitset
+
+    Args:
+        ibs (intbitset): bitset
+
+    Examples:
+        Serialize intbitset
+
+        >>> adapt_intbitset(intbitset([1, 2, 3, 4]))
+        'x\x9c\x93c@\x05\x00\x01\xf0\x00\x1f'
+
+    Returns:
+        str: Fast dumped intbitset
+    """
     return ibs.fastdump()
 
 
 def convert_intbitset(s):
+    """Convert fast dumped intbitset to intbitset
+
+    Args:
+        s (str): Fast dumped intbitset
+
+    Examples:
+        Deserialize intbitset
+
+        >>> ibs = convert_intbitset('x\x9c\x93c@\x05\x00\x01\xf0\x00\x1f')
+        intbitset([1, 2, 3, 4])
+
+    Returns:
+        intbitset: bitset
+    """
     ibs = intbitset()
     ibs.fastload(s)
     return ibs
 
 
 def adapt_molblockgz(mol):
+    """Convert RDKit molecule to compressed molblock
+
+    Args:
+        mol (rdkit.Chem.Mol): molecule
+
+    Returns:
+        str: Compressed molblock
+    """
     return zlib.compress(MolToMolBlock(mol))
 
 
 def convert_molblockgz(molgz):
+    """Convert compressed molblock to RDKit molecule
+
+    Args:
+        molgz: (str) zlib compressed molblock
+
+    Returns:
+        rdkit.Chem.Mol: molecule
+    """
     return MolFromMolBlock(zlib.decompress(molgz))
 
 
@@ -47,19 +95,21 @@ sqlite3.register_converter('molblockgz', convert_molblockgz)
 
 
 class FastInserter(object):
+    """Use with to make inserting faster, but less safe
+
+    By setting journal mode to WAL and turn synchronous off.
+
+    Args:
+        cursor (sqlite3.Cursor): Sqlite cursor
+
+    Examples:
+
+        >>> with FastInserter(cursor):
+                cursor.executemany('INSERT INTO table VALUES (?), rows))
+
+    """
+
     def __init__(self, cursor):
-        """
-
-        Use with to make inserting faster, but less sage
-
-        Parameters
-        ----------
-        cursor sqlite3 cursor
-
-        Returns
-        -------
-
-        """
         self.cursor = cursor
 
     def __enter__(self):
@@ -74,14 +124,19 @@ class FastInserter(object):
 
 
 class SqliteDb(object):
+    """Wrapper around a sqlite database connection
+
+    Database is created if it does not exist.
+
+    Args:
+        filename (str):  Sqlite filename
+
+    Attributes:
+        connection (sqlite3.Connection): Sqlite connection
+        cursor (sqlite3.Cursor): Sqlite cursor
+    """
+
     def __init__(self, filename):
-        """Connect to fragment db.
-
-        Database is created if it does not exist.
-
-        :param filename: Sqlite filename
-        :return:
-        """
         self.filename = filename
         self.connection = sqlite3.connect(filename, detect_types=sqlite3.PARSE_DECLTYPES)
         # sqlite3 defaults to unicode as text_factory, unicode can't be used for byte string
@@ -99,9 +154,11 @@ class SqliteDb(object):
         self.close()
 
     def commit(self):
+        """Commit pending changes"""
         self.connection.commit()
 
     def close(self):
+        """Close database"""
         self.connection.close()
 
 
@@ -109,6 +166,7 @@ class FragmentsDb(SqliteDb):
     """Fragments database"""
 
     def create_tables(self):
+        """Create tables if they don't exist"""
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
             frag_id TEXT PRIMARY KEY,
             frag_nr INT,
@@ -126,11 +184,24 @@ class FragmentsDb(SqliteDb):
         )''')
 
     def add_molecules(self, mols):
+        """Adds molecules to to molecules table.
+
+        Args:
+            mols (List[rdkit.Chem.Mol]): List of molecules
+        """
         with FastInserter(self.cursor):
             for mol in mols:
                 self.add_molecule(mol)
 
     def add_fragments_from_shelve(self, myshelve):
+        """Adds fragments from shelve to fragments table.
+
+        Also creates index on pdb_code column.
+
+        Args:
+            myshelve (Dict[Fragment]): Dictionary with fragment identifier as key and fragment as value.
+
+        """
         with FastInserter(self.cursor):
             for k, v in myshelve.iteritems():
                 self.add_fragment_from_shelve(k, v)
@@ -202,6 +273,15 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
+        """Retrieve fragment based on it's identifier.
+
+        Args:
+            key (str): Fragment identifier
+
+        Returns:
+            Fragment
+
+        """
         sql = '''SELECT f.rowid, * FROM fragments f LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
@@ -218,6 +298,15 @@ class FragmentsDb(SqliteDb):
         return fragment
 
     def by_pdb_code(self, pdb_code):
+        """Retrieve fragments which are part of a PDB structure.
+
+        Args:
+            pdb_code (str): PDB code
+
+        Returns:
+            List[Fragment]
+
+        """
         fragments = []
         sql = '''SELECT m.rowid, * FROM fragments JOIN molecules m USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
         for row in self.cursor.execute(sql, (pdb_code,)):
@@ -226,9 +315,21 @@ class FragmentsDb(SqliteDb):
         return fragments
 
     def id2label(self):
+        """Lookup table of fragments from an number to a label.
+
+        Returns:
+            SqliteDict
+
+        """
         return SqliteDict(self.connection, 'fragments', 'rowid', 'frag_id')
 
     def label2id(self):
+        """Lookup table of fragments from an label to a number.
+
+        Returns:
+            SqliteDict
+
+        """
         return SqliteDict(self.connection, 'fragments', 'frag_id', 'rowid')
 
     def __len__(self):
@@ -238,6 +339,7 @@ class FragmentsDb(SqliteDb):
 
 
 class FingerprintsDb(SqliteDb):
+    """Fingerprints database"""
 
     def create_tables(self):
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS bitsets (
@@ -250,10 +352,33 @@ class FingerprintsDb(SqliteDb):
         )''')
 
     def as_dict(self, number_of_bits=None):
+        """Returns a dict-like object to query and alter fingerprints db
+
+        Args:
+            number_of_bits (Optional[int]): Number of bits that all fingerprints have
+
+        Returns:
+            IntbitsetDict
+        """
         return IntbitsetDict(self, number_of_bits)
 
 
 class SqliteDict(MutableMapping):
+    """Dict-like object of 2 columns of a sqlite table.
+
+    Can be used to query and alter the table.
+
+    Args:
+        connection (sqlite3.Connection): Sqlite connection
+        table_name (str): Table name
+        key_column (str): Column name used as key
+        value_column (str): Column name used as value
+
+    Attributes:
+        connection (sqlite3.Connection): Sqlite connection
+        cursor (sqlite3.Cursor): Sqlite cursor
+
+    """
     def __init__(self, connection, table_name, key_column, value_column):
         self.connection = connection
         self.cursor = connection.cursor()
@@ -326,8 +451,18 @@ class SqliteDict(MutableMapping):
     def iteritems_startswith(self, prefix):
         """item iterator over keys with prefix
 
-        :param prefix: Prefix of key
-        :return:
+        Args:
+            prefix (str): Prefix of key
+
+        Examples:
+           All items with key starting with letter 'a' are returned.
+
+            >>> for frag_id, fragment in fragments.iteritems_startswith('a'):
+                    # do something with frag_id and fragment
+
+        Returns:
+            List[Tuple[key, value]]
+
         """
         sql = self.sqls['iteritems_startswith']
         for row in self.cursor.execute(sql, (prefix + '%',)):
@@ -338,27 +473,21 @@ class SqliteDict(MutableMapping):
 
         Useful when dictionary is iterated multiple times and the cost of fetching is to high.
 
-        Returns
-        -------
-        Dictionary with all kev/value pairs
-
+        Returns:
+            Dict: Dictionary with all kev/value pairs
         """
         return {k: v for k, v in self.iteritems()}
 
 
 class IntbitsetDict(SqliteDict):
-    """
-    Dictionary of intbitset with sqlite3 backend.
+    """Dictionary of intbitset with sqlite3 backend.
 
-    Convert dbm to sqlite:
-    ```
-    from kripodb.dbm import IntbitsetDictDbm
-    from kripodb.db import FragmentsDb
-    dbm = IntbitsetDictDbm('data/fingerprint12.fp.db')
-    frags = FragmentsDb('data/fragments12.db')
-    bitsets = frags.bitsets()
-    bitsets.update(dbm)
-    ```
+    Args:
+        db (FingerprintsDb): Fingerprints db
+        number_of_bits (int): Number of bits
+
+    Attributes:
+        number_of_bits (int): Number of bits the bitsets consist of
 
     """
 
@@ -377,10 +506,6 @@ class IntbitsetDict(SqliteDict):
 
     @property
     def number_of_bits(self):
-        """
-        Number of bits the bitsets consist of
-        :return: int
-        """
         self.cursor.execute('SELECT value FROM attributes WHERE key=?', (ATTR_NUMBER_OF_BITS,))
         row = self.cursor.fetchone()
         if row is None:
