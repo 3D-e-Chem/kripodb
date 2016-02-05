@@ -21,14 +21,10 @@ from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id
 def test_similarities():
     queries = pd.Series(['3j7u_NDP_frag24'])
 
-    result = similarities(queries, 'data/distances.h5', 0.55)
+    result = similarities(queries, 'data/distances.h5', 0.85)
 
     expected = [
-        {'hit_frag_id': '3j7u_NDP_frag4', 'query_frag_id': '3j7u_NDP_frag24', 'score': 0.89903},
-        {'hit_frag_id': '3j7u_NDP_frag32', 'query_frag_id': '3j7u_NDP_frag24', 'score': 0.7377},
-        {'hit_frag_id': '3j7u_NDP_frag31', 'query_frag_id': '3j7u_NDP_frag24', 'score': 0.70291},
-        {'hit_frag_id': '3j7u_NDP_frag27', 'query_frag_id': '3j7u_NDP_frag24', 'score': 0.58808},
-        {'hit_frag_id': '3j7u_NDP_frag30', 'query_frag_id': '3j7u_NDP_frag24', 'score': 0.55239},
+        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.89903},
     ]
     assert_frame_equal(result, pd.DataFrame(expected))
 
