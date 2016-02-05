@@ -53,6 +53,17 @@ Command to find fragments most similar to `3kxm_K74_frag1` fragment.
 kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
 ```
 
+# Data
+
+An example data set included in the `data/` directory. See [data/README.md](data/README.md) for more information.
+
+# Knime workflow
+
+The `Knime-KripoDB-example.zip` file is an Knime workflow (http://www.knime.org).
+
+It can be run by importing it into Knime. 
+Make sure the Python used by Knimeis the same the Python with kripodb package installed.
+
 # Docker
 
 ## Create image
