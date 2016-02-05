@@ -5,7 +5,7 @@ before_install:
   - source conda/bin/activate root
   - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb
 install:
-  - python setup.py develop
+  - pip install -r requirements.txt
 script:
   - nosetests
 after_script:
