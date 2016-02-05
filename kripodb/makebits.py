@@ -41,7 +41,8 @@ def read_bitset(line, fp_size):
 
 def read_file(infile):
     header = infile.readline()
-    (format_name, format_version, fp_size, label) = read_header(header)
+    header_cols = read_header(header)
+    fp_size = header_cols[2]
     bitsets = {}
     for line in infile:
         (fid, bitset) = read_bitset(line, fp_size)

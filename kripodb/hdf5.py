@@ -190,7 +190,7 @@ class PairsTable(AbstractSimpleTable):
 
         query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
         for row in self.table.where(query2):
-            query_id, score = row[0], row[2]
+            score = row[2]
             score = round(score / precision, ndigits)
             hits[hit_id] = score
 

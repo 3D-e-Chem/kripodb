@@ -22,8 +22,6 @@ import os
 import tempfile
 
 from intbitset import intbitset
-from kripodb.hdf5 import PairsTable
-from mock import Mock
 from nose.tools import eq_, assert_raises
 
 import kripodb.pairs as pairs
@@ -120,7 +118,7 @@ class Testpairs(object):
         self.fill_matrix()
         out = StringIO.StringIO()
 
-        hits = pairs.similar_run('a', self.h5filename, 0.99, out)
+        pairs.similar_run('a', self.h5filename, 0.99, out)
 
         result = out.getvalue()
         expected = ""
@@ -214,28 +212,6 @@ class Testpairs(object):
 
         expected = "a\tc\t0.135555555556\n"
         eq_(result, expected)
-
-    def test_dump_pairs_ashdf5(self):
-        pairs.dump_pairs(self.bitsets,
-                         self.bitsets,
-                         'hdf5',
-                         self.h5filename,
-                         None,
-                         self.number_of_bits,
-                         0.4,
-                         0.05,
-                         self.label2id,
-                         self.precision,
-                         True
-                         )
-
-        h5file = tables.open_file(self.h5filename)
-        mypairs = []
-        for row in h5file.root.pairs:
-            mypairs.append((row[0], row[1], row[2]))
-        expected = [(1, 3, 13)]
-        eq_(mypairs, expected)
-        h5file.close()
 
     def test_distance2query(self):
         out = StringIO.StringIO()
