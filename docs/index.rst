@@ -14,6 +14,7 @@ API
 .. toctree::
     :maxdepth: 2
 
+    kripodb.canned <canned.rst>
     kripodb.db <db.rst>
     kripodb.hdf5 <hdf5.rst>
     kripodb.makebits <makebits.rst>

@@ -308,7 +308,7 @@ class FragmentsDb(SqliteDb):
 
         """
         fragments = []
-        sql = '''SELECT m.rowid, * FROM fragments JOIN molecules m USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
+        sql = '''SELECT f.rowid, * FROM fragments f JOIN molecules USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
         for row in self.cursor.execute(sql, (pdb_code,)):
             fragments.append(self._row2fragment(row))
 
