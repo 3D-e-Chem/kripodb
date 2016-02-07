@@ -6,7 +6,7 @@ FROM continuumio/miniconda
 
 MAINTAINER Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
 
-RUN /opt/conda/bin/conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb coverage && \
+RUN /opt/conda/bin/conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb coverage pandas && \
 /opt/conda/bin/conda clean -y -s -p -t -l -i
 
 ENV PATH /opt/conda/bin:$PATH
