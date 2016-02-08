@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/3D-e-Chem/kripodb.svg?branch=master)](https://travis-ci.org/3D-e-Chem/kripodb)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/4878758675a0402bb75019672fa6e45c)](https://www.codacy.com/app/NLeSC/kripodb)
 [![Codacy Badge](https://api.codacy.com/project/badge/coverage/4878758675a0402bb75019672fa6e45c)](https://www.codacy.com/app/NLeSC/kripodb)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.45750.svg)](http://dx.doi.org/10.5281/zenodo.45750)
 
 Library to interact with Kripo fragment, fingerprint and similarity data files.
 
