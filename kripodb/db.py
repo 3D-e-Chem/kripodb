@@ -169,9 +169,10 @@ class FragmentsDb(SqliteDb):
         """Create tables if they don't exist"""
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
             frag_id TEXT PRIMARY KEY,
-            frag_nr INT,
-            pdb_code TEXT,
-            het_code TEXT,
+            frag_nr INT NOT NULL,
+            pdb_code TEXT NOT NULL,
+            chain TEXT NOT NULL,
+            het_code TEXT NOT NULL,
             atomCodes TEXT,
             hashcode TEXT,
             ligID TEXT,
@@ -181,6 +182,16 @@ class FragmentsDb(SqliteDb):
             frag_id TEXT PRIMARY KEY,
             smiles TEXT,
             molfile molblockgz
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS pdbs (
+            pdb_code TEXT NOT NULL,
+            chain TEXT NOT NULL,
+            title TEXT,
+            macromolecule_name TEXT,
+            uniprot_acc TEXT,
+            uniprot_name TEXT,
+            ec_number TEXT,
+            PRIMARY KEY (pdb_code, chain)
         )''')
 
     def add_molecules(self, mols):
@@ -192,6 +203,16 @@ class FragmentsDb(SqliteDb):
         with FastInserter(self.cursor):
             for mol in mols:
                 self.add_molecule(mol)
+
+    def add_pdbs(self, pdbs):
+        """Adds pdb meta data to to pdbs table.
+
+        Args:
+            pdbs (List[Tuple]): List of pdb meta data
+        """
+        with FastInserter(self.cursor):
+            for pdb in pdbs:
+                self.add_pdb(pdb)
 
     def add_fragments_from_shelve(self, myshelve):
         """Adds fragments from shelve to fragments table.
@@ -227,6 +248,7 @@ class FragmentsDb(SqliteDb):
         sql = '''INSERT OR REPLACE INTO fragments (
             frag_id,
             pdb_code,
+            chain,
             het_code,
             frag_nr,
             atomCodes,
@@ -236,6 +258,7 @@ class FragmentsDb(SqliteDb):
         ) VALUES (
             :frag_id,
             :pdb_code,
+            :chain,
             :het_code,
             :frag_nr,
             :atomCodes,
@@ -258,6 +281,7 @@ class FragmentsDb(SqliteDb):
         row = {
             'frag_id': frag_id.replace('-', '_'),
             'pdb_code': splitted_frag_id[0],
+            'chain': 'A',
             'het_code': splitted_frag_id[1],
             'frag_nr': frag_nr,
             'hashcode': None,
@@ -269,7 +293,39 @@ class FragmentsDb(SqliteDb):
             row[k] = v
 
         row['numRgroups'] = int(row['numRgroups'])
+        ligIDparts = row['ligId'].split('-')
+        row['chain'] = ligIDparts[1]
 
+        self.cursor.execute(sql, row)
+
+    def add_pdb(self, pdb):
+        sql = '''INSERT OR REPLACE INTO pdbs (
+            pdbcode,
+            chain,
+            title,
+            macromolecule_name,
+            uniprot_acc,
+            uniprot_name,
+            ec_number
+        ) VALUES (
+            :pdbcode,
+            :chain,
+            :title,
+            :macromolecule_name,
+            :uniprot_acc,
+            :uniprot_name,
+            :ec_number
+        )'''
+        pdb2col = {
+            'structureId': 'pdb_code',
+            'chainId': 'chain',
+            'structureTitle': 'title',
+            'compound': 'macromolecule_name',
+            'uniprotAcc': 'uniprot_acc',
+            'uniprotRecommendedName': 'uniprot_name',
+            'ecNo': 'ec_number',
+        }
+        row = {v: pdb.get(k, None) for k, v in pdb2col.iteritems()}
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
