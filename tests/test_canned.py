@@ -36,11 +36,28 @@ def test_fragments_by_pdb_codes():
 
     # ignoring molecules
     result.drop('molfile', axis=1, inplace=True, errors='ignore')
-    expected = [
-        {'numRgroups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k', 'atomCodes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': 'd491952cd7c9dc30', 'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'ligID': '2n2k-A-MTN-101-A'},
-        {'numRgroups': 1, 'smiles': '[*]C[S-]', 'pdb_code': '2n2k', 'atomCodes': 'C4,S1', 'het_code': 'MTN', 'hashcode': '8b8dc32f7e8a9db3', 'frag_nr': 2, 'frag_id': '2n2k_MTN_frag2', 'rowid': 175950, 'ligID': '2n2k-A-MTN-101-A'},
-        {'numRgroups': 1, 'smiles': '[*]C1=CC(C)(C)[NH+](O)C1(C)C', 'pdb_code': '2n2k', 'atomCodes': 'O1,N1,C1,C2,C3,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': '17c58abf7bdf33ba', 'frag_nr': 3, 'frag_id': '2n2k_MTN_frag3', 'rowid': 175971, 'ligID': '2n2k-A-MTN-101-A'}
-    ]
+    expected = [{
+        'numRgroups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+        'atomCodes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': 'd491952cd7c9dc30',
+        'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'ligID': '2n2k-A-MTN-101-A',
+        'chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'macromolecule_name': 'ubiquitin',
+        'ec_number': None,
+        'title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }, {
+        'numRgroups': 1, 'smiles': '[*]C[S-]', 'pdb_code': '2n2k', 'atomCodes': 'C4,S1', 'het_code': 'MTN',
+        'hashcode': '8b8dc32f7e8a9db3', 'frag_nr': 2, 'frag_id': '2n2k_MTN_frag2', 'rowid': 175950,
+        'ligID': '2n2k-A-MTN-101-A',
+        'chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'macromolecule_name': 'ubiquitin',
+        'ec_number': None,
+        'title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }, {
+        'numRgroups': 1, 'smiles': '[*]C1=CC(C)(C)[NH+](O)C1(C)C', 'pdb_code': '2n2k',
+        'atomCodes': 'O1,N1,C1,C2,C3,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': '17c58abf7bdf33ba',
+        'frag_nr': 3, 'frag_id': '2n2k_MTN_frag3', 'rowid': 175971, 'ligID': '2n2k-A-MTN-101-A',
+        'chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'macromolecule_name': 'ubiquitin',
+        'ec_number': None,
+        'title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }]
     assert_frame_equal(result, pd.DataFrame(expected))
 
 
@@ -51,7 +68,12 @@ def test_fragments_by_id():
 
     # ignoring molecules
     result.drop('molfile', axis=1, inplace=True)
-    expected = [
-        {'numRgroups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k', 'atomCodes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': 'd491952cd7c9dc30', 'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'ligID': '2n2k-A-MTN-101-A'},
-    ]
+    expected = [{
+        'numRgroups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+        'atomCodes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hashcode': 'd491952cd7c9dc30',
+        'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'ligID': '2n2k-A-MTN-101-A',
+        'chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'macromolecule_name': 'ubiquitin',
+        'ec_number': None,
+        'title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }]
     assert_frame_equal(result, pd.DataFrame(expected))

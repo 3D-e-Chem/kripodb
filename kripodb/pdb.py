@@ -16,6 +16,21 @@ from urllib import urlopen
 import csv
 
 
+def parse_csv_file(thefile):
+    reader = csv.reader(thefile)
+    # read header
+    colnames = reader.next()
+    # data rows
+    for row in reader:
+        pdb = {}
+        for k, v in zip(colnames, row):
+            if v is '':
+                v = None
+            pdb[k] = v
+
+        yield pdb
+
+
 class PdbReport(object):
     """Client for the Custom Report Web Services of the RCSB PDB website
 
@@ -45,15 +60,4 @@ class PdbReport(object):
 
     def fetch(self):
         response = urlopen(self.url)
-        reader = csv.reader(response)
-        # read header
-        colnames = reader.next()
-        for row in reader:
-            pdb = {}
-            for k, v in zip(colnames, row):
-                if v is '':
-                    v = None
-                pdb[k] = v
-
-            yield pdb
-
+        return parse_csv_file(response)

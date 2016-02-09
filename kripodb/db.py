@@ -208,11 +208,13 @@ class FragmentsDb(SqliteDb):
         """Adds pdb meta data to to pdbs table.
 
         Args:
-            pdbs (List[Tuple]): List of pdb meta data
+            pdbs (Iterable[Tuple]): List of pdb meta data
         """
         with FastInserter(self.cursor):
             for pdb in pdbs:
                 self.add_pdb(pdb)
+            self.cursor.execute('DELETE FROM pdbs WHERE pdb_code NOT IN (SELECT pdb_code FROM fragments)')
+            self.cursor.execute('VACUUM')
 
     def add_fragments_from_shelve(self, myshelve):
         """Adds fragments from shelve to fragments table.
@@ -293,14 +295,15 @@ class FragmentsDb(SqliteDb):
             row[k] = v
 
         row['numRgroups'] = int(row['numRgroups'])
-        ligIDparts = row['ligId'].split('-')
-        row['chain'] = ligIDparts[1]
+        if row['ligID'] is not None:
+            ligIDparts = row['ligID'].split('-')
+            row['chain'] = ligIDparts[1]
 
         self.cursor.execute(sql, row)
 
     def add_pdb(self, pdb):
         sql = '''INSERT OR REPLACE INTO pdbs (
-            pdbcode,
+            pdb_code,
             chain,
             title,
             macromolecule_name,
@@ -308,7 +311,7 @@ class FragmentsDb(SqliteDb):
             uniprot_name,
             ec_number
         ) VALUES (
-            :pdbcode,
+            :pdb_code,
             :chain,
             :title,
             :macromolecule_name,
@@ -325,7 +328,8 @@ class FragmentsDb(SqliteDb):
             'uniprotRecommendedName': 'uniprot_name',
             'ecNo': 'ec_number',
         }
-        row = {v: pdb.get(k, None) for k, v in pdb2col.iteritems()}
+        row = {pdb2col[k]: v for k, v in pdb.iteritems()}
+        row['pdb_code'] = row['pdb_code'].lower()
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
@@ -338,7 +342,11 @@ class FragmentsDb(SqliteDb):
             Fragment
 
         """
-        sql = '''SELECT f.rowid, * FROM fragments f LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
+        sql = '''SELECT f.rowid, *
+        FROM fragments f
+        JOIN pdbs USING (pdb_code, chain)
+        LEFT JOIN molecules USING (frag_id)
+        WHERE frag_id=?'''
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
 
@@ -364,7 +372,11 @@ class FragmentsDb(SqliteDb):
 
         """
         fragments = []
-        sql = '''SELECT f.rowid, * FROM fragments f JOIN molecules USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
+        sql = '''SELECT f.rowid, *
+        FROM fragments f
+        JOIN pdbs USING (pdb_code, chain)
+        LEFT JOIN molecules USING (frag_id)
+        WHERE pdb_code=? ORDER BY frag_id'''
         for row in self.cursor.execute(sql, (pdb_code,)):
             fragments.append(self._row2fragment(row))
 

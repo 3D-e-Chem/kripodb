@@ -20,13 +20,11 @@ from kripodb.pdb import PdbReport
 
 
 class TestPdbReport():
-    pdb_report = None
-
-    def setUp(self):
-        self.pdb_report = PdbReport()
 
     def test_url_default(self):
-        url = self.pdb_report.url
+        pdb_report = PdbReport()
+
+        url = pdb_report.url
 
         expected = 'http://www.rcsb.org/pdb/rest/customReport?' \
                    'pdbids=*&' \
@@ -56,17 +54,21 @@ class TestPdbReport():
         mresponse.seek(0)
         mocked_urlopen.return_value = mresponse
 
-        pdbs = list(self.pdb_report.fetch())
+        pdb_report = PdbReport(['104L', '12E8'])
+
+        pdbs = list(pdb_report.fetch())
 
         expected = [{
-            'chainId': 'B', 'structureId': '104L',
+            'chainId': 'B',
+            'structureId': '104L',
             'structureTitle': 'HOW AMINO-ACID INSERTIONS ARE ALLOWED IN AN ALPHA-HELIX OF T4 LYSOZYME',
             'ecNo': '3.2.1.17',
             'uniprotAcc': 'P00720',
             'compound': 'T4 LYSOZYME',
             'uniprotRecommendedName': 'Endolysin'
         }, {
-            'chainId': 'H', 'structureId': '12E8',
+            'chainId': 'H',
+            'structureId': '12E8',
             'structureTitle': '2E8 FAB FRAGMENT',
             'ecNo': None,
             'uniprotAcc': None,

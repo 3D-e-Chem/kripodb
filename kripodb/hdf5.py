@@ -269,5 +269,3 @@ class LabelsLookup(AbstractSimpleTable):
             self.table.row['label'] = label
             self.table.row.append()
         self.table.flush()
-
-

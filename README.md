@@ -35,6 +35,7 @@ Commands to create all data files
 ```
 kripodb shelve2fragmentsdb fragments.shelve fragments.sqlite
 kripodb sdf2fragmentsdb fragment??.sdf fragments.sqlite
+kripodb pdb2fragmentsdb fragments.sqlite
 kripodb makebits2fingerprintsdb 01.fp 01.fp.db
 kripodb makebits2fingerprintsdb 02.fp 02.fp.db
 kripodb pairs --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5

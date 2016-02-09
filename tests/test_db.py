@@ -81,9 +81,7 @@ class TestFragmentsDBEmpty(object):
         result = self.fdb.add_fragment_from_shelve('1muu-GDX-B', {})
         eq_(result, None)
 
-    def test_add_molecule_none(self):
-        self.fdb.add_molecule(None)
-
+    def test_len(self):
         eq_(len(self.fdb), 0)
 
 
@@ -113,8 +111,24 @@ class TestFragmentsDBFilled(object):
             'frag_nr': 7,
             'frag_id': '1muu_GDX_frag7',
             'rowid': 1,
-            'ligID': '1muu-A-GDX-1005-B'
+            'ligID': '1muu-A-GDX-1005-B',
+            'chain': 'A',
+            'title': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'macromolecule_name': 'GDP-mannose 6-dehydrogenase',
+            'ec_number': '1.1.1.132',
+            'uniprot_acc': 'P11759',
+            'uniprot_name': 'GDP-mannose 6-dehydrogenase',
         }
+        self.pdbs = [{
+            'chainId': 'A',
+            'structureId': '1muu',
+            'structureTitle': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'ecNo': '1.1.1.132',
+            'uniprotAcc': 'P11759',
+            'compound': 'GDP-mannose 6-dehydrogenase',
+            'uniprotRecommendedName': 'GDP-mannose 6-dehydrogenase',
+        }]
+        self.fdb.add_pdbs(self.pdbs)
 
     def test_getitem(self):
         fragment = self.fdb['1muu_GDX_frag7']
