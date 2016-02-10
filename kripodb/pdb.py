@@ -17,6 +17,17 @@ import csv
 
 
 def parse_csv_file(thefile):
+    """Parse csv file, yielding rows as dictionary.
+
+    The csv file should have an header.
+
+    Args:
+        thefile (file): File like object
+
+    Yields:
+         dict: Dictionary with column header name as key and cell as value
+
+    """
     reader = csv.reader(thefile)
     # read header
     colnames = reader.next()
@@ -42,6 +53,9 @@ class PdbReport(object):
             Default is ['structureTitle', 'compound', 'ecNo', 'uniprotAcc', 'uniprotRecommendedName']
             See http://www.rcsb.org/pdb/results/reportField.do for possible fields.
 
+    Attributes:
+        url (str): Url of report, based on pdbids and fields.
+
     """
     url_tpl = 'http://www.rcsb.org/pdb/rest/customReport?pdbids={pdbids}' \
               '&customReportColumns={fields}&format=csv&service=wsfile'
@@ -59,5 +73,11 @@ class PdbReport(object):
         return self.url_tpl.format(pdbids=','.join(self.pdbids), fields=','.join(self.fields))
 
     def fetch(self):
+        """Fetch report from PDB website
+
+        Yields:
+            dict: Dictionary with keys same as ['structureId', 'chainID'] + self.fields
+
+        """
         response = urlopen(self.url)
         return parse_csv_file(response)

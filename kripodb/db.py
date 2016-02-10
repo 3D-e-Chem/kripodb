@@ -171,11 +171,11 @@ class FragmentsDb(SqliteDb):
             frag_id TEXT PRIMARY KEY,
             frag_nr INT NOT NULL,
             pdb_code TEXT NOT NULL,
-            chain TEXT NOT NULL,
+            prot_chain TEXT NOT NULL,
+            het_chain TEXT NOT NULL,
             het_code TEXT NOT NULL,
             atomCodes TEXT,
             hashcode TEXT,
-            ligID TEXT,
             numRgroups INT
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS molecules (
@@ -185,13 +185,13 @@ class FragmentsDb(SqliteDb):
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS pdbs (
             pdb_code TEXT NOT NULL,
-            chain TEXT NOT NULL,
+            prot_chain TEXT NOT NULL,
             title TEXT,
             macromolecule_name TEXT,
             uniprot_acc TEXT,
             uniprot_name TEXT,
             ec_number TEXT,
-            PRIMARY KEY (pdb_code, chain)
+            PRIMARY KEY (pdb_code, prot_chain)
         )''')
 
     def add_molecules(self, mols):
@@ -250,22 +250,22 @@ class FragmentsDb(SqliteDb):
         sql = '''INSERT OR REPLACE INTO fragments (
             frag_id,
             pdb_code,
-            chain,
+            prot_chain,
             het_code,
             frag_nr,
             atomCodes,
             hashcode,
-            ligID,
+            het_chain,
             numRgroups
         ) VALUES (
             :frag_id,
             :pdb_code,
-            :chain,
+            :prot_chain,
             :het_code,
             :frag_nr,
             :atomCodes,
             :hashcode,
-            :ligID,
+            :het_chain,
             :numRgroups
         )'''
 
@@ -280,31 +280,26 @@ class FragmentsDb(SqliteDb):
             logging.warn('Weird id {}, skipping'.format(frag_id))
             return
 
+        ligIDparts = fragment['ligID'].split('-')
+
         row = {
             'frag_id': frag_id.replace('-', '_'),
             'pdb_code': splitted_frag_id[0],
-            'chain': 'A',
+            'prot_chain': ligIDparts[1],
             'het_code': splitted_frag_id[1],
             'frag_nr': frag_nr,
-            'hashcode': None,
-            'atomCodes': None,
-            'ligID': None,
-            'numRgroups': None
+            'hashcode': fragment['hashcode'],
+            'atomCodes': fragment['atomCodes'],
+            'het_chain': ligIDparts[3],
+            'numRgroups': int(fragment['numRgroups']),
         }
-        for k, v in fragment.iteritems():
-            row[k] = v
-
-        row['numRgroups'] = int(row['numRgroups'])
-        if row['ligID'] is not None:
-            ligIDparts = row['ligID'].split('-')
-            row['chain'] = ligIDparts[1]
 
         self.cursor.execute(sql, row)
 
     def add_pdb(self, pdb):
         sql = '''INSERT OR REPLACE INTO pdbs (
             pdb_code,
-            chain,
+            prot_chain,
             title,
             macromolecule_name,
             uniprot_acc,
@@ -312,7 +307,7 @@ class FragmentsDb(SqliteDb):
             ec_number
         ) VALUES (
             :pdb_code,
-            :chain,
+            :prot_chain,
             :title,
             :macromolecule_name,
             :uniprot_acc,
@@ -321,7 +316,7 @@ class FragmentsDb(SqliteDb):
         )'''
         pdb2col = {
             'structureId': 'pdb_code',
-            'chainId': 'chain',
+            'chainId': 'prot_chain',
             'structureTitle': 'title',
             'compound': 'macromolecule_name',
             'uniprotAcc': 'uniprot_acc',
@@ -344,7 +339,7 @@ class FragmentsDb(SqliteDb):
         """
         sql = '''SELECT f.rowid, *
         FROM fragments f
-        JOIN pdbs USING (pdb_code, chain)
+        JOIN pdbs USING (pdb_code, prot_chain)
         LEFT JOIN molecules USING (frag_id)
         WHERE frag_id=?'''
         self.cursor.execute(sql, (key,))
@@ -374,7 +369,7 @@ class FragmentsDb(SqliteDb):
         fragments = []
         sql = '''SELECT f.rowid, *
         FROM fragments f
-        JOIN pdbs USING (pdb_code, chain)
+        JOIN pdbs USING (pdb_code, prot_chain)
         LEFT JOIN molecules USING (frag_id)
         WHERE pdb_code=? ORDER BY frag_id'''
         for row in self.cursor.execute(sql, (pdb_code,)):
