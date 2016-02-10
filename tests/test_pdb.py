@@ -19,7 +19,7 @@ from nose.tools import eq_
 from kripodb.pdb import PdbReport
 
 
-class TestPdbReport():
+class TestPdbReport(object):
 
     def test_url_default(self):
         pdb_report = PdbReport()
