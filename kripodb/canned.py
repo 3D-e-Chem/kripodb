@@ -23,13 +23,14 @@ from .pairs import similar
 from .db import FragmentsDb
 
 
-def similarities(queries, distance_matrix_filename, cutoff):
+def similarities(queries, distance_matrix_filename, cutoff, limit=1000):
     """Find similar fragments to queries based on distance matrix.
 
     Args:
         queries (List[str]): Query fragment identifiers
         distance_matrix_filename (str): Filename of distance matrix file
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        limit (int): Maximum number of hits for each query. Default is 1000. Use is None for no limit.
 
     Examples:
         Fragments similar to '3j7u_NDP_frag24' fragment.
@@ -48,7 +49,7 @@ def similarities(queries, distance_matrix_filename, cutoff):
     labels = distance_matrix.labels()
     hits = []
     for query in queries:
-        for query_id, hit_id, score in similar(query, pairs, labels, cutoff):
+        for query_id, hit_id, score in similar(query, pairs, labels, cutoff, limit):
             hit = {'query_frag_id': query_id,
                    'hit_frag_id': hit_id,
                    'score': score,

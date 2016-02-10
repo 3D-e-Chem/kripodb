@@ -182,7 +182,7 @@ def similar_run(query, pairsdbfn, cutoff, out):
     matrix.close()
 
 
-def similar(query, pairsdb, labels, cutoff):
+def similar(query, pairsdb, labels, cutoff, limit=None):
     """Find similar fragments to query based on distance matrix.
 
     Args:
@@ -190,6 +190,7 @@ def similar(query, pairsdb, labels, cutoff):
         pairsdb (kripodb.db.PairsTable): Pairs table
         labels (kripodb.db.LabelsLookup): Labels lookup table
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        limit (int): Maximum number of hits. Default is None for no limit.
 
     Returns:
         List[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, distance score) sorted on distance score
@@ -206,6 +207,9 @@ def similar(query, pairsdb, labels, cutoff):
 
     # highest score/most similar first
     sorted_hits = sorted(hits, reverse=True, key=lambda r: r[2])
+
+    if limit is not None:
+        sorted_hits = sorted_hits[:limit]
 
     return sorted_hits
 

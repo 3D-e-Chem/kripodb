@@ -29,6 +29,17 @@ def test_similarities():
     assert_frame_equal(result, pd.DataFrame(expected))
 
 
+def test_similarities_limitof1():
+    queries = pd.Series(['3j7u_NDP_frag24'])
+
+    result = similarities(queries, 'data/distances.h5', 0.55, 1)
+
+    expected = [
+        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
+    ]
+    assert_frame_equal(result, pd.DataFrame(expected))
+
+
 def test_fragments_by_pdb_codes():
     pdb_codes = pd.Series(['2n2k'])
 
