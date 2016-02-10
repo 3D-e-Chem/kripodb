@@ -20,6 +20,7 @@ import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
 
+from kripodb.pdb import PdbReport
 from .db import FragmentsDb, FingerprintsDb
 from . import makebits
 from . import pairs
@@ -47,6 +48,8 @@ def make_parser():
     shelve2fragmentsdb_sc(subparsers)
 
     sdf2fragmentsdb_sc(subparsers)
+
+    pdb2fragmentsdb_sc(subparsers)
 
     merge_pairs_sc(subparsers)
 
@@ -270,6 +273,22 @@ def sdf2fragmentsdb_run(sdffns, fragmentsdb):
         logging.warn('Parsing {}'.format(sdffn))
         suppl = SDMolSupplier(sdffn)
         frags.add_molecules(suppl)
+
+
+def pdb2fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('pdb2fragmentsdb', help='Add pdb metadata from RCSB PDB website to fragment sqlite db')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+
+    sc.set_defaults(func=pdb2fragmentsdb_run)
+
+
+def pdb2fragmentsdb_run(fragmentsdb):
+    pdb_report = PdbReport()
+    pdbs = pdb_report.fetch()
+    frags = FragmentsDb(fragmentsdb)
+    frags.add_pdbs(pdbs)
 
 
 def merge_pairs_sc(subparsers):

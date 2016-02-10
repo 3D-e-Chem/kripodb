@@ -20,6 +20,7 @@ API
     kripodb.makebits <makebits.rst>
     kripodb.modifiedtanimoto <modifiedtanimoto.rst>
     kripodb.pairs <pairs.rst>
+    kripodb.pdb <pdb.rst>
     kripodb.script <script.rst>
 
 

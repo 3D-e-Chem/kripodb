@@ -164,23 +164,38 @@ class SqliteDb(object):
 
 class FragmentsDb(SqliteDb):
     """Fragments database"""
+    select_sql = '''SELECT f.rowid, * FROM fragments f
+                    JOIN pdbs USING (pdb_code, prot_chain)
+                    LEFT JOIN molecules USING (frag_id)'''
 
     def create_tables(self):
         """Create tables if they don't exist"""
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments (
             frag_id TEXT PRIMARY KEY,
-            frag_nr INT,
-            pdb_code TEXT,
-            het_code TEXT,
-            atomCodes TEXT,
-            hashcode TEXT,
-            ligID TEXT,
-            numRgroups INT
+            frag_nr INT NOT NULL,
+            pdb_code TEXT NOT NULL,
+            prot_chain TEXT NOT NULL,
+            het_chain TEXT NOT NULL,
+            het_code TEXT NOT NULL,
+            het_seq_nr INT,
+            atom_codes TEXT,
+            hash_code TEXT,
+            nr_r_groups INT
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS molecules (
             frag_id TEXT PRIMARY KEY,
             smiles TEXT,
-            molfile molblockgz
+            mol molblockgz
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS pdbs (
+            pdb_code TEXT NOT NULL,
+            prot_chain TEXT NOT NULL,
+            pdb_title TEXT,
+            prot_name TEXT,
+            uniprot_acc TEXT,
+            uniprot_name TEXT,
+            ec_number TEXT,
+            PRIMARY KEY (pdb_code, prot_chain)
         )''')
 
     def add_molecules(self, mols):
@@ -192,6 +207,21 @@ class FragmentsDb(SqliteDb):
         with FastInserter(self.cursor):
             for mol in mols:
                 self.add_molecule(mol)
+
+    def add_pdbs(self, pdbs):
+        """Adds pdb meta data to to pdbs table.
+
+        Args:
+            pdbs (Iterable[Dict]): List of pdb meta data
+        """
+
+        rows = self.cursor.execute('SELECT pdb_code || prot_chain FROM fragments')
+        pdbs_in_fragments = frozenset([r[0] for r in rows])
+
+        with FastInserter(self.cursor):
+            for pdb in pdbs:
+                if pdb['structureId'].lower() + pdb['chainId'] in pdbs_in_fragments:
+                    self.add_pdb(pdb)
 
     def add_fragments_from_shelve(self, myshelve):
         """Adds fragments from shelve to fragments table.
@@ -209,7 +239,7 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
 
     def add_molecule(self, mol):
-        sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, molfile) VALUES (?, ?, ?)'''
+        sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, mol) VALUES (?, ?, ?)'''
 
         if mol is None:
             logging.warn('Empty molecule, skipping')
@@ -227,21 +257,25 @@ class FragmentsDb(SqliteDb):
         sql = '''INSERT OR REPLACE INTO fragments (
             frag_id,
             pdb_code,
+            prot_chain,
             het_code,
             frag_nr,
-            atomCodes,
-            hashcode,
-            ligID,
-            numRgroups
+            atom_codes,
+            hash_code,
+            het_chain,
+            het_seq_nr,
+            nr_r_groups
         ) VALUES (
             :frag_id,
             :pdb_code,
+            :prot_chain,
             :het_code,
             :frag_nr,
-            :atomCodes,
-            :hashcode,
-            :ligID,
-            :numRgroups
+            :atom_codes,
+            :hash_code,
+            :het_chain,
+            :het_seq_nr,
+            :nr_r_groups
         )'''
 
         splitted_frag_id = frag_id.split('-')
@@ -255,21 +289,52 @@ class FragmentsDb(SqliteDb):
             logging.warn('Weird id {}, skipping'.format(frag_id))
             return
 
+        ligIDparts = fragment['ligID'].split('-')
+
         row = {
             'frag_id': frag_id.replace('-', '_'),
             'pdb_code': splitted_frag_id[0],
+            'prot_chain': ligIDparts[1],
             'het_code': splitted_frag_id[1],
+            'het_seq_nr': ligIDparts[3],
+            'het_chain': ligIDparts[4],
             'frag_nr': frag_nr,
-            'hashcode': None,
-            'atomCodes': None,
-            'ligID': None,
-            'numRgroups': None
+            'hash_code': fragment['hashcode'],
+            'atom_codes': fragment['atomCodes'],
+            'nr_r_groups': int(fragment['numRgroups']),
         }
-        for k, v in fragment.iteritems():
-            row[k] = v
 
-        row['numRgroups'] = int(row['numRgroups'])
+        self.cursor.execute(sql, row)
 
+    def add_pdb(self, pdb):
+        sql = '''INSERT OR REPLACE INTO pdbs (
+            pdb_code,
+            prot_chain,
+            pdb_title,
+            prot_name,
+            uniprot_acc,
+            uniprot_name,
+            ec_number
+        ) VALUES (
+            :pdb_code,
+            :prot_chain,
+            :pdb_title,
+            :prot_name,
+            :uniprot_acc,
+            :uniprot_name,
+            :ec_number
+        )'''
+        pdb2col = {
+            'structureId': 'pdb_code',
+            'chainId': 'prot_chain',
+            'structureTitle': 'pdb_title',
+            'compound': 'prot_name',
+            'uniprotAcc': 'uniprot_acc',
+            'uniprotRecommendedName': 'uniprot_name',
+            'ecNo': 'ec_number',
+        }
+        row = {pdb2col[k]: v for k, v in pdb.iteritems()}
+        row['pdb_code'] = row['pdb_code'].lower()
         self.cursor.execute(sql, row)
 
     def __getitem__(self, key):
@@ -282,7 +347,7 @@ class FragmentsDb(SqliteDb):
             Fragment
 
         """
-        sql = '''SELECT f.rowid, * FROM fragments f LEFT JOIN molecules USING (frag_id) WHERE frag_id=?'''
+        sql = self.select_sql + 'WHERE frag_id=?'
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
 
@@ -308,7 +373,7 @@ class FragmentsDb(SqliteDb):
 
         """
         fragments = []
-        sql = '''SELECT f.rowid, * FROM fragments f JOIN molecules USING (frag_id) WHERE pdb_code=? ORDER BY frag_id'''
+        sql = self.select_sql + 'WHERE pdb_code=? ORDER BY frag_id'
         for row in self.cursor.execute(sql, (pdb_code,)):
             fragments.append(self._row2fragment(row))
 

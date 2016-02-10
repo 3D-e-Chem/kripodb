@@ -81,9 +81,7 @@ class TestFragmentsDBEmpty(object):
         result = self.fdb.add_fragment_from_shelve('1muu-GDX-B', {})
         eq_(result, None)
 
-    def test_add_molecule_none(self):
-        self.fdb.add_molecule(None)
-
+    def test_len(self):
         eq_(len(self.fdb), 0)
 
 
@@ -104,23 +102,49 @@ class TestFragmentsDBFilled(object):
         self.mol.SetProp('_Name', '1muu_GDX_frag7')
         self.fdb.add_molecule(self.mol)
         self.expected_fragment = {
-            'numRgroups': 1,
+            'nr_r_groups': 1,
             'smiles': '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O',
             'pdb_code': '1muu',
-            'atomCodes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+            'atom_codes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
             'het_code': 'GDX',
-            'hashcode': '0d6ced7ce686f4da',
+            'hash_code': '0d6ced7ce686f4da',
             'frag_nr': 7,
             'frag_id': '1muu_GDX_frag7',
             'rowid': 1,
-            'ligID': '1muu-A-GDX-1005-B'
+            'het_seq_nr': 1005,
+            'het_chain': 'B',
+            'prot_chain': 'A',
+            'pdb_title': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'prot_name': 'GDP-mannose 6-dehydrogenase',
+            'ec_number': '1.1.1.132',
+            'uniprot_acc': 'P11759',
+            'uniprot_name': 'GDP-mannose 6-dehydrogenase',
         }
+        self.pdbs = [{
+            'chainId': 'A',
+            'structureId': '1muu',
+            'structureTitle': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'ecNo': '1.1.1.132',
+            'uniprotAcc': 'P11759',
+            'compound': 'GDP-mannose 6-dehydrogenase',
+            'uniprotRecommendedName': 'GDP-mannose 6-dehydrogenase',
+        }, {
+            # pdbs which has no fragment should be skipped
+            'chainId': 'A',
+            'structureId': '2n2k',
+            'structureTitle': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+            'ecNo': None,
+            'uniprotAcc': 'P0CG48',
+            'compound': 'ubiquitin',
+            'uniprotRecommendedName': 'Polyubiquitin-C',
+        }]
+        self.fdb.add_pdbs(self.pdbs)
 
     def test_getitem(self):
         fragment = self.fdb['1muu_GDX_frag7']
 
-        eq_(MolToSmiles(fragment['molfile']), '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
-        del fragment['molfile']
+        eq_(MolToSmiles(fragment['mol']), '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
+        del fragment['mol']
 
         eq_(fragment, self.expected_fragment)
 
@@ -135,7 +159,7 @@ class TestFragmentsDBFilled(object):
 
         fragments = self.fdb.by_pdb_code(pdb_code)
 
-        del fragments[0]['molfile']
+        del fragments[0]['mol']
         eq_(fragments, [self.expected_fragment])
 
     def test_len(self):
