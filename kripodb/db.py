@@ -213,7 +213,9 @@ class FragmentsDb(SqliteDb):
         with FastInserter(self.cursor):
             for pdb in pdbs:
                 self.add_pdb(pdb)
-            self.cursor.execute('DELETE FROM pdbs WHERE pdb_code NOT IN (SELECT pdb_code FROM fragments)')
+            self.cursor.execute('''DELETE FROM pdbs WHERE (pdb_code || prot_chain ) NOT IN (
+                                SELECT pdb_code || prot_chain FROM fragments
+                                )''')
             self.cursor.execute('VACUUM')
 
     def add_fragments_from_shelve(self, myshelve):
