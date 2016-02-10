@@ -128,6 +128,15 @@ class TestFragmentsDBFilled(object):
             'uniprotAcc': 'P11759',
             'compound': 'GDP-mannose 6-dehydrogenase',
             'uniprotRecommendedName': 'GDP-mannose 6-dehydrogenase',
+        }, {
+            # pdbs which has no fragment should be skipped
+            'chainId': 'A',
+            'structureId': '2n2k',
+            'structureTitle': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+            'ecNo': None,
+            'uniprotAcc': 'P0CG48',
+            'compound': 'ubiquitin',
+            'uniprotRecommendedName': 'Polyubiquitin-C',
         }]
         self.fdb.add_pdbs(self.pdbs)
 

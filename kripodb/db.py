@@ -212,15 +212,16 @@ class FragmentsDb(SqliteDb):
         """Adds pdb meta data to to pdbs table.
 
         Args:
-            pdbs (Iterable[Tuple]): List of pdb meta data
+            pdbs (Iterable[Dict]): List of pdb meta data
         """
+
+        rows = self.cursor.execute('SELECT pdb_code || prot_chain FROM fragments')
+        pdbs_in_fragments = frozenset([r[0] for r in rows])
+
         with FastInserter(self.cursor):
             for pdb in pdbs:
-                self.add_pdb(pdb)
-            self.cursor.execute('''DELETE FROM pdbs WHERE (pdb_code || prot_chain ) NOT IN (
-                                SELECT pdb_code || prot_chain FROM fragments
-                                )''')
-            self.cursor.execute('VACUUM')
+                if pdb['structureId'].lower() + pdb['chainId'] in pdbs_in_fragments:
+                    self.add_pdb(pdb)
 
     def add_fragments_from_shelve(self, myshelve):
         """Adds fragments from shelve to fragments table.
