@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from StringIO import StringIO
 
 from nose.tools import eq_
 
@@ -38,3 +39,11 @@ def test_pairs_subcommand_defaults():
         'fingerprintsfn1': 'fp1'
     }
     eq_(fargs, expected)
+
+
+def test_meanbitdensity():
+    out = StringIO()
+
+    script.meanbitdensity_run('data/fingerprints.sqlite', out)
+
+    eq_(out.getvalue(), '0.01228\n')

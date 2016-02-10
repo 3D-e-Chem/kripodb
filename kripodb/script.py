@@ -234,12 +234,16 @@ def meanbitdensity_sc(subparsers):
     sc.add_argument("fingerprintsdb",
                     default='fingerprints.db',
                     help="Name of fingerprints db file")
+    sc.add_argument("--out", type=argparse.FileType('w'),
+                    default='-',
+                    help='Output file, default is stdout')
     sc.set_defaults(func=meanbitdensity_run)
 
 
-def meanbitdensity_run(fingerprintsdb):
+def meanbitdensity_run(fingerprintsdb, out):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
-    print(calc_mean_onbit_density(bitsets.itervalues(), bitsets.number_of_bits))
+    density = calc_mean_onbit_density(bitsets.values(), bitsets.number_of_bits)
+    out.write("{0:.5f}\n".format(density))
 
 
 def shelve2fragmentsdb_sc(subparsers):
