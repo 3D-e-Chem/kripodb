@@ -24,7 +24,7 @@ def test_similarities():
     result = similarities(queries, 'data/distances.h5', 0.85)
 
     expected = [
-        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.89903},
+        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
     ]
     assert_frame_equal(result, pd.DataFrame(expected))
 

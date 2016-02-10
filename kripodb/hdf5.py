@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Distance matrix using hdf5 as storage backend."""
-from math import log10, ceil
+from math import log10, ceil, floor
 
 import tables
 
@@ -178,20 +178,20 @@ class PairsTable(AbstractSimpleTable):
 
         """
         precision = float(self.score_precision)
-        ndigits = int(ceil(log10(precision)))
+        precision10 = float(10**(floor(log10(precision))))
         scutoff = int(cutoff * precision)
 
         hits = {}
         query1 = '(a == {}) & (score >= {})'.format(frag_id, scutoff)
         for row in self.table.where(query1):
             hit_id, score = row[1], row[2]
-            score = round(score / precision, ndigits)
+            score = ceil(precision10 * score / precision) / precision10
             hits[hit_id] = score
 
         query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
         for row in self.table.where(query2):
             hit_id, score = row[0], row[2]
-            score = round(row[2] / precision, ndigits)
+            score = ceil(precision10 * score / precision) / precision10
             hits[hit_id] = score
 
         return hits
