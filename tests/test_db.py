@@ -102,19 +102,20 @@ class TestFragmentsDBFilled(object):
         self.mol.SetProp('_Name', '1muu_GDX_frag7')
         self.fdb.add_molecule(self.mol)
         self.expected_fragment = {
-            'numRgroups': 1,
+            'nr_r_groups': 1,
             'smiles': '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O',
             'pdb_code': '1muu',
-            'atomCodes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+            'atom_codes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
             'het_code': 'GDX',
-            'hashcode': '0d6ced7ce686f4da',
+            'hash_code': '0d6ced7ce686f4da',
             'frag_nr': 7,
             'frag_id': '1muu_GDX_frag7',
             'rowid': 1,
-            'ligID': '1muu-A-GDX-1005-B',
-            'chain': 'A',
-            'title': '2.0 A crystal structure of GDP-mannose dehydrogenase',
-            'macromolecule_name': 'GDP-mannose 6-dehydrogenase',
+            'het_seq_nr': 1005,
+            'het_chain': 'B',
+            'prot_chain': 'A',
+            'pdb_title': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'prot_name': 'GDP-mannose 6-dehydrogenase',
             'ec_number': '1.1.1.132',
             'uniprot_acc': 'P11759',
             'uniprot_name': 'GDP-mannose 6-dehydrogenase',
@@ -133,8 +134,8 @@ class TestFragmentsDBFilled(object):
     def test_getitem(self):
         fragment = self.fdb['1muu_GDX_frag7']
 
-        eq_(MolToSmiles(fragment['molfile']), '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
-        del fragment['molfile']
+        eq_(MolToSmiles(fragment['mol']), '[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
+        del fragment['mol']
 
         eq_(fragment, self.expected_fragment)
 
@@ -149,7 +150,7 @@ class TestFragmentsDBFilled(object):
 
         fragments = self.fdb.by_pdb_code(pdb_code)
 
-        del fragments[0]['molfile']
+        del fragments[0]['mol']
         eq_(fragments, [self.expected_fragment])
 
     def test_len(self):

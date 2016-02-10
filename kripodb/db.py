@@ -164,6 +164,9 @@ class SqliteDb(object):
 
 class FragmentsDb(SqliteDb):
     """Fragments database"""
+    select_sql = '''SELECT f.rowid, * FROM fragments f
+                    JOIN pdbs USING (pdb_code, prot_chain)
+                    LEFT JOIN molecules USING (frag_id)'''
 
     def create_tables(self):
         """Create tables if they don't exist"""
@@ -174,20 +177,21 @@ class FragmentsDb(SqliteDb):
             prot_chain TEXT NOT NULL,
             het_chain TEXT NOT NULL,
             het_code TEXT NOT NULL,
-            atomCodes TEXT,
-            hashcode TEXT,
-            numRgroups INT
+            het_seq_nr INT,
+            atom_codes TEXT,
+            hash_code TEXT,
+            nr_r_groups INT
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS molecules (
             frag_id TEXT PRIMARY KEY,
             smiles TEXT,
-            molfile molblockgz
+            mol molblockgz
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS pdbs (
             pdb_code TEXT NOT NULL,
             prot_chain TEXT NOT NULL,
-            title TEXT,
-            macromolecule_name TEXT,
+            pdb_title TEXT,
+            prot_name TEXT,
             uniprot_acc TEXT,
             uniprot_name TEXT,
             ec_number TEXT,
@@ -234,7 +238,7 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
 
     def add_molecule(self, mol):
-        sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, molfile) VALUES (?, ?, ?)'''
+        sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, mol) VALUES (?, ?, ?)'''
 
         if mol is None:
             logging.warn('Empty molecule, skipping')
@@ -255,20 +259,22 @@ class FragmentsDb(SqliteDb):
             prot_chain,
             het_code,
             frag_nr,
-            atomCodes,
-            hashcode,
+            atom_codes,
+            hash_code,
             het_chain,
-            numRgroups
+            het_seq_nr,
+            nr_r_groups
         ) VALUES (
             :frag_id,
             :pdb_code,
             :prot_chain,
             :het_code,
             :frag_nr,
-            :atomCodes,
-            :hashcode,
+            :atom_codes,
+            :hash_code,
             :het_chain,
-            :numRgroups
+            :het_seq_nr,
+            :nr_r_groups
         )'''
 
         splitted_frag_id = frag_id.split('-')
@@ -289,11 +295,12 @@ class FragmentsDb(SqliteDb):
             'pdb_code': splitted_frag_id[0],
             'prot_chain': ligIDparts[1],
             'het_code': splitted_frag_id[1],
+            'het_seq_nr': ligIDparts[3],
+            'het_chain': ligIDparts[4],
             'frag_nr': frag_nr,
-            'hashcode': fragment['hashcode'],
-            'atomCodes': fragment['atomCodes'],
-            'het_chain': ligIDparts[3],
-            'numRgroups': int(fragment['numRgroups']),
+            'hash_code': fragment['hashcode'],
+            'atom_codes': fragment['atomCodes'],
+            'nr_r_groups': int(fragment['numRgroups']),
         }
 
         self.cursor.execute(sql, row)
@@ -302,16 +309,16 @@ class FragmentsDb(SqliteDb):
         sql = '''INSERT OR REPLACE INTO pdbs (
             pdb_code,
             prot_chain,
-            title,
-            macromolecule_name,
+            pdb_title,
+            prot_name,
             uniprot_acc,
             uniprot_name,
             ec_number
         ) VALUES (
             :pdb_code,
             :prot_chain,
-            :title,
-            :macromolecule_name,
+            :pdb_title,
+            :prot_name,
             :uniprot_acc,
             :uniprot_name,
             :ec_number
@@ -319,8 +326,8 @@ class FragmentsDb(SqliteDb):
         pdb2col = {
             'structureId': 'pdb_code',
             'chainId': 'prot_chain',
-            'structureTitle': 'title',
-            'compound': 'macromolecule_name',
+            'structureTitle': 'pdb_title',
+            'compound': 'prot_name',
             'uniprotAcc': 'uniprot_acc',
             'uniprotRecommendedName': 'uniprot_name',
             'ecNo': 'ec_number',
@@ -339,11 +346,7 @@ class FragmentsDb(SqliteDb):
             Fragment
 
         """
-        sql = '''SELECT f.rowid, *
-        FROM fragments f
-        JOIN pdbs USING (pdb_code, prot_chain)
-        LEFT JOIN molecules USING (frag_id)
-        WHERE frag_id=?'''
+        sql = self.select_sql + 'WHERE frag_id=?'
         self.cursor.execute(sql, (key,))
         row = self.cursor.fetchone()
 
@@ -369,11 +372,7 @@ class FragmentsDb(SqliteDb):
 
         """
         fragments = []
-        sql = '''SELECT f.rowid, *
-        FROM fragments f
-        JOIN pdbs USING (pdb_code, prot_chain)
-        LEFT JOIN molecules USING (frag_id)
-        WHERE pdb_code=? ORDER BY frag_id'''
+        sql = self.select_sql + 'WHERE pdb_code=? ORDER BY frag_id'
         for row in self.cursor.execute(sql, (pdb_code,)):
             fragments.append(self._row2fragment(row))
 
