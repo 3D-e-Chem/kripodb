@@ -13,7 +13,4 @@ after_script:
   - pip install codacy_coverage
   - coverage xml
   - python-codacy-coverage -r coverage.xml
-cache:
-  - conda
-  - Miniconda-latest-Linux-x86_64.sh
 sudo: false
