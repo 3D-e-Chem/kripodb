@@ -17,7 +17,7 @@ from nose.tools import eq_
 from kripodb.hdf5 import DistanceMatrix
 
 
-class TestPairsTable(object):
+class TestDistanceMatrix(object):
     matrix = None
 
     def setUp(self):
@@ -27,9 +27,26 @@ class TestPairsTable(object):
         self.matrix.close()
 
     def test_find_1(self):
-        frag_id = self.matrix.labels().by_label('2n6i_4FU_frag1')
+        result = self.matrix.find('2n6i_4FU_frag1', 0.98)
 
-        result = self.matrix.pairs().find(frag_id, 0.98)
+        expected = [('2n6i_4FU_frag2', 1.0), ('2n6i_4FU_frag6', 1.0)]
+        eq_(list(result), expected)
 
-        expected = {357742L: 1.0, 357686L: 1.0}
+    def test_iter_first2(self):
+        myiter = iter(self.matrix)
+
+        result = [myiter.next(), myiter.next()]
+
+        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877164873731594), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633096818493935)]
         eq_(result, expected)
+
+    def test_iter_last(self):
+        myiter = iter(self.matrix)
+
+        result = None
+        for row in myiter:
+            result = row
+
+        expected = ('3wyl_3KB_frag20', '3wyl_3KB_frag21', 0.999496452277409)
+        eq_(result, expected)
+
