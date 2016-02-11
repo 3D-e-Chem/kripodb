@@ -113,14 +113,11 @@ def dump_pairs_hdf5(distances_iter,
     :param out_file:
     :return:
     """
-    matrix = DistanceMatrix(out_file, 'w')
+    matrix = DistanceMatrix(out_file, 'w',
+                            expectedpairrows=expectedrows, precision=precision,
+                            expectedlabelrows=len(label2id))
 
-    pairs = matrix.pairs(expectedrows, precision)
-    pairs.update(distances_iter, label2id)
-    pairs.add_indexes()
-
-    labels = matrix.labels(len(label2id))
-    labels.update(label2id)
+    matrix.update(distances_iter, label2id)
 
     matrix.close()
 
@@ -173,66 +170,46 @@ def similar_run(query, pairsdbfn, cutoff, out):
 
     """
     matrix = DistanceMatrix(pairsdbfn)
-    pairs = matrix.pairs()
-    labels = matrix.labels()
-
-    hits = similar(query, pairs, labels, cutoff)
+    hits = similar(query, matrix, cutoff)
     dump_pairs_tsv(hits, out)
-
     matrix.close()
 
 
-def similar(query, pairsdb, labels, cutoff, limit=None):
+def similar(query, distance_matrix, cutoff, limit=None):
     """Find similar fragments to query based on distance matrix.
 
     Args:
         query (str): Query fragment identifier
-        pairsdb (kripodb.db.PairsTable): Pairs table
-        labels (kripodb.db.LabelsLookup): Labels lookup table
+        distance_matrix (kripodb.db.DistanceMatrix): Distance matrix
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
         limit (int): Maximum number of hits. Default is None for no limit.
 
-    Returns:
-        List[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, distance score) sorted on distance score
+    Yields:
+        Tuple[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, distance score) sorted on distance score
 
     """
-    frag_id = labels.by_label(query)
-    raw_hits = pairsdb.find(frag_id, cutoff)
-
-    # replace ids with labels + add query column
-    hits = []
-    for hit_id, score in raw_hits.iteritems():
-        hit = (query, labels.by_id(hit_id), score)
-        hits.append(hit)
-
-    # highest score/most similar first
-    sorted_hits = sorted(hits, reverse=True, key=lambda r: r[2])
-
-    if limit is not None:
-        sorted_hits = sorted_hits[:limit]
-
-    return sorted_hits
+    raw_hits = distance_matrix.find(query, cutoff, limit)
+    # add query column
+    for hit_id, score in raw_hits:
+        yield query, hit_id, score
 
 
-def total_number_of_pairs(fingerprintfilenames):
+def total_number_of_pairs(fingerprint_filenames):
+    """Count number of pairs in distance matrix files
+
+    Args:
+        fingerprint_filenames (list[str]): List of file names of distance matrices
+
+    Returns:
+        int: Total number of pairs
+    """
     sizes = []
-    for filename in fingerprintfilenames:
+    for filename in fingerprint_filenames:
         matrix = DistanceMatrix(filename)
-        pairs = matrix.pairs()
+        pairs = matrix.pairs
         sizes.append(len(pairs))
         matrix.close()
     return sum(sizes)
-
-
-def labels_consistency_check(fingerprintfilenames):
-    nr_labels = set()
-    for filename in fingerprintfilenames:
-        matrix = DistanceMatrix(filename)
-        labels = matrix.labels()
-        nr_labels.add(len(labels))
-        # TODO implement more checks
-        matrix.close()
-    assert len(nr_labels) == 1
 
 
 def merge(ins, out):
@@ -247,28 +224,14 @@ def merge(ins, out):
 
     """
     expectedrows = total_number_of_pairs(ins)
-    labels_consistency_check(ins)
-    out_matrix = DistanceMatrix(out, 'w')
-
-    # copy labels
-    first_in_matrix = DistanceMatrix(ins[0])
-    first_in_labels = first_in_matrix.labels()
-    out_labels = out_matrix.labels(len(first_in_labels))
-    out_labels.append(first_in_labels)
-
-    # copy precision
-    first_in_pairs = first_in_matrix.pairs()
-    out_pairs = out_matrix.pairs(expectedrows, first_in_pairs.score_precision)
-
-    first_in_matrix.close()
+    out_matrix = DistanceMatrix(out, 'w', expectedpairrows=expectedrows)
 
     # copy pairs
-    for filename in ins:
-        matrix = DistanceMatrix(filename)
-        pairs = matrix.pairs()
-        out_pairs.append(pairs)
-        matrix.close()
+    for in_filename in ins:
+        in_matrix = DistanceMatrix(in_filename)
+        out_matrix.append(in_matrix)
+        in_matrix.close()
 
-    out_pairs.add_indexes()
+    out_matrix.pairs.add_indexes()
 
     out_matrix.close()
