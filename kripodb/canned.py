@@ -60,7 +60,7 @@ def similarities(queries, distance_matrix_filename, cutoff, limit=1000):
     return pd.DataFrame(hits)
 
 
-def fragments_by_pdb_codes(pdb_codes, fragments_db_filename):
+def fragments_by_pdb_codes(pdb_codes, fragments_db_filename, prefix=''):
     """Retrieve fragments based on PDB codes.
 
     See http://www.rcsb.org/pdb/ for PDB structures.
@@ -68,6 +68,7 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename):
     Args:
         pdb_codes (List[str]): List of PDB codes
         fragments_db_filename (str): Filename of fragments db
+        prefix (str): Prefix for output columns
 
     Examples:
         Fetch fragments of '2n2k' PDB code
@@ -86,18 +87,22 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename):
     for pdb_code in pdb_codes:
         for fragment in fragmentsdb.by_pdb_code(pdb_code):
             fragments.append(fragment)
-    return pd.DataFrame(fragments)
+
+    df = pd.DataFrame(fragments)
+    df.rename(columns=lambda x: prefix + x, inplace=True)
+    return df
 
 
-def fragments_by_id(fragment_ids, fragments_db_filename):
+def fragments_by_id(fragment_ids, fragments_db_filename, prefix=''):
     """Retrieve fragments based on fragment identifier.
 
     Args:
         fragment_ids (List[str]): List of fragment identifiers
         fragments_db_filename (str): Filename of fragments db
+        prefix (str): Prefix for output columns
 
     Examples:
-        Fetch fragments of '2n2k' PDB code
+        Fetch fragments of '2n2k_MTN_frag1' fragment identifier
 
         >>> from kripodb.canned import fragments_by_id
         >>> fragment_ids = pd.Series(['2n2k_MTN_frag1'])
@@ -110,4 +115,6 @@ def fragments_by_id(fragment_ids, fragments_db_filename):
     """
     fragmentsdb = FragmentsDb(fragments_db_filename)
     fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
-    return pd.DataFrame(fragments)
+    df = pd.DataFrame(fragments)
+    df.rename(columns=lambda x: prefix + x, inplace=True)
+    return df

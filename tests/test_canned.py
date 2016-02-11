@@ -72,6 +72,25 @@ def test_fragments_by_pdb_codes():
     assert_frame_equal(result, pd.DataFrame(expected))
 
 
+def test_fragments_by_pdb_codes_with_prefix():
+    pdb_codes = pd.Series(['3wxj'])
+
+    result = fragments_by_pdb_codes(pdb_codes, 'data/fragments.sqlite', 'prefix_')
+
+    # ignoring molecules
+    result.drop('prefix_mol', axis=1, inplace=True, errors='ignore')
+
+    expected = [{
+        'prefix_nr_r_groups': 0, 'prefix_smiles': 'O=P([O-])([O-])OCC(O)CO', 'prefix_pdb_code': '3wxj',
+        'prefix_atom_codes': 'O1,C1,C2,O2,C3,O1P,O4P,O2P,O3P,P', 'prefix_het_code': 'G3P', 'prefix_hash_code': 'ee9013689ff298d4',
+        'prefix_frag_nr': 1, 'prefix_frag_id': '3wxj_G3P_frag1', 'prefix_rowid': 352104, 'prefix_het_chain': 'B', 'prefix_het_seq_nr': 601,
+        'prefix_prot_chain': 'B', 'prefix_uniprot_acc': 'D3KVM3', 'prefix_uniprot_name': None, 'prefix_prot_name': 'Glycerol kinase',
+        'prefix_ec_number': '2.7.1.30',
+        'prefix_pdb_title': 'Crystal structure of trypanosoma brucei gambiense glycerol kinase in complex with glycerol 3-phosphate',
+    }]
+    assert_frame_equal(result, pd.DataFrame(expected))
+
+
 def test_fragments_by_id():
     frag_ids = pd.Series(['2n2k_MTN_frag1'])
 
@@ -86,5 +105,24 @@ def test_fragments_by_id():
         'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
         'ec_number': None,
         'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }]
+    assert_frame_equal(result, pd.DataFrame(expected))
+
+
+def test_fragments_by_id_with_prefix():
+    frag_ids = pd.Series(['2n2k_MTN_frag1'])
+
+    result = fragments_by_id(frag_ids, 'data/fragments.sqlite', 'prefix_')
+
+    # ignoring molecules
+    result.drop('prefix_mol', axis=1, inplace=True)
+    expected = [{
+        'prefix_nr_r_groups': 0, 'prefix_smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'prefix_pdb_code': '2n2k',
+        'prefix_atom_codes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'prefix_het_code': 'MTN',
+        'prefix_hash_code': 'd491952cd7c9dc30', 'prefix_frag_nr': 1, 'prefix_frag_id': '2n2k_MTN_frag1',
+        'prefix_rowid': 175992, 'prefix_het_chain': 'A', 'prefix_het_seq_nr': 101, 'prefix_prot_chain': 'A',
+        'prefix_uniprot_acc': 'P0CG48', 'prefix_uniprot_name': 'Polyubiquitin-C', 'prefix_prot_name': 'ubiquitin',
+        'prefix_ec_number': None,
+        'prefix_pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
     }]
     assert_frame_equal(result, pd.DataFrame(expected))
