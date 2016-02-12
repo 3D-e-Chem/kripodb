@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.2.1 - 12 Feb 2016
+
+### Added
+
+- Added sub commands to read/write distance matrix in tab delimited format (#13)
+- Created repo for Knime example and plugin at https://github.com/3D-e-Chem/knime-kripodb (#8)
+
 ## 1.2.0 - 11 Feb 2016
 
 ### Added
