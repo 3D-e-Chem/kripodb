@@ -56,12 +56,13 @@ kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
 
 An example data set included in the [data/](data/) directory. See [data/README.md](data/README.md) for more information.
 
-# Knime workflow
+# Knime
 
-The [Knime-KripoDB-example.zip](Knime-KripoDB-example.zip) file is an Knime workflow (http://www.knime.org).
-
-It can be run by importing it into Knime. 
+The [Knime-KripoDB-example.zip](https://github.com/3D-e-Chem/knime-kripodb/blob/master/examples/Knime-KripoDB-example.zip) file is an example workflow showing how to use KripoDB python package inside Knime (http://www.knime.org).
+It can be run by importing it into Knime.
 Make sure the Python used by Knime is the same the Python with kripodb package installed.
+
+The https://github.com/3D-e-Chem/knime-kripodb repo adds KripoDB code templates to Knime.
 
 # Docker
 
