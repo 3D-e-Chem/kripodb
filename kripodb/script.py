@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
+import csv
 import gzip
 import logging
 import shelve
@@ -20,10 +21,11 @@ import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
 
-from kripodb.pdb import PdbReport
-from .db import FragmentsDb, FingerprintsDb
 from . import makebits
 from . import pairs
+from .db import FragmentsDb, FingerprintsDb
+from .hdf5 import DistanceMatrix
+from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
 from .version import __version__
 
@@ -52,6 +54,10 @@ def make_parser():
     pdb2fragmentsdb_sc(subparsers)
 
     merge_pairs_sc(subparsers)
+
+    distmatrix_export_sc(subparsers)
+
+    distmatrix_import_sc(subparsers)
 
     return parser
 
@@ -137,8 +143,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
                      cutoff,
                      label2id,
                      precision,
-                     nomemory
-                     )
+                     nomemory)
 
 
 def makebits2fingerprintsdb_sc(subparsers):
@@ -300,6 +305,73 @@ def merge_pairs_sc(subparsers):
     sc.add_argument('ins', help='Input pair file in hdf5_compact format', nargs='+')
     sc.add_argument('out', help='Output pair file in hdf5_compact format')
     sc.set_defaults(func=pairs.merge)
+
+
+def distmatrix_export_sc(subparsers):
+    sc = subparsers.add_parser('distmatrix_export', help='Export distance matrix to tab delimited file')
+    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix filename')
+    sc.add_argument("outputfile", type=argparse.FileType('w'),
+                    help='Tab delimited output file, use - for stdout')
+    sc.set_defaults(func=distmatrix_export_run)
+
+
+def distmatrix_export_run(distmatrixfn, outputfile):
+    """Export distance matrix to tab delimited file
+
+    Args:
+        distmatrixfn (str): Compact hdf5 distance matrix filename
+        outputfile (file): Tab delimited output file
+
+    """
+    distmatrix = DistanceMatrix(distmatrixfn)
+    writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
+    writer.writerow(['frag_id1', 'frag_id2', 'score'])
+    writer.writerows(distmatrix)
+    distmatrix.close()
+
+
+def distmatrix_import_sc(subparsers):
+    sc = subparsers.add_parser('distmatrix_import', help='Import distance matrix from tab delimited file')
+    sc.add_argument("inputfile", type=argparse.FileType('r'),
+                    help='Input file, use - for stdin')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    ph = '''Distance precision for compact formats,
+    distance range from 0..<precision>'''
+    sc.add_argument("--precision",
+                    type=int,
+                    default=65535,
+                    help=ph)
+    # Have to ask, because inputfile can be stdin so can't do 2 passes through file
+    sc.add_argument("--nrrows",
+                    type=int,
+                    default=2**16,
+                    help='Number of rows in inputfile')
+    sc.set_defaults(func=distmatrix_import_run)
+
+
+def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
+    frags = FragmentsDb(fragmentsdb)
+    label2id = frags.label2id()
+    distmatrix = DistanceMatrix(distmatrixfn, 'w',
+                                precision=precision,
+                                expectedlabelrows=len(label2id),
+                                expectedpairrows=nrrows)
+
+    reader = csv.reader(inputfile, delimiter="\t")
+    # ignore header
+    reader.next()
+
+    # distmatrix wants score as float instead of str
+    def csv_iter(rows):
+        for row in rows:
+            row[2] = float(row[2])
+            yield row
+
+    distmatrix.update(csv_iter(reader), label2id)
+    distmatrix.close()
 
 
 def main(argv=sys.argv[1:]):
