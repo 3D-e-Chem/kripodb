@@ -55,11 +55,11 @@ def test_meanbitdensity():
 def test_distmatrix_import_run():
     output_fn = tmpname()
 
-    input = '''frag_id1	frag_id2	score
+    tsv = '''frag_id1	frag_id2	score
 2mlm_2W7_frag1	2mlm_2W7_frag2	0.5877164873731594
 2mlm_2W7_frag2	3wvm_STE_frag1	0.4633096818493935
 '''
-    inputfile = StringIO(input)
+    inputfile = StringIO(tsv)
 
     try:
         script.distmatrix_import_run(inputfile=inputfile,
