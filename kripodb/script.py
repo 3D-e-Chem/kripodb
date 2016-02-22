@@ -59,6 +59,8 @@ def make_parser():
 
     distmatrix_import_sc(subparsers)
 
+    distmatrix_importfpneigh_sc(subparsers)
+
     return parser
 
 
@@ -372,6 +374,60 @@ def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrow
 
     distmatrix.update(csv_iter(reader), label2id)
     distmatrix.close()
+
+
+def distmatrix_importfpneigh_sc(subparsers):
+    sc = subparsers.add_parser('distmatrix_fpneighimport', help='Import distance matrix from fpneigh formatted file')
+    sc.add_argument("inputfile", type=argparse.FileType('r'),
+                    help='Input file, use - for stdin')
+    sc.add_argument("fragmentsdb",
+                    default='fragments.db',
+                    help="Name of fragments db file")
+    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    ph = '''Distance precision for compact formats,
+    distance range from 0..<precision>'''
+    sc.add_argument("--precision",
+                    type=int,
+                    default=65535,
+                    help=ph)
+    # Have to ask, because inputfile can be stdin so can't do 2 passes through file
+    sc.add_argument("--nrrows",
+                    type=int,
+                    default=2**16,
+                    help='Number of rows in inputfile')
+    sc.set_defaults(func=distmatrix_importfpneigh_run)
+
+
+def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
+    frags = FragmentsDb(fragmentsdb)
+    label2id = frags.label2id()
+    distmatrix = DistanceMatrix(distmatrixfn, 'w',
+                                precision=precision,
+                                expectedlabelrows=len(label2id),
+                                expectedpairrows=nrrows)
+
+    distmatrix.update(read_fpneighpairs_file(inputfile), label2id)
+    distmatrix.close()
+
+
+def read_fpneighpairs_file(inputfile):
+    """Read fpneigh formatted distance matrix file.
+
+    Args:
+        inputfile (file): File object to read
+
+    Yields:
+        Tuple((Str,Str,Float)): List of (query fragment identifier, hit fragment identifier, distance score)
+
+    """
+    current_query = None
+    reader = csv.reader(inputfile, delimiter=' ', skipinitialspace=True)
+
+    for row in reader:
+        if len(row) == 2 and current_query != row[0]:
+            yield (current_query, row[0], float(row[1]))
+        elif len(row) == 4:
+            current_query = row[3][:-1]
 
 
 def main(argv=sys.argv[1:]):

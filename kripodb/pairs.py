@@ -235,3 +235,7 @@ def merge(ins, out):
     out_matrix.pairs.add_indexes()
 
     out_matrix.close()
+
+
+def read_fpneighpairs_file(text):
+    return None

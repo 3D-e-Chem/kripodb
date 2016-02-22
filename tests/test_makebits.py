@@ -86,3 +86,4 @@ def test_write_file():
 3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9
 '''
     eq_(result, expected)
+

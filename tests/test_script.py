@@ -88,3 +88,46 @@ def test_distmatrix_export_run():
                '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5877164873731594\n' \
                '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4633096818493935\n'
     assert output.startswith(expected)
+
+
+def test_read_fpneighpairs_file():
+    text = StringIO('''Compounds similar to 2xry_FAD_frag4:
+2xry_FAD_frag4   1.0000
+3cvv_FAD_frag3   0.5600
+Compounds similar to 1wnt_NAP_frag1:
+1wnt_NAP_frag1   1.0000
+1wnt_NAP_frag3   0.8730
+''')
+
+    result = list(script.read_fpneighpairs_file(text))
+
+    expected = [('2xry_FAD_frag4', '3cvv_FAD_frag3', 0.56), ('1wnt_NAP_frag1', '1wnt_NAP_frag3', 0.873)]
+    eq_(result, expected)
+
+
+def test_distmatrix_importfpneigh_run():
+    output_fn = tmpname()
+
+    tsv = '''Compounds similar to 2mlm_2W7_frag1:
+2mlm_2W7_frag1   1.0000
+2mlm_2W7_frag2   0.5877
+Compounds similar to 2mlm_2W7_frag2:
+2mlm_2W7_frag2   1.0000
+3wvm_STE_frag1   0.4633
+'''
+    inputfile = StringIO(tsv)
+
+    try:
+        script.distmatrix_importfpneigh_run(inputfile=inputfile,
+                                            distmatrixfn=output_fn,
+                                            fragmentsdb='data/fragments.sqlite',
+                                            precision=65535,
+                                            nrrows=3)
+
+        distmatrix = DistanceMatrix(output_fn)
+        rows = [r for r in distmatrix]
+        distmatrix.close()
+        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.587685969329366), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4632944228274968)]
+        eq_(rows, expected)
+    finally:
+        os.remove(output_fn)
