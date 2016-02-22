@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.2 - 22 Feb 2016
+
 ### Added
 
 - Added sub command to read fpneigh formatted distance matrix file (#14)
