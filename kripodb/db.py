@@ -487,7 +487,7 @@ class SqliteDict(MutableMapping):
         self.connection.commit()
 
     def __setitem__(self, key, value):
-        sql = '''INSERT OR REPLACE INTO bitsets (frag_id, bitset) VALUES (?, ?)'''
+        sql = self.sqls['setitem']
         self.cursor.execute(sql, (key, value))
         self.connection.commit()
 
