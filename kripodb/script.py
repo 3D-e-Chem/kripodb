@@ -356,7 +356,7 @@ def distmatrix_import_sc(subparsers):
 
 def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
     frags = FragmentsDb(fragmentsdb)
-    label2id = frags.label2id()
+    label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
                                 precision=precision,
                                 expectedlabelrows=len(label2id),
@@ -400,7 +400,7 @@ def distmatrix_importfpneigh_sc(subparsers):
 
 def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
     frags = FragmentsDb(fragmentsdb)
-    label2id = frags.label2id()
+    label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
                                 precision=precision,
                                 expectedlabelrows=len(label2id),

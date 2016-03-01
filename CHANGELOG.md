@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.2 - 1 Mar 2016
+
+### Changed
+
+* Converting distances matrix will load id2label lookup into memory to speed up conversion
+
 ## 1.2.2 - 22 Feb 2016
 
 ### Added
