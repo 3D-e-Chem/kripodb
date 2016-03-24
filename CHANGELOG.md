@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-## 1.2.2 - 1 Mar 2016
+## 1.2.4 - 24 Mar 2016
+
+### Added
+
+* Sub command to convert fpneight distance file to tsv.
+
+## 1.2.3 - 1 Mar 2016
 
 ### Changed
 

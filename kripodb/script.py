@@ -430,6 +430,22 @@ def read_fpneighpairs_file(inputfile):
             current_query = row[3][:-1]
 
 
+def fpneigh2tsv_sc(subparsers):
+    sc = subparsers.add_parser('fpneigh2tsv', help='Convert fpneigh formatted file to csv')
+    sc.add_argument("inputfile", type=argparse.FileType('r'),
+                    help='Input file, use - for stdin')
+    sc.add_argument("outputfile", type=argparse.FileType('w'),
+                    help='Tab delimited output file, use - for stdout')
+    sc.set_defaults(func=fpneigh2tsv_run)
+
+
+def fpneigh2tsv_run(inputfile, outputfile):
+    reader = read_fpneighpairs_file(inputfile)
+    writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
+    writer.writerow(['frag_id1', 'frag_id2', 'score'])
+    writer.writerows(reader)
+
+
 def main(argv=sys.argv[1:]):
     """Main script function.
 

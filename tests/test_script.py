@@ -131,3 +131,24 @@ Compounds similar to 2mlm_2W7_frag2:
         eq_(rows, expected)
     finally:
         os.remove(output_fn)
+
+
+def test_fpneigh2tsv_run():
+    fpneigh_in = '''Compounds similar to 2mlm_2W7_frag1:
+2mlm_2W7_frag1   1.0000
+2mlm_2W7_frag2   0.5877
+Compounds similar to 2mlm_2W7_frag2:
+2mlm_2W7_frag2   1.0000
+3wvm_STE_frag1   0.4633
+'''
+    inputfile = StringIO(fpneigh_in)
+
+    outputfile = StringIO()
+
+    script.fpneigh2tsv_run(inputfile, outputfile)
+
+    expected = '''frag_id1\tfrag_id2\tscore
+2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5877
+2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4633
+'''
+    eq_(outputfile.getvalue(), expected)
