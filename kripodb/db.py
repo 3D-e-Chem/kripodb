@@ -162,6 +162,13 @@ class SqliteDb(object):
         self.connection.close()
 
 
+def _row2fragment(row):
+    fragment = {}
+    for idx, v in enumerate(row.keys()):
+        fragment[v] = row[idx]
+    return fragment
+
+
 class FragmentsDb(SqliteDb):
     """Fragments database"""
     select_sql = '''SELECT f.rowid, * FROM fragments f
@@ -354,13 +361,7 @@ class FragmentsDb(SqliteDb):
         if row is None:
             raise KeyError("'{}' not found".format(key))
 
-        return self._row2fragment(row)
-
-    def _row2fragment(self, row):
-        fragment = {}
-        for idx, v in enumerate(row.keys()):
-            fragment[v] = row[idx]
-        return fragment
+        return _row2fragment(row)
 
     def by_pdb_code(self, pdb_code):
         """Retrieve fragments which are part of a PDB structure.
@@ -375,7 +376,7 @@ class FragmentsDb(SqliteDb):
         fragments = []
         sql = self.select_sql + 'WHERE pdb_code=? ORDER BY frag_id'
         for row in self.cursor.execute(sql, (pdb_code,)):
-            fragments.append(self._row2fragment(row))
+            fragments.append(_row2fragment(row))
 
         return fragments
 
