@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.5 - 24 Mar 2016
+
+### Fixed
+
+* fpneigh2tsv not availble as sub command
+
 ## 1.2.4 - 24 Mar 2016
 
 ### Added
