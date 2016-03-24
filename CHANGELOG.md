@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.6 - 24 Mar 2016
+
+### Changed
+
+* Fixed several Codacy warnings.
+
 ## 1.2.5 - 24 Mar 2016
 
 ### Fixed
