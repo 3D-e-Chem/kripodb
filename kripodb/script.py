@@ -61,6 +61,8 @@ def make_parser():
 
     distmatrix_importfpneigh_sc(subparsers)
 
+    fpneigh2tsv_sc(subparsers)
+
     return parser
 
 
