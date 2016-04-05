@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-execfile('kripodb/version.py')
+exec(open('kripodb/version.py').read())
 
 setup(
     name='kripo',
