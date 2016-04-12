@@ -1,12 +1,12 @@
 language: python
 before_install:
-  - ls -l conda
-  - ls -l conda/bin
-  - if [ ! -e conda/bin/activate ]; then
+  - ls -l $HOME/conda
+  - ls -l $HOME/conda/bin
+  - if [ ! -e $HOME/conda/bin/activate ]; then
     wget -nc https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh;
-    bash Miniconda-latest-Linux-x86_64.sh -f -b -p conda;
+    bash Miniconda-latest-Linux-x86_64.sh -f -b -p $HOME/conda;
     fi
-  - source conda/bin/activate root
+  - source $HOME/conda/bin/activate root
   - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb pandas coverage sphinx
 install:
   - pip install -r requirements.txt
@@ -21,6 +21,6 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-    - conda
+    - $HOME/conda
 before_cache:
-  - rm $HOME/.cache/pip/log/debug.log conda/bin/kripodb conda/lib/*/*/kripo.egg-link
+  - rm $HOME/.cache/pip/log/debug.log $HOME/conda/bin/kripodb $HOME/conda/lib/*/*/kripo.egg-link
