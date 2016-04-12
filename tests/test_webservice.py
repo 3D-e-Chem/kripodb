@@ -22,36 +22,27 @@ from kripodb.version import __version__
 class TestWebservice(object):
     def setUp(self):
         self.matrix = DistanceMatrix('data/distances.h5')
-        self.request = testing.DummyRequest()
-        self.request.registry.settings = {'matrix': self.matrix}
+        self.app = webservice.wsgi_app(self.matrix)
 
     def tearDown(self):
         self.matrix.close()
 
-    def test_similar(self):
-        self.request.swagger_data = {
-            'fragment_id': '3j7u_NDP_frag24',
-            'cutoff': 0.85,
-        }
+    def test_get_similar_fragments(self):
+        fragment_id = '3j7u_NDP_frag24'
+        cutoff = 0.85
 
-        result = webservice.similar(self.request)
+        with self.app.app.test_request_context():
+            result = webservice.get_similar_fragments(fragment_id, cutoff, 1000)
+            expected = [
+                {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
+            ]
+            eq_(result, expected)
 
-        expected = [
-            {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
-        ]
-        eq_(result, expected)
-
-    def test_version(self):
-        result = webservice.version(self.request)
+    def test_get_version(self):
+        result = webservice.get_version()
 
         expected = {'version': __version__}
         eq_(result, expected)
 
     def test_wsgi_app(self):
-        app = webservice.wsgi_app(self.request.registry.settings)
-        testapp = TestApp(app)
-
-        result = testapp.get('/kripo/version')
-
-        expected = {'version': __version__}
-        eq_(result.json_body, expected)
+        eq_(self.app.app.config['matrix'], self.matrix)

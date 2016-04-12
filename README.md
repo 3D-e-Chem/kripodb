@@ -86,6 +86,20 @@ To calculate the mean bit density of the fingerprints in the `fingerprints.sqlit
 docker run --rm -u $UID -v $PWD:/data nlesc/kripodb kripodb meanbitdensity /data/fingerprints.sqlite
 ```
 
+# Web service
+
+The Kripo data files can be queried using a web service.
+
+Start webservice with:
+```
+kripodb serve --port 8084 data/distances.h5
+```
+
+* Swagger spec at http://localhost:8084/kripo/swagger.json
+* Swagger UI at http://localhost:8084/kripo/ui/
+
+Note! The webservice returns a limited amount of results. To get all results use local files.
+
 # Reference
 
 KRIPO – a structure-based pharmacophores approach explains polypharmacological effects;

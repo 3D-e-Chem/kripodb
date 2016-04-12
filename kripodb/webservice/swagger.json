@@ -18,24 +18,36 @@
       "get": {
         "summary": "Similar fragments",
         "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by distance score.\n",
+        "operationId": "kripodb.webservice.get_similar_fragments",
         "parameters": [
           {
             "name": "fragment_id",
             "in": "path",
-            "description": "Query fragment identifier.",
+            "description": "Query fragment identifier. e.g. 3j7u_NDP_frag24",
             "required": true,
             "type": "string"
           },
           {
             "name": "cutoff",
             "in": "query",
-            "description": "Distance score cutoff. Default 0.55",
+            "description": "Distance score cutoff.",
             "required": false,
             "default": 0.55,
             "type": "number",
             "format": "double",
             "minimum": 0.55,
             "maximum": 1.00
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of hits.",
+            "required": false,
+            "default": 1000,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "maximum": 1000
           }
         ],
         "tags": [
@@ -63,6 +75,7 @@
     "/version": {
       "get": {
         "summary": "Version of webservice",
+        "operationId": "kripodb.webservice.get_version",
         "tags": ["Version"],
         "responses": {
           "200": {
