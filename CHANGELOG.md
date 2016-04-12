@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+* het_seq_nr contains non-numbers (#15)
+
 ## 1.2.5 - 24 Mar 2016
 
 ### Fixed

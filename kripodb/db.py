@@ -20,6 +20,9 @@ from collections import MutableMapping
 import sqlite3
 import logging
 import zlib
+
+import re
+
 from intbitset import intbitset
 from rdkit.Chem import MolToMolBlock, MolFromMolBlock, Mol, MolToSmiles
 
@@ -297,13 +300,14 @@ class FragmentsDb(SqliteDb):
             return
 
         ligIDparts = fragment['ligID'].split('-')
+        het_seq_nr = int(re.sub('[A-Z]$', '', ligIDparts[3]))
 
         row = {
             'frag_id': frag_id.replace('-', '_'),
             'pdb_code': splitted_frag_id[0],
             'prot_chain': ligIDparts[1],
             'het_code': splitted_frag_id[1],
-            'het_seq_nr': ligIDparts[3],
+            'het_seq_nr': het_seq_nr,
             'het_chain': ligIDparts[4],
             'frag_nr': frag_nr,
             'hash_code': fragment['hashcode'],

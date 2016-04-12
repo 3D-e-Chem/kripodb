@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from intbitset import intbitset
+
+import logging
 from nose.tools import eq_, raises, assert_raises
 from mock import call, Mock
 from rdkit.Chem import MolFromSmiles, MolToSmiles
@@ -164,6 +166,58 @@ class TestFragmentsDBFilled(object):
 
     def test_len(self):
         eq_(len(self.fdb), 1)
+
+
+class TestHetSeqNr(object):
+    def test_isnumber(self):
+        fdb = db.FragmentsDb(':memory:')
+        myshelve = {
+            '1muu-GDX-frag7': {
+                'atomCodes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+                'hashcode': '0d6ced7ce686f4da',
+                'ligID': '1muu-A-GDX-1005-B',
+                'numRgroups': '1'
+            }
+        }
+        fdb.add_fragments_from_shelve(myshelve)
+        fdb.add_pdbs([{
+            'structureTitle': '2.0 A crystal structure of GDP-mannose dehydrogenase',
+            'ecNo': '1.1.1.132',
+            'uniprotAcc': 'P11759',
+            'compound': 'GDP-mannose 6-dehydrogenase',
+            'uniprotRecommendedName': 'GDP-mannose 6-dehydrogenase',
+            'chainId': 'A',
+            'structureId': '1muu'
+        }])
+
+        fragment = fdb['1muu_GDX_frag7']
+
+        eq_(fragment['het_seq_nr'], 1005)
+
+    def test_nan(self):
+        fdb = db.FragmentsDb(':memory:')
+        myshelve = {
+            '1hoo-GNP-frag1': {
+                'atomCodes': 'PG,O1G,O2G,O3G,N3B,PB,O1B,O2B,O3A,PA,O1A,O2A,O5*,C5*,C4*,O4*,C3*,O3*,C2*,O2*,C1*,N9,C8,N7,C5,C6,O6,N1,C2,N2,N3,C4',
+                'hashcode': 'be4ce041f2a35721',
+                'ligID': '1hoo-A-GNP-432B-A',
+                'numRgroups': '0'
+            }
+        }
+        fdb.add_fragments_from_shelve(myshelve)
+        fdb.add_pdbs([{
+            'chainId': 'A',
+            'structureId': '1hoo',
+            'structureTitle': 'STRUCTURE OF GUANINE NUCLEOTIDE (GPPCP) COMPLEX OF ADENYLOSUCCINATE SYNTHETASE FROM E. COLI AT PH 6.5 AND 25 DEGREES CELSIUS',
+            'ecNo': '6.3.4.4',
+            'uniprotAcc': 'P0A7D4',
+            'uniprotRecommendedName': 'Adenylosuccinate synthetase',
+            'compound': 'ADENYLOSUCCINATE SYNTHETAS',
+        }])
+
+        fragment = fdb['1hoo_GNP_frag1']
+
+        eq_(fragment['het_seq_nr'], 432)
 
 
 class TestIntbitsetDictEmpty(object):
