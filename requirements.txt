@@ -1,6 +1,4 @@
-# requirements are installed within setup.py
-
--e .
+# requirements for development of kripodb
 nose
 coverage
 setuptools>=18.8.1

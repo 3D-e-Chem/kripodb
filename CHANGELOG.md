@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+* webservice server/client for distance matrix
+
 ### Fixed
 
 * het_seq_nr contains non-numbers (#15)

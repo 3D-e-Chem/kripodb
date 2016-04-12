@@ -21,6 +21,7 @@ import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
 
+from kripodb.webservice import serve_app
 from . import makebits
 from . import pairs
 from .db import FragmentsDb, FingerprintsDb
@@ -62,6 +63,8 @@ def make_parser():
     distmatrix_importfpneigh_sc(subparsers)
 
     fpneigh2tsv_sc(subparsers)
+
+    serve_sc(subparsers)
 
     return parser
 
@@ -446,6 +449,15 @@ def fpneigh2tsv_run(inputfile, outputfile):
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     writer.writerow(['frag_id1', 'frag_id2', 'score'])
     writer.writerows(reader)
+
+
+def serve_sc(subparsers):
+    sc = subparsers.add_parser('serve', help='Serve distance matrix as webservice')
+    sc.add_argument('matrix', type=str, help='Filename of distance matrix hdf5 file')
+    sc.add_argument('--port', type=int, default=8084, help='TCP port on which to listen (default: %(default)s)')
+    sc.add_argument('--host', type=str, default='0.0.0.0', help='Hostname or IP address on which to listen (default: %(default)s)')
+    sc.add_argument('--prefix', type=str, default='/kripo', help='Url prefix (default: %(default)s)')
+    sc.set_defaults(func=serve_app)
 
 
 def main(argv=sys.argv[1:]):
