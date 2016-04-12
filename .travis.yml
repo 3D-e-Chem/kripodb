@@ -1,7 +1,5 @@
 language: python
 before_install:
-  - ls -l $HOME/conda
-  - ls -l $HOME/conda/bin
   - if [ ! -e $HOME/conda/bin/activate ]; then
     wget -nc https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh;
     bash Miniconda-latest-Linux-x86_64.sh -f -b -p $HOME/conda;
