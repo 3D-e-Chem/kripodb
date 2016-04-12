@@ -230,7 +230,7 @@ def distance2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, m
 def similar_sc(subparsers):
     sc_help = 'Find the fragments closets to query based on distance matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
-    sc.add_argument("pairsdbfn", type=str, help='Compact hdf5 distance matrix file')
+    sc.add_argument("pairsdbfn", type=str, help='hdf5 distance matrix file or base url of kripodb webservice')
     sc.add_argument("query", type=str, help='Query fragment identifier')
     sc.add_argument("--out", type=argparse.FileType('w'), default='-',
                     help='Output file tab delimited (query, hit, distance score)')
@@ -455,7 +455,6 @@ def serve_sc(subparsers):
     sc = subparsers.add_parser('serve', help='Serve distance matrix as webservice')
     sc.add_argument('matrix', type=str, help='Filename of distance matrix hdf5 file')
     sc.add_argument('--port', type=int, default=8084, help='TCP port on which to listen (default: %(default)s)')
-    sc.add_argument('--host', type=str, default='localhost', help='Hostname or IP address on which to listen (default: %(default)s)')
     sc.set_defaults(func=serve_app)
 
 

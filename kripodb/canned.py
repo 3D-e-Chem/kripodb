@@ -17,18 +17,19 @@ For using Kripo data files inside Knime (http://www.knime.org)
 """
 
 import pandas as pd
+from kripodb.webservice.client import WebserviceClient
 
 from .hdf5 import DistanceMatrix
 from .pairs import similar
 from .db import FragmentsDb
 
 
-def similarities(queries, distance_matrix_filename, cutoff, limit=1000):
+def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):
     """Find similar fragments to queries based on distance matrix.
 
     Args:
         queries (List[str]): Query fragment identifiers
-        distance_matrix_filename (str): Filename of distance matrix file
+        distance_matrix_filename_or_url (str): Filename of distance matrix file or base url of kripodb webservice
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
         limit (int): Maximum number of hits for each query.
             Default is 1000. Use is None for no limit.
@@ -36,26 +37,40 @@ def similarities(queries, distance_matrix_filename, cutoff, limit=1000):
     Examples:
         Fragments similar to '3j7u_NDP_frag24' fragment.
 
+        >>> import pandas as pd
         >>> from kripodb.canned import similarities
         >>> queries = pd.Series(['3j7u_NDP_frag24'])
         >>> hits = similarities(queries, 'data/distances.h5', 0.55)
         >>> len(hits)
-        5
+        11
+
+        Retrieved from web service instead of local distance matrix file.
+        Make sure the web service is running, for example by `kripodb serve data/distances.h5`.
+
+        >>> hits = similarities(queries, 'http://localhost:8084/kripo', 0.55)
+        >>> len(hits)
+        11
 
     Returns:
         pandas.DataFrame: Data frame with query_fragment_id, hit_frag_id and score columns
     """
-    distance_matrix = DistanceMatrix(distance_matrix_filename)
     hits = []
-    for query in queries:
-        for query_id, hit_id, score in similar(query, distance_matrix, cutoff, limit):
-            hit = {'query_frag_id': query_id,
-                   'hit_frag_id': hit_id,
-                   'score': score,
-                   }
-            hits.append(hit)
+    if distance_matrix_filename_or_url.startswith('http'):
+        client = WebserviceClient(distance_matrix_filename_or_url)
+        for query in queries:
+            qhits = client.similar_fragments(query, cutoff, limit)
+            hits.extend(qhits)
+    else:
+        distance_matrix = DistanceMatrix(distance_matrix_filename_or_url)
+        for query in queries:
+            for query_id, hit_id, score in similar(query, distance_matrix, cutoff, limit):
+                hit = {'query_frag_id': query_id,
+                       'hit_frag_id': hit_id,
+                       'score': score,
+                       }
+                hits.append(hit)
 
-    distance_matrix.close()
+        distance_matrix.close()
 
     return pd.DataFrame(hits)
 

@@ -18,9 +18,9 @@ class WebserviceClient(object):
     def __init__(self, base_url):
         self.base_url = base_url
 
-    def similar_fragments(self, fragment_id, cutoff):
+    def similar_fragments(self, fragment_id, cutoff, limit=1000):
         url = self.base_url + '/fragments/{fragment_id}/similar'.format(fragment_id=fragment_id)
-        params = {'cutoff': cutoff}
+        params = {'cutoff': cutoff, 'limit': limit}
         response = requests.get(url, params)
         response.raise_for_status()
         return response.json()

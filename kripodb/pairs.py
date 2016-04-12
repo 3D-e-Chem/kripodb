@@ -14,6 +14,7 @@
 """Module handling generation and retrieval of distance matrix"""
 
 import logging
+from kripodb.webservice.client import WebserviceClient
 
 from .hdf5 import DistanceMatrix
 from .modifiedtanimoto import distances, corrections
@@ -164,15 +165,21 @@ def similar_run(query, pairsdbfn, cutoff, out):
 
     Args:
         query (str): Query fragment identifier
-        pairsdbfn (str): Filename of distance matrix file
+        pairsdbfn (str): Filename of distance matrix file or url of kripodb webservice
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
         out (File): File object to write output to
 
     """
-    matrix = DistanceMatrix(pairsdbfn)
-    hits = similar(query, matrix, cutoff)
-    dump_pairs_tsv(hits, out)
-    matrix.close()
+    if pairsdbfn.startswith('http'):
+        client = WebserviceClient(pairsdbfn)
+        hits = client.similar_fragments(query, cutoff)
+        hits = [(h['query_frag_id'], h['hit_frag_id'], h['score']) for h in hits]
+        dump_pairs_tsv(hits, out)
+    else:
+        matrix = DistanceMatrix(pairsdbfn)
+        hits = similar(query, matrix, cutoff)
+        dump_pairs_tsv(hits, out)
+        matrix.close()
 
 
 def similar(query, distance_matrix, cutoff, limit=None):
