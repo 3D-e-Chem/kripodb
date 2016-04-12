@@ -1,3 +1,5 @@
+# install Kripodb itself
+-e .
 # requirements for development of kripodb
 nose
 coverage

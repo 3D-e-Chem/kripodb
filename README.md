@@ -19,7 +19,7 @@ Requirements:
 ```
 pip install -U setuptools
 pip install numpy
-python setup.py develop
+python setup.py install
 ```
 
 # Usage
@@ -63,6 +63,13 @@ It can be run by importing it into Knime.
 Make sure the Python used by Knime is the same the Python with kripodb package installed.
 
 The https://github.com/3D-e-Chem/knime-kripodb repo adds KripoDB code templates to Knime.
+
+# Development of KripoDB
+
+Install the development deps with:
+```
+pip install -r requirements.txt
+```
 
 # Docker
 
