@@ -1,97 +1,120 @@
 {
-    "swagger": "2.0",
-    "info": {
-        "title": "Kripo API",
-        "description": "API to interact with Kripo fragment, fingerprint and similarity data files.",
-        "version": "1.0.0"
-    },
-    "host": "kripodb.localhost",
-    "schemes": [
-        "http"
-    ],
-    "basePath": "/kripo",
-    "produces": [
-        "application/json"
-    ],
-    "paths": {
-        "/fragments/{fragment_id}/similar": {
-            "get": {
-                "summary": "Similar fragments",
-                "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by distance score.\n",
-                "parameters": [
-                    {
-                        "name": "fragment_id",
-                        "in": "path",
-                        "description": "Query fragment identifier.",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "name": "cutoff",
-                        "in": "query",
-                        "description": "Distance score cutoff. Default 0.55",
-                        "required": false,
-                        "default": 0.55,
-                        "type": "number",
-                        "format": "double"
-                    }
-                ],
-                "tags": [
-                    "Hits"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An array of products",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Hit"
-                            }
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
+  "swagger": "2.0",
+  "info": {
+    "title": "Kripo API",
+    "description": "API to interact with Kripo fragment, fingerprint and similarity data files.",
+    "version": "1.0.0"
+  },
+  "host": "kripodb.localhost",
+  "schemes": [
+    "http"
+  ],
+  "basePath": "/kripo",
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/fragments/{fragment_id}/similar": {
+      "get": {
+        "summary": "Similar fragments",
+        "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by distance score.\n",
+        "parameters": [
+          {
+            "name": "fragment_id",
+            "in": "path",
+            "description": "Query fragment identifier.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cutoff",
+            "in": "query",
+            "description": "Distance score cutoff. Default 0.55",
+            "required": false,
+            "default": 0.55,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "tags": [
+          "Hits"
+        ],
+        "responses": {
+          "200": {
+            "description": "An array of products",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Hit"
+              }
             }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
         }
+      }
     },
-    "definitions": {
-        "Hit": {
-            "type": "object",
-            "properties": {
-                "query_id": {
-                    "type": "string",
-                    "description": "Query fragment identifier"
-                },
-                "hit_id": {
-                    "type": "string",
-                    "description": "Hit fragment identifier"
-                },
-                "score": {
-                    "type": "number",
-                    "format": "double",
-                    "description": "Distance score"
-                }
+    "/version": {
+      "get": {
+        "summary": "Version of webservice",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/Version"
             }
-        },
-        "Error": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "format": "int32"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "fields": {
-                    "type": "string"
-                }
-            }
+          }
         }
+      }
     }
+  },
+  "definitions": {
+    "Hit": {
+      "type": "object",
+      "properties": {
+        "query_frag_id": {
+          "type": "string",
+          "description": "Query fragment identifier"
+        },
+        "hit_frag_id": {
+          "type": "string",
+          "description": "Hit fragment identifier"
+        },
+        "score": {
+          "type": "number",
+          "format": "double",
+          "description": "Distance score"
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "string"
+        }
+      }
+    },
+    "Version": {
+      "type": "object",
+      "description": "Version response",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "The version is semver format"
+        }
+      }
+    }
+  }
 }
