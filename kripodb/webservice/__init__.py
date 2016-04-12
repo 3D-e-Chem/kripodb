@@ -39,11 +39,16 @@ def version(request):
 
 
 def wsgi_app(settings):
-    url_prefix = '/kripo'  # must be same as basePath in api_docs/swagger.json
+    # must be same as basePath in api_docs/swagger.json
+    # and same as prefix in reverse proxy
+    url_prefix = '/kripo'
+    settings['pyramid_swagger.exclude_paths'] = [r'^/kripo/static', r'^/kripo/swagger.json']
     config = Configurator(settings=settings)
-    config.include('pyramid_swagger')
+    config.include('pyramid_swagger', route_prefix=url_prefix)
     config.add_route('fragments.similar', url_prefix + '/fragments/{fragment_id}/similar')
     config.add_route('version', url_prefix + '/version')
+    # Unpack dist directory from swagger ui (https://github.com/swagger-api/swagger-ui) into kripodb/static.
+    config.add_static_view(url_prefix + '/static', path='kripodb:static')
     config.scan()
     return config.make_wsgi_app()
 
@@ -51,6 +56,7 @@ def wsgi_app(settings):
 def serve_app(matrix, port, host):
     dist_matrix = DistanceMatrix(matrix)
     app = wsgi_app({'matrix': dist_matrix})
+    print('Api docs on http://{host}:{port}/static/?url=http://{host}:{port}/kripo/swagger.json'.format(host=host, port=port))
     try:
         serve(app, host=host, port=port)
     finally:

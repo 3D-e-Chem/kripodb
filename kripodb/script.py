@@ -455,7 +455,7 @@ def serve_sc(subparsers):
     sc = subparsers.add_parser('serve', help='Serve distance matrix as webservice')
     sc.add_argument('matrix', type=str, help='Filename of distance matrix hdf5 file')
     sc.add_argument('--port', type=int, default=8084, help='TCP port on which to listen (default: %(default)s)')
-    sc.add_argument('--host', type=str, default='0.0.0.0', help='Hostname or IP address on which to listen (default: %(default)s)')
+    sc.add_argument('--host', type=str, default='localhost', help='Hostname or IP address on which to listen (default: %(default)s)')
     sc.set_defaults(func=serve_app)
 
 

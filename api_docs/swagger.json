@@ -5,7 +5,7 @@
     "description": "API to interact with Kripo fragment, fingerprint and similarity data files.",
     "version": "1.0.0"
   },
-  "host": "kripodb.localhost",
+  "host": "localhost:8084",
   "schemes": [
     "http"
   ],
@@ -33,11 +33,13 @@
             "required": false,
             "default": 0.55,
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "minimum": 0.55,
+            "maximum": 1.00
           }
         ],
         "tags": [
-          "Hits"
+          "Fragments"
         ],
         "responses": {
           "200": {
@@ -61,6 +63,7 @@
     "/version": {
       "get": {
         "summary": "Version of webservice",
+        "tags": ["Version"],
         "responses": {
           "200": {
             "description": "Success",
@@ -112,7 +115,7 @@
       "properties": {
         "version": {
           "type": "string",
-          "description": "The version is semver format"
+          "description": "The semantic version"
         }
       }
     }
