@@ -11,11 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 from urlparse import urlparse
 import connexion
 from flask import current_app
 from kripodb.version import __version__
 from kripodb.hdf5 import DistanceMatrix
+
+LOGGER = logging.getLogger(__name__)
 
 
 def get_similar_fragments(fragment_id, cutoff, limit):
@@ -45,6 +48,10 @@ def wsgi_app(dist_matrix, external_url):
 def serve_app(matrix, internal_port, external_url):
     dist_matrix = DistanceMatrix(matrix)
     app = wsgi_app(dist_matrix, external_url)
+    LOGGER.setLevel(logging.INFO)
+    LOGGER.addHandler(logging.StreamHandler())
+    LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))
+    LOGGER.info(' * Swagger ui at {}/ui'.format(external_url))
     try:
         app.run(port=internal_port)
     finally:
