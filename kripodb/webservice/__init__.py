@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from urlparse import urlparse
 import connexion
 from flask import current_app
 from kripodb.version import __version__
@@ -33,17 +34,18 @@ def get_version():
     return {'version': __version__}
 
 
-def wsgi_app(dist_matrix):
+def wsgi_app(dist_matrix, external_url):
     app = connexion.App(__name__)
-    app.add_api('swagger.json')
+    url = urlparse(external_url)
+    app.add_api('swagger.json', base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
     app.app.config['matrix'] = dist_matrix
     return app
 
 
-def serve_app(matrix, port):
+def serve_app(matrix, internal_port, external_url):
     dist_matrix = DistanceMatrix(matrix)
-    app = wsgi_app(dist_matrix)
+    app = wsgi_app(dist_matrix, external_url)
     try:
-        app.run(port=port)
+        app.run(port=internal_port)
     finally:
         dist_matrix.close()

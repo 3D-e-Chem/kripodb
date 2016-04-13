@@ -5,9 +5,9 @@
     "description": "API to interact with Kripo fragment, fingerprint and similarity data files.",
     "version": "1.0.0"
   },
-  "host": "localhost:8084",
+  "host": "{{ hostport }}",
   "schemes": [
-    "http"
+    "{{ scheme }}"
   ],
   "basePath": "/kripo",
   "produces": [

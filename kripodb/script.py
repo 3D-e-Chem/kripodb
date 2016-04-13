@@ -454,7 +454,15 @@ def fpneigh2tsv_run(inputfile, outputfile):
 def serve_sc(subparsers):
     sc = subparsers.add_parser('serve', help='Serve distance matrix as webservice')
     sc.add_argument('matrix', type=str, help='Filename of distance matrix hdf5 file')
-    sc.add_argument('--port', type=int, default=8084, help='TCP port on which to listen (default: %(default)s)')
+    sc.add_argument('--internal_port',
+                    type=int,
+                    default=8084,
+                    help='TCP port on which to listen (default: %(default)s)')
+    sc.add_argument('--external_url',
+                    type=str,
+                    default='http://localhost:8084/kripo',
+                    help='URL which should be used in Swagger spec (default: %(default)s)')
+
     sc.set_defaults(func=serve_app)
 
 
