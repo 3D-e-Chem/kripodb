@@ -21,4 +21,4 @@ cache:
     - $HOME/.cache/pip
     - $HOME/conda
 before_cache:
-  - rm $HOME/.cache/pip/log/debug.log $HOME/conda/bin/kripodb $HOME/conda/lib/*/*/kripo.egg-link
+  - rm $HOME/.cache/pip/log/debug.log $HOME/conda/bin/kripodb $HOME/conda/lib/*/*/kripodb.egg-link
