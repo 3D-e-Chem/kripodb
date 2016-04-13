@@ -22,6 +22,7 @@ API
     kripodb.pairs <pairs.rst>
     kripodb.pdb <pdb.rst>
     kripodb.script <script.rst>
+    kripodb.webservice <webservice.rst>
 
 
 Indices and tables

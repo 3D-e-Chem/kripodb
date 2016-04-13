@@ -45,11 +45,24 @@ def get_similar_fragments(fragment_id, cutoff, limit):
 
 
 def get_version():
+    """
+    Returns:
+        Dict: Version of web service
+    """
     # TODO check if matrix is usable
     return {'version': __version__}
 
 
 def wsgi_app(dist_matrix, external_url='http://localhost:8084/kripo'):
+    """Create wsgi app
+
+    Args:
+        dist_matrix (DistanceMatrix): Distance matrix to use in webservice
+        external_url (str): URL which should be used in Swagger spec
+
+    Returns:
+        connexion.App
+    """
     app = connexion.App(__name__)
     url = urlparse(external_url)
     swagger_file = resource_filename(__name__, 'swagger.json')
@@ -59,6 +72,13 @@ def wsgi_app(dist_matrix, external_url='http://localhost:8084/kripo'):
 
 
 def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kripo'):
+    """Serve webservice forever
+
+    Args:
+        matrix: Filename of distance matrix hdf5 file
+        internal_port: TCP port on which to listen
+        external_url (str): URL which should be used in Swagger spec
+    """
     dist_matrix = DistanceMatrix(matrix)
     app = wsgi_app(dist_matrix, external_url)
     LOGGER.setLevel(logging.INFO)
