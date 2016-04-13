@@ -4,6 +4,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/4878758675a0402bb75019672fa6e45c)](https://www.codacy.com/app/NLeSC/kripodb)
 [![Codacy Badge](https://api.codacy.com/project/badge/coverage/4878758675a0402bb75019672fa6e45c)](https://www.codacy.com/app/NLeSC/kripodb)
 [![DOI](https://zenodo.org/badge/19641/3D-e-Chem/kripodb.svg)](https://zenodo.org/badge/latestdoi/19641/3D-e-Chem/kripodb)
+[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/3dechem/kripodb/)
 
 Library to interact with Kripo fragment, fingerprint and similarity data files.
 
@@ -81,9 +82,9 @@ docker build -t 3dechem/kripodb .
 
 ## Run container
 
-Without any subcommands will show the help
+Show the kripodb help with
 ```
-docker run --rm -u $UID -v $PWD:/data 3dechem/kripodb kripodb
+docker run --rm 3dechem/kripodb kripodb --help
 ```
 
 To calculate the mean bit density of the fingerprints in the `fingerprints.sqlite` file in the current working directory use following command.
