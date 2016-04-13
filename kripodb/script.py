@@ -32,6 +32,11 @@ from .version import __version__
 
 
 def make_parser():
+    """Creates a parser with sub commands
+
+    Returns:
+        argparse.ArgumentParser: parser with sub commands
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version=__version__)
     subparsers = parser.add_subparsers()

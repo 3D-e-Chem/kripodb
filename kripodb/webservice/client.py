@@ -11,14 +11,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module for Client for kripo web service"""
 import requests
 
 
 class WebserviceClient(object):
+    """Client for kripo web service
+
+    Example:
+        >>> client = WebserviceClient('http://localhost:8084/kripo')
+        >>> client.similar_fragments('3j7u_NDP_frag24', 0.85)
+        [{'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991}]
+
+    Args:
+        base_url (str): Base url of web service. e.g. http://localhost:8084/kripo
+    """
     def __init__(self, base_url):
         self.base_url = base_url
 
     def similar_fragments(self, fragment_id, cutoff, limit=1000):
+        """Find similar fragments to query.
+
+        Args:
+            fragment_id (str): Query fragment identifier
+            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+            limit (int): Maximum number of hits. Default is None for no limit.
+
+        Returns:
+            List(Dict()): Query fragment identifier, hit fragment identifier and distance score
+        """
         url = self.base_url + '/fragments/{fragment_id}/similar'.format(fragment_id=fragment_id)
         params = {'cutoff': cutoff, 'limit': limit}
         response = requests.get(url, params)

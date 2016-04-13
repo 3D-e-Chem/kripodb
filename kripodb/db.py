@@ -249,6 +249,14 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
 
     def add_molecule(self, mol):
+        """Adds molecule to molecules table
+
+        Args:
+            mol (rdkit.Chem.AllChem.Mol): the rdkit molecule
+
+        Returns:
+
+        """
         sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, mol) VALUES (?, ?, ?)'''
 
         if mol is None:
@@ -299,16 +307,16 @@ class FragmentsDb(SqliteDb):
             logging.warn('Weird id {}, skipping'.format(frag_id))
             return
 
-        ligIDparts = fragment['ligID'].split('-')
-        het_seq_nr = int(re.sub('[A-Z]$', '', ligIDparts[3]))
+        lig_id = fragment['ligID'].split('-')
+        het_seq_nr = int(re.sub('[A-Z]$', '', lig_id[3]))
 
         row = {
             'frag_id': frag_id.replace('-', '_'),
             'pdb_code': splitted_frag_id[0],
-            'prot_chain': ligIDparts[1],
+            'prot_chain': lig_id[1],
             'het_code': splitted_frag_id[1],
             'het_seq_nr': het_seq_nr,
-            'het_chain': ligIDparts[4],
+            'het_chain': lig_id[4],
             'frag_nr': frag_nr,
             'hash_code': fragment['hashcode'],
             'atom_codes': fragment['atomCodes'],

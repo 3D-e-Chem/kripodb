@@ -92,7 +92,7 @@ def dump_pairs_tsv(distances_iter, out):
 
     """
     for label1, label2, distance in distances_iter:
-        out.write('{}\t{}\t{}\n'.format(label1, label2, distance))
+        out.write('{0}\t{1}\t{2}\n'.format(label1, label2, distance))
 
 
 def dump_pairs_hdf5(distances_iter,
@@ -242,7 +242,3 @@ def merge(ins, out):
     out_matrix.pairs.add_indexes()
 
     out_matrix.close()
-
-
-def read_fpneighpairs_file(text):
-    return None

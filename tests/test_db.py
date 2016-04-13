@@ -44,7 +44,7 @@ class TestFastInserter(object):
         self.cursor = Mock()
         self.unit = db.FastInserter(self.cursor)
 
-    def testWith(self):
+    def test_with(self):
         with self.unit:
             self.cursor.execute.assert_has_calls([call('PRAGMA journal_mode=WAL'),
                                                   call('PRAGMA synchronous=OFF')])

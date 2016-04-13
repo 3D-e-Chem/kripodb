@@ -227,13 +227,13 @@ class PairsTable(AbstractSimpleTable):
         scutoff = int(cutoff * precision)
 
         hits = {}
-        query1 = '(a == {}) & (score >= {})'.format(frag_id, scutoff)
+        query1 = '(a == {0}) & (score >= {1})'.format(frag_id, scutoff)
         for row in self.table.where(query1):
             hit_id, score = row[1], row[2]
             score = ceil(precision10 * score / precision) / precision10
             hits[hit_id] = score
 
-        query2 = '(b == {}) & (score >= {})'.format(frag_id, scutoff)
+        query2 = '(b == {0}) & (score >= {1})'.format(frag_id, scutoff)
         for row in self.table.where(query2):
             hit_id, score = row[0], row[2]
             score = ceil(precision10 * score / precision) / precision10
@@ -248,6 +248,12 @@ class PairsTable(AbstractSimpleTable):
         return sorted_hits
 
     def append(self, other):
+        """Append rows of other table to self
+
+        Args:
+            other: Table of same type as self
+
+        """
         super(PairsTable, self).append(other)
 
         if self.score_precision is None:
