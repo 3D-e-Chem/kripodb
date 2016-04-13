@@ -12,8 +12,10 @@ setup(
     author_email='s.verhoeven@esciencecenter.nl',
     install_requires=['intbitset', 'tables', 'pandas', 'connexion', 'requests'],
     package_data={
-      'kripodb': ['webservice/swagger.json'],
+      'kripodb.webservice': ['swagger.json'],
     },
+    include_package_data=True,
+    zip_safe=False,
     entry_points={
         'console_scripts': [
             'kripodb=kripodb.script:main',
