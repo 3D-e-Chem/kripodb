@@ -76,14 +76,19 @@ pip install -r requirements.txt
 ## Create image
 
 ```
-docker build -t nlesc/kripodb .
+docker build -t 3dechem/kripodb .
 ```
 
 ## Run container
 
+Without any subcommands will show the help
+```
+docker run --rm -u $UID -v $PWD:/data 3dechem/kripodb kripodb
+```
+
 To calculate the mean bit density of the fingerprints in the `fingerprints.sqlite` file in the current working directory use following command.
 ```
-docker run --rm -u $UID -v $PWD:/data nlesc/kripodb kripodb meanbitdensity /data/fingerprints.sqlite
+docker run --rm -u $UID -v $PWD:/data 3dechem/kripodb kripodb meanbitdensity /data/fingerprints.sqlite
 ```
 
 # Web service
