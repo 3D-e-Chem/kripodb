@@ -94,9 +94,7 @@ Start webservice with:
 ```
 kripodb serve --port 8084 data/distances.h5
 ```
-
-* Swagger spec at http://localhost:8084/kripo/swagger.json
-* Swagger UI at http://localhost:8084/kripo/ui/
+It will print the urls for the swagger spec and UI.
 
 Note! The webservice returns a limited amount of results. To get all results use local files.
 

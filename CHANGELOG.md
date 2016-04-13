@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+## 1.3.0 - 23 Apr 2016
+
 ### Added
 
-* webservice server/client for distance matrix
+* webservice server/client for distance matrix (#16). The CLI and canned commands can now take a local file or a url.
 
 ### Fixed
 
@@ -14,7 +16,7 @@
 
 ### Fixed
 
-* fpneigh2tsv not availble as sub command
+* fpneigh2tsv not available as sub command
 
 ## 1.2.4 - 24 Mar 2016
 

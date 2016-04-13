@@ -4,7 +4,7 @@ exec(open('kripodb/version.py').read())
 
 setup(
     name='kripodb',
-    description='Kripo database',
+    description='Library to interact with Kripo fragment, fingerprint and similarity data files.',
     version=__version__,
     packages=find_packages(),
     url='https://github.com/3D-e-Chem/kripodb',
@@ -25,5 +25,10 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2.7',
+        'Framework :: Flask',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Chemistry',
+        'Environment :: Console',
+        'Environment :: Web Environment',
     ]
 )
