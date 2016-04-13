@@ -37,7 +37,7 @@ def get_version():
     return {'version': __version__}
 
 
-def wsgi_app(dist_matrix, external_url):
+def wsgi_app(dist_matrix, external_url='http://localhost:8084/kripo'):
     app = connexion.App(__name__)
     url = urlparse(external_url)
     app.add_api('swagger.json', base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
@@ -45,7 +45,7 @@ def wsgi_app(dist_matrix, external_url):
     return app
 
 
-def serve_app(matrix, internal_port, external_url):
+def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kripo'):
     dist_matrix = DistanceMatrix(matrix)
     app = wsgi_app(dist_matrix, external_url)
     LOGGER.setLevel(logging.INFO)

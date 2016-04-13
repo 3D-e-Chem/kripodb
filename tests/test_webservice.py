@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from nose.tools import eq_
-from pyramid import testing
-from webtest import TestApp
+import requests_mock
 from kripodb import webservice
 from kripodb.hdf5 import DistanceMatrix
 from kripodb.version import __version__
+from kripodb.webservice.client import WebserviceClient
 
 
 class TestWebservice(object):
@@ -46,3 +46,21 @@ class TestWebservice(object):
 
     def test_wsgi_app(self):
         eq_(self.app.app.config['matrix'], self.matrix)
+
+
+class TestWebServiceClient(object):
+    def setUp(self):
+        self.base_url = 'http://localhost:8084/kripo'
+        self.client = WebserviceClient(self.base_url)
+
+    @requests_mock.mock()
+    def test_similar_fragments(self, m):
+        expected = [
+            {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
+        ]
+        url = self.base_url + '/fragments/3j7u_NDP_frag24/similar?cutoff=0.75&limit=1'
+        m.get(url, json=expected)
+
+        response = self.client.similar_fragments(fragment_id='3j7u_NDP_frag24', cutoff=0.75, limit=1)
+
+        eq_(response, expected)

@@ -8,3 +8,4 @@ six>=1.7
 mock
 sphinx
 webtest
+requests_mock
