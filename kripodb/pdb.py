@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from urllib import urlopen
+from __future__ import absolute_import
 import csv
+from six.moves import zip
+from six.moves.urllib.request import urlopen
 
 
 def parse_csv_file(thefile):
@@ -30,7 +32,7 @@ def parse_csv_file(thefile):
     """
     reader = csv.reader(thefile)
     # read header
-    colnames = reader.next()
+    colnames = next(reader)
     # data rows
     for row in reader:
         pdb = {}

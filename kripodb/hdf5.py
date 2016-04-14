@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Distance matrix using hdf5 as storage backend."""
+from __future__ import absolute_import
 from math import log10, ceil, floor
 
 import tables
+import six
 
 
 class DistanceMatrix(object):
@@ -240,7 +242,7 @@ class PairsTable(AbstractSimpleTable):
             hits[hit_id] = score
 
         # highest score==most similar first
-        sorted_hits = sorted(hits.iteritems(), reverse=True, key=lambda r: r[1])
+        sorted_hits = sorted(six.iteritems(hits), reverse=True, key=lambda r: r[1])
 
         if limit is not None:
             sorted_hits = sorted_hits[:limit]
@@ -305,7 +307,11 @@ class LabelsLookup(AbstractSimpleTable):
         Returns:
             str: Label of fragment
         """
-        return self.table.where('frag_id == {}'.format(frag_id)).next()[1]
+        query = 'frag_id == {}'.format(frag_id)
+        result = self.table.where(query)
+        first_row = next(result)
+        label_col = first_row[1].decode()
+        return label_col
 
     def by_label(self, label):
         """Look up id of fragment by label
@@ -319,16 +325,20 @@ class LabelsLookup(AbstractSimpleTable):
         Returns:
             int: Fragment identifier
         """
-        return self.table.where('label == "{}"'.format(label)).next()[0]
+        query = 'label == b"{}"'.format(label)
+        result = self.table.where(query)
+        first_row = next(result)
+        id_col = first_row[0]
+        return id_col
 
     def label2ids(self):
-        """Returhn whole table as a dictionary
+        """Return whole table as a dictionary
 
         Returns:
             Dict: Dictionary with label as key and frag_id as value.
 
         """
-        return {r['label']: r['frag_id'] for r in self.table}
+        return {r['label'].decode(): r['frag_id'] for r in self.table}
 
     def update(self, label2id):
         """Update labels lookup by adding labels in label2id.
@@ -337,7 +347,7 @@ class LabelsLookup(AbstractSimpleTable):
             label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
 
         """
-        for label, frag_id in label2id.iteritems():
+        for label, frag_id in six.iteritems(label2id):
             self.table.row['frag_id'] = frag_id
             self.table.row['label'] = label
             self.table.row.append()
@@ -380,3 +390,7 @@ class LabelsLookup(AbstractSimpleTable):
 
         self.update(missing_label2ids)
         return missing_label2ids
+
+    def __iter__(self):
+        for r in self.table.__iter__():
+            yield {'frag_id': r['frag_id'], 'label': r['label'].decode()}

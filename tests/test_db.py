@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
 from intbitset import intbitset
 
-import logging
 from nose.tools import eq_, raises, assert_raises
 from mock import call, Mock
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 
 import kripodb.db as db
+import six
 
 
 def test_adapt_intbitset():
@@ -260,14 +261,13 @@ class TestIntbitsetDictEmpty(object):
 
         self.bitsets.update(other)
 
-        result = {k: v for k, v in self.bitsets.iteritems()}
+        result = {k: v for k, v in six.iteritems(self.bitsets)}
         eq_(result, other)
 
     def test_getitem_keyerror(self):
         with assert_raises(KeyError) as e:
             self.bitsets['id1']
-        eq_(e.exception.message, 'id1')
-
+        eq_(e.exception.args, ('id1',))
 
 
 class TestIntbitsetDictFilled(object):
@@ -295,13 +295,13 @@ class TestIntbitsetDictFilled(object):
         eq_(len(self.bitsets), 0)
 
     def test_keys(self):
-        result = self.bitsets.keys()
+        result = list(self.bitsets.keys())
 
         expected = ['id1']
         eq_(result, expected)
 
     def test_iteritems(self):
-        result = {k: v for k, v in self.bitsets.iteritems()}
+        result = {k: v for k, v in six.iteritems(self.bitsets)}
 
         expected = {self.bid: self.bs}
         eq_(result, expected)
@@ -316,7 +316,7 @@ class TestIntbitsetDictFilled(object):
         assert 'someid' not in result
 
     def test_itervalues(self):
-        result = [v for v in self.bitsets.itervalues()]
+        result = [v for v in six.itervalues(self.bitsets)]
 
         expected = [self.bs]
         eq_(result, expected)

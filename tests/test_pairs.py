@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
 from collections import Mapping
-import StringIO
-
-import kripodb.hdf5
-import tables
-
 import os
 import tempfile
 
+import tables
+from six import StringIO
 from intbitset import intbitset
 from nose.tools import eq_, assert_raises
 
+import kripodb.hdf5
 import kripodb.pairs as pairs
 from kripodb.hdf5 import DistanceMatrix
 
@@ -83,7 +82,7 @@ class Testpairs(object):
             os.remove(self.h5filename)
 
     def test_dump_pairs_tsv(self):
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.dump_pairs_tsv(self.pairs, out)
         result = out.getvalue()
@@ -107,7 +106,7 @@ class Testpairs(object):
 
     def test_similar_run(self):
         self.fill_matrix()
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.similar_run('a', self.h5filename, 0.55, out)
 
@@ -117,7 +116,7 @@ class Testpairs(object):
 
     def test_similar_run_nohits(self):
         self.fill_matrix()
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.similar_run('a', self.h5filename, 0.99, out)
 
@@ -155,7 +154,7 @@ class Testpairs(object):
                              False
                              )
 
-        eq_(cm.exception.message, 'Invalid output format')
+        eq_(cm.exception.args, ('Invalid output format',))
 
     def test_dump_pairs_badffn(self):
         with assert_raises(Exception) as cm:
@@ -172,10 +171,10 @@ class Testpairs(object):
                              False
                              )
 
-        eq_(cm.exception.message, "hdf5 formats can't be outputted to stdout")
+        eq_(cm.exception.args, ("hdf5 formats can't be outputted to stdout",))
 
     def test_dump_pairs_astsv(self):
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.dump_pairs(self.bitsets,
                          self.bitsets,
@@ -191,11 +190,11 @@ class Testpairs(object):
                          )
         result = out.getvalue()
 
-        expected = "a\tc\t0.135555555556\n"
+        expected = "a\tc\t0.13556\n"
         eq_(result, expected)
 
     def test_dump_pairs_astsv_nomem(self):
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.dump_pairs(self.bitsets,
                          self.bitsets,
@@ -211,11 +210,11 @@ class Testpairs(object):
                          )
         result = out.getvalue()
 
-        expected = "a\tc\t0.135555555556\n"
+        expected = "a\tc\t0.13556\n"
         eq_(result, expected)
 
     def test_distance2query(self):
-        out = StringIO.StringIO()
+        out = StringIO()
 
         pairs.distance2query(self.bitsets,
                              'a',
@@ -226,7 +225,7 @@ class Testpairs(object):
                              )
         result = out.getvalue()
 
-        expected = "a\tc\t0.135555555556\n"
+        expected = "a\tc\t0.13556\n"
         eq_(result, expected)
 
     def test_total_number_of_pairs(self):
