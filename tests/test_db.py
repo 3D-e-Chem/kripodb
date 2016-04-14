@@ -14,7 +14,6 @@
 
 from intbitset import intbitset
 
-import logging
 from nose.tools import eq_, raises, assert_raises
 from mock import call, Mock
 from rdkit.Chem import MolFromSmiles, MolToSmiles
@@ -267,7 +266,6 @@ class TestIntbitsetDictEmpty(object):
         with assert_raises(KeyError) as e:
             self.bitsets['id1']
         eq_(e.exception.message, 'id1')
-
 
 
 class TestIntbitsetDictFilled(object):
