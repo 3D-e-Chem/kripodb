@@ -4,6 +4,7 @@
 
 ### Added
 
+* Added Python3 support
 * Added automated build to docker hub.
 
 ## 1.3.0 - 23 Apr 2016
