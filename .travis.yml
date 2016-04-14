@@ -1,11 +1,21 @@
 language: python
+matrix:
+  include: 
+    - python: 2.7
+      env:
+        - INSTALLER=Miniconda-latest-Linux-x86_64.sh
+        - CONDA_INSTALL="bsddb"
+    - python: 3.5
+      env:
+        - INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+        - CONDA_INSTALL=""
 before_install:
   - if [ ! -e $HOME/conda/bin/activate ]; then
-    wget -nc https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh;
-    bash Miniconda-latest-Linux-x86_64.sh -f -b -p $HOME/conda;
+    wget -nc https://repo.continuum.io/miniconda/$INSTALLER;
+    bash $INSTALLER -f -b -p $HOME/conda;
     fi
   - source $HOME/conda/bin/activate root
-  - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables bsddb pandas coverage sphinx
+  - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables pandas coverage sphinx $CONDA_INSTALL
 install:
   - pip install -r requirements.txt
 script:
