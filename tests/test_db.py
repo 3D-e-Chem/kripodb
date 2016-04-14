@@ -103,9 +103,6 @@ class TestFragmentsDBFilled(object):
 
         self.mol = MolFromSmiles('[*]COP(=O)([O-])OP(=O)([O-])OC1OC(C(=O)[O-])C(O)C(O)C1O')
         self.mol.SetProp('_Name', '1muu_GDX_frag7')
-        import sqlite3
-        print(sqlite3.adapters)
-        print(repr(self.mol))
         self.fdb.add_molecule(self.mol)
         self.expected_fragment = {
             'nr_r_groups': 1,
