@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import absolute_import
 import argparse
 import csv
 import gzip
@@ -21,13 +22,13 @@ import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
 
-from kripodb.webservice import serve_app
 from . import makebits
 from . import pairs
 from .db import FragmentsDb, FingerprintsDb
 from .hdf5 import DistanceMatrix
 from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
+from .webservice import serve_app
 from .version import __version__
 
 
@@ -260,7 +261,7 @@ def meanbitdensity_sc(subparsers):
 def meanbitdensity_run(fingerprintsdb, out):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
     density = calc_mean_onbit_density(bitsets.values(), bitsets.number_of_bits)
-    out.write("{0:.5f}\n".format(density))
+    out.write("{0:.5}\n".format(density))
 
 
 def shelve2fragmentsdb_sc(subparsers):
@@ -374,7 +375,7 @@ def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrow
 
     reader = csv.reader(inputfile, delimiter="\t")
     # ignore header
-    reader.next()
+    next(reader)
 
     # distmatrix wants score as float instead of str
     def csv_iter(rows):

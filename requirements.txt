@@ -9,3 +9,5 @@ mock
 sphinx
 webtest
 requests_mock
+# for faster pydev debugging
+cython

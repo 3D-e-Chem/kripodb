@@ -16,12 +16,12 @@
 For using Kripo data files inside Knime (http://www.knime.org)
 """
 
+from __future__ import absolute_import
 import pandas as pd
-from kripodb.webservice.client import WebserviceClient
-
+from .db import FragmentsDb
 from .hdf5 import DistanceMatrix
 from .pairs import similar
-from .db import FragmentsDb
+from .webservice.client import WebserviceClient
 
 
 def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):

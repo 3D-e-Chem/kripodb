@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import StringIO
+from __future__ import absolute_import
+
+from six import StringIO
 from intbitset import intbitset
 from nose.tools import assert_raises, eq_
+
 from kripodb import makebits as makebits
 
 
@@ -41,15 +44,15 @@ def test_read_bitset_toolong():
     line = '3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 5'
     with assert_raises(Exception) as e:
         makebits.read_bitset(line, 100)
-    expected = 'On bit checksum incorrect for 3frb_TOP_frag24'
-    eq_(e.exception.message, expected)
+    expected = ('On bit checksum incorrect for 3frb_TOP_frag24',)
+    eq_(e.exception.args, expected)
 
 
 def test_read_file():
     input = '''MAKEBITS 1.0 574331 BigGrid
 3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9
 '''
-    infile = StringIO.StringIO(input)
+    infile = StringIO(input)
 
     (bitsets, fp_size) = makebits.read_file(infile)
 
@@ -62,7 +65,7 @@ def test_iter_file():
     input = '''MAKEBITS 1.0 574331 BigGrid
 3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9
 '''
-    infile = StringIO.StringIO(input)
+    infile = StringIO(input)
 
     iterator = makebits.iter_file(infile)
 
@@ -76,7 +79,7 @@ def test_iter_file():
 
 def test_write_file():
     bitsets = {'3frb_TOP_frag24': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])}
-    outfile = StringIO.StringIO()
+    outfile = StringIO()
     fp_size = 574331
 
     makebits.write_file(fp_size, bitsets, outfile)

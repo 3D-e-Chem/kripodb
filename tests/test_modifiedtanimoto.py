@@ -12,9 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nose.tools import assert_almost_equal
+from __future__ import absolute_import
+from nose.tools import assert_almost_equal, eq_
 from intbitset import intbitset
 from kripodb import modifiedtanimoto
+
+
+def assert_distances(result, expected):
+    result = sorted(result)
+    expected = sorted(expected)
+    eq_(len(result), len(expected))
+    for i, r in enumerate(result):
+        eq_(r[0], expected[i][0])
+        eq_(r[1], expected[i][1])
+        assert_almost_equal(r[2], expected[i][2])
 
 
 class TestAlgorithm(object):
@@ -37,7 +48,7 @@ class TestAlgorithm(object):
         result = modifiedtanimoto.calc_mean_onbit_density(bitsets.values(), self.number_of_bits)
 
         expected = 0.04
-        assert result == expected
+        eq_(result, expected)
 
     def test_corrections(self):
         corr_st, corr_sto = modifiedtanimoto.corrections(0.01)
@@ -73,12 +84,7 @@ class TestAlgorithm(object):
             ('a', 'c', 0.5779523809525572),
             ('b', 'c', 0.8357708333333689)]
         # pair a-c is below cutoff with distance of 0.53
-
-        assert len(result) == len(expected)
-        for i, r in enumerate(result):
-            assert r[0] == expected[i][0]
-            assert r[1] == expected[i][1]
-            assert_almost_equal(r[2], expected[i][2])
+        assert_distances(result, expected)
 
     def test_distances_fullmatrix(self):
         bitsets = {
@@ -99,11 +105,4 @@ class TestAlgorithm(object):
             ('c', 'b', 0.8357708333333689),
             ('b', 'c', 0.8357708333333689)]
         # pair a-c is below cutoff with distance of 0.53
-
-        print result
-
-        assert len(result) == len(expected)
-        for i, r in enumerate(result):
-            assert r[0] == expected[i][0]
-            assert r[1] == expected[i][1]
-            assert_almost_equal(r[2], expected[i][2])
+        assert_distances(result, expected)

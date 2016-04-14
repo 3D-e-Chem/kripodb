@@ -13,7 +13,9 @@
 # limitations under the License.
 """Module to read/write Makebits file format"""
 
+from __future__ import absolute_import
 from intbitset import intbitset
+import six
 
 
 def read_header(line):
@@ -104,5 +106,5 @@ def write_file(fp_size, bitsets, fn):
 
     """
     fn.write(write_header(fp_size))
-    for fid, bitset in bitsets.iteritems():
+    for fid, bitset in six.iteritems(bitsets):
         fn.write(write_bitset(fid, bitset))

@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import absolute_import
 import os
-from cStringIO import StringIO
+from six import StringIO
 
 from nose.tools import eq_
+from numpy.testing import assert_array_almost_equal
 
 from kripodb.hdf5 import DistanceMatrix
 import kripodb.script as script
@@ -49,7 +51,7 @@ def test_meanbitdensity():
 
     script.meanbitdensity_run('data/fingerprints.sqlite', out)
 
-    eq_(out.getvalue(), '0.01228\n')
+    eq_(out.getvalue(), '0.0077683\n')
 
 
 def test_distmatrix_import_run():
@@ -69,10 +71,11 @@ def test_distmatrix_import_run():
                                      nrrows=2)
 
         distmatrix = DistanceMatrix(output_fn)
-        rows = [r for r in distmatrix]
+        result = [r for r in distmatrix]
         distmatrix.close()
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877164873731594), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633096818493935)]
-        eq_(rows, expected)
+        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 5)
+        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
     finally:
         os.remove(output_fn)
 

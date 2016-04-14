@@ -13,11 +13,12 @@
 # limitations under the License.
 """Module handling generation and retrieval of distance matrix"""
 
+from __future__ import absolute_import
 import logging
-from kripodb.webservice.client import WebserviceClient
 
 from .hdf5 import DistanceMatrix
 from .modifiedtanimoto import distances, corrections
+from .webservice.client import WebserviceClient
 
 
 def dump_pairs(bitsets1,
@@ -92,7 +93,7 @@ def dump_pairs_tsv(distances_iter, out):
 
     """
     for label1, label2, distance in distances_iter:
-        out.write('{0}\t{1}\t{2}\n'.format(label1, label2, distance))
+        out.write('{0}\t{1}\t{2:.5}\n'.format(label1, label2, distance))
 
 
 def dump_pairs_hdf5(distances_iter,

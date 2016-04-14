@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
 from nose.tools import eq_
+from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
 from kripodb.hdf5 import DistanceMatrix
 
@@ -27,18 +29,20 @@ class TestDistanceMatrix(object):
         self.matrix.close()
 
     def test_find_1(self):
-        result = self.matrix.find('2n6i_4FU_frag1', 0.98)
+        result = list(self.matrix.find('2n6i_4FU_frag1', 0.98))
 
         expected = [('2n6i_4FU_frag2', 1.0), ('2n6i_4FU_frag6', 1.0)]
-        eq_(list(result), expected)
+        assert_array_almost_equal([r[1] for r in result], [r[1] for r in expected], 5)
+        eq_([r[0] for r in result], [r[0] for r in result])
 
     def test_iter_first2(self):
         myiter = iter(self.matrix)
 
-        result = [myiter.next(), myiter.next()]
+        result = [next(myiter), next(myiter)]
 
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877164873731594), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633096818493935)]
-        eq_(result, expected)
+        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 5)
+        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
 
     def test_iter_last(self):
         myiter = iter(self.matrix)
@@ -48,5 +52,6 @@ class TestDistanceMatrix(object):
             result = row
 
         expected = ('3wyl_3KB_frag20', '3wyl_3KB_frag21', 0.999496452277409)
-        eq_(result, expected)
+        assert_almost_equal(result[2], expected[2], 5)
+        eq_(result[:2], expected[:2])
 

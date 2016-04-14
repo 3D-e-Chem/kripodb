@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Kripo datafiles wrapped in a webservice"""
+from __future__ import absolute_import
 from pkg_resources import resource_filename
 import logging
-from urlparse import urlparse
+from six.moves.urllib_parse import urlparse
+
+
 import connexion
 from flask import current_app
-from kripodb.version import __version__
-from kripodb.hdf5 import DistanceMatrix
+
+from ..version import __version__
+from ..hdf5 import DistanceMatrix
 
 LOGGER = logging.getLogger(__name__)
 

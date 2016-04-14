@@ -16,15 +16,17 @@
 Registers `intbitset` and `molblockgz` data types in sqlite.
 """
 
+from __future__ import absolute_import
 from collections import MutableMapping
 import sqlite3
 import logging
 import zlib
-
 import re
 
 from intbitset import intbitset
-from rdkit.Chem import MolToMolBlock, MolFromMolBlock, Mol, MolToSmiles
+from rdkit.Chem import MolToMolBlock, MolFromMolBlock, MolToSmiles
+from rdkit.Chem.rdchem import Mol
+import six
 
 ATTR_NUMBER_OF_BITS = 'number_of_bits'
 
@@ -76,7 +78,8 @@ def adapt_molblockgz(mol):
     Returns:
         str: Compressed molblock
     """
-    return zlib.compress(MolToMolBlock(mol))
+    molblock = MolToMolBlock(mol).encode()
+    return zlib.compress(molblock)
 
 
 def convert_molblockgz(molgz):
@@ -243,7 +246,7 @@ class FragmentsDb(SqliteDb):
 
         """
         with FastInserter(self.cursor):
-            for k, v in myshelve.iteritems():
+            for k, v in six.iteritems(myshelve):
                 self.add_fragment_from_shelve(k, v)
 
         self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
@@ -260,7 +263,7 @@ class FragmentsDb(SqliteDb):
         sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, mol) VALUES (?, ?, ?)'''
 
         if mol is None:
-            logging.warn('Empty molecule, skipping')
+            logging.warning('Empty molecule, skipping')
             return
 
         self.cursor.execute(sql, (
@@ -352,7 +355,7 @@ class FragmentsDb(SqliteDb):
             'uniprotRecommendedName': 'uniprot_name',
             'ecNo': 'ec_number',
         }
-        row = {pdb2col[k]: v for k, v in pdb.iteritems()}
+        row = {pdb2col[k]: v for k, v in six.iteritems(pdb)}
         row['pdb_code'] = row['pdb_code'].lower()
         self.cursor.execute(sql, row)
 
@@ -515,6 +518,16 @@ class SqliteDict(MutableMapping):
         for row in self.cursor.execute(sql):
             yield row
 
+    def items(self):
+        sql = self.sqls['iteritems']
+        for row in self.cursor.execute(sql):
+            yield row
+
+    def values(self):
+        sql = self.sqls['itervalues']
+        for row in self.cursor.execute(sql):
+            yield row[0]
+
     def itervalues(self):
         sql = self.sqls['itervalues']
         for row in self.cursor.execute(sql):
@@ -554,7 +567,7 @@ class SqliteDict(MutableMapping):
         Returns:
             Dict: Dictionary with all kev/value pairs
         """
-        return {k: v for k, v in self.iteritems()}
+        return {k: v for k, v in six.iteritems(self)}
 
 
 class IntbitsetDict(SqliteDict):

@@ -14,6 +14,10 @@
 # limitations under the License.
 """Module to calculate modified tanimoto distance"""
 
+from __future__ import absolute_import
+from math import fsum
+import six
+
 
 def calc_mean_onbit_density(bitsets, number_of_bits):
     """Calculate the mean density of bits that are on in bitsets collection.
@@ -27,7 +31,7 @@ def calc_mean_onbit_density(bitsets, number_of_bits):
 
     """
     all_nr_onbits = [len(v) for v in bitsets]
-    mean_onbit = sum(all_nr_onbits) / float(len(bitsets))
+    mean_onbit = fsum(all_nr_onbits) / float(len(all_nr_onbits))
     density = mean_onbit / number_of_bits
     return float(density)
 
@@ -114,8 +118,8 @@ def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ful
         (fingerprint label 1, fingerprint label2, distance)
 
     """
-    for (label1, bs1) in bitsets1.iteritems():
-        for (label2, bs2) in bitsets2.iteritems():
+    for (label1, bs1) in six.iteritems(bitsets1):
+        for (label2, bs2) in six.iteritems(bitsets2):
             if label1 == label2:
                 # always skip self
                 continue
