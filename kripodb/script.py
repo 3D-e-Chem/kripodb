@@ -68,6 +68,8 @@ def make_parser():
 
     distmatrix_importfpneigh_sc(subparsers)
 
+    distmatrix_filter_sc(subparsers)
+
     fpneigh2tsv_sc(subparsers)
 
     serve_sc(subparsers)
@@ -419,6 +421,37 @@ def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision
 
     distmatrix.update(read_fpneighpairs_file(inputfile), label2id)
     distmatrix.close()
+
+
+def distmatrix_filter_sc(subparsers):
+    sc = subparsers.add_parser('distmatrix_filter', help='Filter distance matrix')
+    sc.add_argument("input", type=str,
+                    help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    sc.add_argument("output", type=str,
+                    help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    sc.add_argument("--pdb", type=argparse.FileType('r'),
+                    help='Filter on query, query must contain pdb from file, use - for stdin')
+    ph = '''Distance precision for compact formats,
+    distance range from 0..<precision>'''
+    sc.add_argument("--precision",
+                    type=int,
+                    default=65535,
+                    help=ph)
+    sc.set_defaults(func=distmatrix_filter)
+
+
+def distmatrix_filter(input, output, pdb):
+    distmatrix_in = DistanceMatrix(input)
+    expectedlabelrows = 1
+    expectedpairrows = 1
+    # TODO count filtered rows
+
+    distmatrix_out = DistanceMatrix(output, 'w', expectedlabelrows=expectedlabelrows, expectedpairrows=expectedpairrows)
+
+    # TODO copy filtered matrix
+
+    distmatrix_in.close()
+    distmatrix_out.close()
 
 
 def read_fpneighpairs_file(inputfile):
