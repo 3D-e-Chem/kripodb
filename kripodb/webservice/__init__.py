@@ -19,7 +19,7 @@ from six.moves.urllib_parse import urlparse
 
 
 import connexion
-from flask import current_app
+from flask import current_app, abort
 
 from ..version import __version__
 from ..hdf5 import DistanceMatrix
@@ -40,11 +40,14 @@ def get_similar_fragments(fragment_id, cutoff, limit):
     """
     distance_matrix = current_app.config['matrix']
     query_id = fragment_id
-    raw_hits = distance_matrix.find(query_id, cutoff, limit)
-    # add query column
     hits = []
-    for hit_id, score in raw_hits:
-        hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
+    try:
+        raw_hits = distance_matrix.find(query_id, cutoff, limit)
+        # add query column
+        for hit_id, score in raw_hits:
+            hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
+    except KeyError:
+        abort(404)
     return hits
 
 
