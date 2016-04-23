@@ -26,7 +26,7 @@ from tests.test_pairs import tmpname
 def test_pairs_subcommand_defaults():
     parser = script.make_parser()
 
-    args = parser.parse_args(['pairs', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
+    args = parser.parse_args(['fingerprints', 'distances', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
 
     eq_(args.func, script.pairs_run)
 
@@ -65,6 +65,7 @@ def test_distmatrix_import_run():
 
     try:
         script.distmatrix_import_run(inputfile=inputfile,
+                                     format='tsv',
                                      distmatrixfn=output_fn,
                                      fragmentsdb='data/fragments.sqlite',
                                      precision=65535,

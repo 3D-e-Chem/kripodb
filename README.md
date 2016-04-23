@@ -34,16 +34,18 @@ kripodb --help
 
 Commands to create all data files
 ```
-kripodb shelve2fragmentsdb fragments.shelve fragments.sqlite
-kripodb sdf2fragmentsdb fragment??.sdf fragments.sqlite
-kripodb pdb2fragmentsdb fragments.sqlite
-kripodb makebits2fingerprintsdb 01.fp 01.fp.db
-kripodb makebits2fingerprintsdb 02.fp 02.fp.db
-kripodb pairs --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
-kripodb pairs --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
-kripodb pairs --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
-kripodb pairs --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
-kripodb mergepairs dist_*_*.h5  dist_all.h5
+kripodb fragments shelve fragments.shelve fragments.sqlite
+kripodb fragments sdf fragment??.sdf fragments.sqlite
+kripodb fragments pdb fragments.sqlite
+kripodb fingerprints import 01.fp 01.fp.db
+kripodb fingerprints import 02.fp 02.fp.db
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
+kripodb distances merge dist_*_*.h5  dist_all.h5
+kripodb distances optimize dist_all.h5
+kripodb distances serve dist_all.h5
 ```
 
 ## Search for most similar fragments
