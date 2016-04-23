@@ -74,11 +74,12 @@ def test_distmatrix_import_run():
         distmatrix = DistanceMatrix(output_fn)
         result = [r for r in distmatrix]
         distmatrix.close()
-        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877164873731594), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633096818493935)]
-        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 5)
+        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
+        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
         eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
     finally:
-        os.remove(output_fn)
+        if os.path.exists(output_fn):
+            os.remove(output_fn)
 
 
 def test_distmatrix_export_run():
@@ -89,8 +90,8 @@ def test_distmatrix_export_run():
     outputfile.seek(0)
     output = outputfile.getvalue()
     expected = 'frag_id1\tfrag_id2\tscore\n' \
-               '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5877164873731594\n' \
-               '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4633096818493935\n'
+               '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' \
+               '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4634\n'
     assert output.startswith(expected)
 
 
@@ -131,7 +132,7 @@ Compounds similar to 2mlm_2W7_frag2:
         distmatrix = DistanceMatrix(output_fn)
         rows = [r for r in distmatrix]
         distmatrix.close()
-        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.587685969329366), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4632944228274968)]
+        expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
         eq_(rows, expected)
     finally:
         os.remove(output_fn)

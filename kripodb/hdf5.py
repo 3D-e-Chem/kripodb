@@ -31,6 +31,7 @@ class DistanceMatrix(object):
             the score is converted to an int by multiplying it with the precision
         expectedlabelrows (int): Expected number of labels to be added.
             Required when distance matrix is opened in write mode, helps optimize storage
+        cache_labels (bool): Cache labels, speed up label lookups
 
     Attributes:
         h5file (tables.File): Object representing an open hdf5 file
@@ -39,10 +40,19 @@ class DistanceMatrix(object):
     """
     filters = tables.Filters(complevel=6, complib='blosc')
 
-    def __init__(self, filename, mode='r', expectedpairrows=None, precision=None, expectedlabelrows=None):
+    def __init__(self, filename, mode='r', expectedpairrows=None, precision=None, expectedlabelrows=None, cache_labels=False):
         self.h5file = tables.open_file(filename, mode, filters=self.filters)
         self.pairs = PairsTable(self.h5file, expectedpairrows, precision)
         self.labels = LabelsLookup(self.h5file, expectedlabelrows)
+        self.cache_i2l = {}
+        self.cache_l2i = {}
+        if cache_labels:
+            self._build_label_cache()
+
+    def _build_label_cache(self):
+        if not self.cache_l2i:
+            self.cache_l2i = self.labels.label2ids()
+            self.cache_i2l = {v: k for k, v in six.iteritems(self.cache_l2i)}
 
     def close(self):
         """Closes the hdf5file"""
@@ -69,10 +79,9 @@ class DistanceMatrix(object):
             self.pairs.update(other, self.labels.label2ids())
 
     def __iter__(self):
-        id2label = {r['frag_id']: r['label'] for r in self.labels}
-        precision = float(self.pairs.score_precision)
+        self._build_label_cache()
         for pair in self.pairs:
-            yield id2label[pair['a']], id2label[pair['b']], float(pair['score']) / precision
+            yield self.cache_i2l[pair['a']], self.cache_i2l[pair['b']], pair['score']
 
     def update(self, distances_iter, label2id):
         """Store pairs of fragment identifier with their distance score and label 2 id lookup
@@ -97,9 +106,14 @@ class DistanceMatrix(object):
         Yields:
             Tuple[(str, float)]: Hit fragment idenfier and distance score
         """
-        frag_id = self.labels.by_label(query)
-        for hit_frag_id, score in self.pairs.find(frag_id, cutoff, limit):
-            yield self.labels.by_id(hit_frag_id), score
+        if self.cache_l2i:
+            frag_id = self.cache_l2i[query]
+            for hit_frag_id, score in self.pairs.find(frag_id, cutoff, limit):
+                yield self.cache_i2l[hit_frag_id], score
+        else:
+            frag_id = self.labels.by_label(query)
+            for hit_frag_id, score in self.pairs.find(frag_id, cutoff, limit):
+                yield self.labels.by_id(hit_frag_id), score
 
 
 class AbstractSimpleTable(object):
@@ -159,6 +173,7 @@ class PairsTable(AbstractSimpleTable):
     Attributes:
         score_precision (int): Distance score is a fraction,
             the score is converted to an int by multiplying it with the precision
+        full_matrix (bool): Matrix is filled above and below diagonal.
     """
     table_name = 'pairs'
     filters = tables.Filters(complevel=6, complib='blosc')
@@ -188,13 +203,25 @@ class PairsTable(AbstractSimpleTable):
     def score_precision(self, value):
         self.table.attrs['score_precision'] = value
 
+    @property
+    def full_matrix(self):
+        try:
+            return self.table.attrs['full_matrix']
+        except KeyError:
+            return False
+
+    @full_matrix.setter
+    def full_matrix(self, value):
+        self.table.attrs['full_matrix'] = value
+
     def add_indexes(self):
         """Add indexes on identifier columns
 
         Best done after calling update().
         """
         self.table.cols.a.create_index(filters=self.filters)
-        self.table.cols.b.create_index(filters=self.filters)
+        if not self.full_matrix:
+            self.table.cols.b.create_index(filters=self.filters)
 
     def update(self, distances_iter, label2id):
         """Store pairs of fragment identifier with their distance score
@@ -235,11 +262,12 @@ class PairsTable(AbstractSimpleTable):
             score = ceil(precision10 * score / precision) / precision10
             hits[hit_id] = score
 
-        query2 = '(b == {0}) & (score >= {1})'.format(frag_id, scutoff)
-        for row in self.table.where(query2):
-            hit_id, score = row[0], row[2]
-            score = ceil(precision10 * score / precision) / precision10
-            hits[hit_id] = score
+        if not self.full_matrix:
+            query2 = '(b == {0}) & (score >= {1})'.format(frag_id, scutoff)
+            for row in self.table.where(query2):
+                hit_id, score = row[0], row[2]
+                score = ceil(precision10 * score / precision) / precision10
+                hits[hit_id] = score
 
         # highest score==most similar first
         sorted_hits = sorted(six.iteritems(hits), reverse=True, key=lambda r: r[1])
@@ -260,6 +288,13 @@ class PairsTable(AbstractSimpleTable):
 
         if self.score_precision is None:
             self.score_precision = other.score_precision
+
+    def __iter__(self):
+        precision = float(self.score_precision)
+        precision10 = float(10**(floor(log10(precision))))
+        for pair in super(PairsTable, self).__iter__():
+            score = ceil(precision10 * pair['score'] / precision) / precision10
+            yield {'a': pair['a'], 'b': pair['b'], 'score': score}
 
 
 class Id2Label(tables.IsDescription):

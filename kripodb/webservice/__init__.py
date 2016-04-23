@@ -86,7 +86,7 @@ def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kr
         internal_port: TCP port on which to listen
         external_url (str): URL which should be used in Swagger spec
     """
-    dist_matrix = DistanceMatrix(matrix)
+    dist_matrix = DistanceMatrix(matrix, cache_labels=True)
     app = wsgi_app(dist_matrix, external_url)
     LOGGER.setLevel(logging.INFO)
     LOGGER.addHandler(logging.StreamHandler())

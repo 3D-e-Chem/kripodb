@@ -32,7 +32,7 @@ class TestDistanceMatrix(object):
         result = list(self.matrix.find('2n6i_4FU_frag1', 0.98))
 
         expected = [('2n6i_4FU_frag2', 1.0), ('2n6i_4FU_frag6', 1.0)]
-        assert_array_almost_equal([r[1] for r in result], [r[1] for r in expected], 5)
+        assert_array_almost_equal([r[1] for r in result], [r[1] for r in expected], 3)
         eq_([r[0] for r in result], [r[0] for r in result])
 
     def test_iter_first2(self):
@@ -40,8 +40,8 @@ class TestDistanceMatrix(object):
 
         result = [next(myiter), next(myiter)]
 
-        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877164873731594), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633096818493935)]
-        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 5)
+        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
+        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
         eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
 
     def test_iter_last(self):
