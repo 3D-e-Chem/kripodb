@@ -416,7 +416,7 @@ class LabelsLookup(AbstractSimpleTable):
         """
         id_offset = max([r['frag_id'] for r in self.table]) + 1
 
-        mylabels = frozenset([r['label'] for r in self.table])
+        mylabels = frozenset([r['label'].decode() for r in self.table])
         missing_label2ids = {}
         for row in label2id:
             if row['label'] not in mylabels:
