@@ -578,16 +578,20 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
 
 def dismatrix_optimize_sc(subparsers):
     sc = subparsers.add_parser('optimize', help='Optimize distance matrix for reading')
-    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    sc.add_argument("distmatrixfn", type=str, help='hdf5 distance matrix file, will overwrite file')
     sc.set_defaults(func=dismatrix_optimize)
 
 
 def dismatrix_optimize(distmatrixfn):
+    # bump memory usage to speed up copy action
     from tables import parameters
     parameters.CHUNK_CACHE_SIZE = 1024**3
     parameters.CHUNK_CACHE_NELMTS = 2**14
 
     distmatrix = DistanceMatrix(distmatrixfn, 'a')
+    if distmatrix.pairs.full_matrix:
+        distmatrix.close()
+        raise Exception('Already optimized')
 
     print('Dropping indices')
     pairs = distmatrix.pairs.table
