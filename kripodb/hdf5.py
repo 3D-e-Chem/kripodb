@@ -268,28 +268,6 @@ class Id2Label(tables.IsDescription):
     label = tables.StringCol(16)
 
 
-class HitScore(tables.IsDescription):
-    hit_id = tables.UInt32Col()
-    score = tables.UInt16Col()
-
-
-class HitsTable(AbstractSimpleTable):
-    filters = tables.Filters(complevel=6, complib='blosc')
-
-    def __init__(self, h5file, query, expectedrows=0):
-        if 'hits' in h5file.root and query in h5file.root.hits:
-            table = h5file.root.hits.__getattr__(query)
-        else:
-            table = h5file.create_table('/hits',
-                                        query,
-                                        HitScore,
-                                        'Hits of ' + query,
-                                        filters=self.filters,
-                                        createparents=True,
-                                        expectedrows=expectedrows)
-        self.table = table
-
-
 class LabelsLookup(AbstractSimpleTable):
     """Table to look up label of fragment by id or id of fragment by label
 
