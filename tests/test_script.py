@@ -33,6 +33,7 @@ def test_pairs_subcommand_defaults():
     fargs = vars(args)
     del(fargs['func'])
     expected = {
+        'subcommand': 'fingerprints',
         'out_format': 'hdf5',
         'cutoff': 0.45,
         'out_file': 'outfn',

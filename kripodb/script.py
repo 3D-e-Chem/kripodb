@@ -42,7 +42,7 @@ def make_parser():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version=__version__)
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='subcommand')
 
     fp_sc = subparsers.add_parser('fingerprints', help='Fingerpints').add_subparsers()
     dm_sc = subparsers.add_parser('distances', help='Distance matrix').add_subparsers()
@@ -692,6 +692,13 @@ def main(argv=sys.argv[1:]):
     parser = make_parser()
     args = parser.parse_args(argv)
     fargs = vars(args)
-    func = args.func
-    del(fargs['func'])
-    func(**fargs)
+    if 'func' in fargs:
+        func = args.func
+        del(fargs['subcommand'])
+        del(fargs['func'])
+        func(**fargs)
+    else:
+        if 'subcommand' in args:
+            parser.parse_args([args.subcommand, '--help'])
+        else:
+            parser.print_help()
