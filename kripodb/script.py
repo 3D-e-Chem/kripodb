@@ -23,6 +23,9 @@ import six
 import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
+import numpy as np
+from tables import parameters
+import tables
 
 from . import makebits
 from . import pairs
@@ -577,56 +580,85 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
 
 
 def dismatrix_optimize_sc(subparsers):
-    sc = subparsers.add_parser('optimize', help='Optimize distance matrix for reading')
-    sc.add_argument("distmatrixfn", type=str, help='hdf5 distance matrix file, will overwrite file')
+    sc = subparsers.add_parser('freeze', help='Optimize distance matrix for reading')
+    sc.add_argument('in_fn', type=str, help='Input pairs file')
+    sc.add_argument('out_fn', type=str, help='Output array file, file is overwritten')
+    sc.add_argument('-f', '--frame_size', type=int, default=10**6, help='Size of frame')
+    sc.add_argument('--memory', type=int, default=2, help='Memory cache in Gigabytes')
+    sc.add_argument('--limit', type=int, help='Number of pairs to copy')
     sc.set_defaults(func=dismatrix_optimize)
 
 
-def dismatrix_optimize(distmatrixfn):
-    # bump memory usage to speed up copy action
-    from tables import parameters
-    parameters.CHUNK_CACHE_SIZE = 1024**3
-    parameters.CHUNK_CACHE_NELMTS = 2**14
+def fill_matrix(framenp, scores):
+    print('Sorting a>b')
+    framenf = np.sort(framenp, order=('a', 'b'))
+    print('Inserting a>b')
+    for row in framenf:
+        scores[row[0], row[1]] = row[2]
+    print('Sorting b>a')
+    framenr = np.sort(framenp, order=('b', 'a'))
+    print('Inserting b>a')
+    for row in framenr:
+        scores[row[1], row[0]] = row[2]
 
-    distmatrix = DistanceMatrix(distmatrixfn, 'a')
-    if distmatrix.pairs.full_matrix:
-        distmatrix.close()
-        raise Exception('Already optimized')
 
-    print('Dropping indices')
-    pairs = distmatrix.pairs.table
-    pairs.cols.a.remove_index()
-    pairs.cols.b.remove_index()
-    print('Adding transposed pairs')
-    step = 10 * 10 ** 6
-    nr_rows = len(distmatrix.pairs)
-    for start in range(0, nr_rows, step):
-        block = pairs.read(start=start, stop=start + step)
-        # swap a<>b
-        olda = block['a']
-        block['a'] = block['b']
-        block['b'] = olda
-        pairs.append(block)
-        print(start)
+def copy(pairs, matrix, id2nid, frame_size, limit):
+    nr_cells = 0
+    for start in range(0, limit, frame_size):
+        stop = frame_size + start
+        frame = pairs.read(start=start, stop=stop)
+        print('Translating frame {0}:{1}'.format(start, stop))
+        framet = []
+        for pair in frame:
+            framet.append((id2nid[pair[0]], id2nid[pair[1]], pair[2]))
+        framenp = np.array(framet, dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
+        nr_cells += len(frame) * 2
+        fill_matrix(framenp, matrix)
+        print('Filled {0} cells in matrix'.format(nr_cells))
 
-    print('Creating full cs index')
-    pairs.cols.a.create_csindex(filters=distmatrix.filters)
 
-    print('Creating sorted table')
-    pairs.copy('/', 'sorted_pairs', sortby='a')
+def dismatrix_optimize(in_fn, out_fn, frame_size, memory, limit=None):
+    parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
+    parameters.CHUNK_CACHE_NELMTS = 2 ** 14
 
-    print('Dropping unsorted pairs')
-    distmatrix.h5file.remove_node('/', 'pairs')
-    distmatrix.h5file.rename_node('/', name='sorted_pairs', newname='pairs')
+    dm = DistanceMatrix(in_fn)
+    nr_frags = len(dm.labels)
 
-    print('Create medium index')
-    # Single block will have same a
-    pairs = distmatrix.h5file.root.pairs
-    pairs.cols.a.create_index(filters=distmatrix.filters)
-    distmatrix.pairs.table = pairs
-    distmatrix.pairs.full_matrix = True
+    f = tables.open_file(out_fn, mode='w')
 
-    distmatrix.close()
+    print('Labels lookup')
+
+    id2labels = {v: k for k, v in dm.labels.label2ids().items()}
+    id2nid = {v: k for k, v in enumerate(id2labels)}
+    labels2nid = [None] * nr_frags
+    for myid in id2nid:
+        labels2nid[id2nid[myid]] = np.string_(id2labels[myid])
+    f.create_carray('/', 'labels', obj=labels2nid, filters=dm.filters)
+    f.flush()
+
+    print('Filling')
+    scores = f.create_carray('/', 'scores', atom=tables.UInt16Atom(),
+                             shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
+                             filters=dm.filters)
+    if limit is None:
+        limit = len(dm.pairs)
+
+    copy(dm.pairs.table, scores, id2nid, frame_size, limit)
+    f.flush()
+    f.close()
+    dm.close()
+
+    # Query pattern
+    # f = tables.open_file('mytestfile.h5', mode='r')
+    # i2l = dict(enumerate(f.root.labels))
+    # l2i = {v: k for k, v in i2l.items()}
+    # ql = b'1wnt_NAP_frag4'
+    # qi = l2i[ql]
+    # rh = f.root.scores[qi, ...]
+    # p = rh.nonzero()[0]
+    # z = {i2l[i]: rh[i] for i in p}
+    # h = sorted([(k, v) for k, v in z.items() if v > 40000], key=lambda r: r[1], reverse=True)[:10]
+    #
 
 
 def read_fpneighpairs_file(inputfile):

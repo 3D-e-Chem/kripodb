@@ -11,6 +11,4 @@ webtest
 requests_mock
 # for faster pydev debugging
 cython
-h5py
-h5py_cache
 numba
