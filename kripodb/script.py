@@ -544,6 +544,10 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
             hit['b'] = row[1]
             hit['score'] = row[2]
             hit.append()
+            hit['b'] = row[0]
+            hit['a'] = row[1]
+            hit['score'] = row[2]
+            hit.append()
         elif row[0] in frag_ids2keep:
             hit['a'] = row[0]
             hit['b'] = row[1]
@@ -554,6 +558,7 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
             hit['a'] = row[1]
             hit['b'] = row[0]
             hit['score'] = row[2]
+            hit.append()
             all_frags2keep.add(row[0])
 
     print('Adding indices')
