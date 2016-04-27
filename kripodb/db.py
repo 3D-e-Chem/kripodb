@@ -301,13 +301,13 @@ class FragmentsDb(SqliteDb):
 
         splitted_frag_id = frag_id.split('-')
         if len(splitted_frag_id) != 3:
-            logging.warn('Weird id {}, skipping'.format(frag_id))
+            logging.warning('Weird id {}, skipping'.format(frag_id))
             return
 
         try:
             frag_nr = int(splitted_frag_id[2].replace('frag', ''))
         except ValueError:
-            logging.warn('Weird id {}, skipping'.format(frag_id))
+            logging.warning('Weird id {}, skipping'.format(frag_id))
             return
 
         lig_id = fragment['ligID'].split('-')

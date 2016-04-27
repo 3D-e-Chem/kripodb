@@ -303,7 +303,7 @@ def sdf2fragmentsdb_sc(subparsers):
 def sdf2fragmentsdb_run(sdffns, fragmentsdb):
     frags = FragmentsDb(fragmentsdb)
     for sdffn in sdffns:
-        logging.warn('Parsing {}'.format(sdffn))
+        logging.warning('Parsing {}'.format(sdffn))
         suppl = SDMolSupplier(sdffn)
         frags.add_molecules(suppl)
 

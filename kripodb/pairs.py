@@ -61,7 +61,7 @@ def dump_pairs(bitsets1,
 
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 
-    logging.warn('Generating pairs')
+    logging.warning('Generating pairs')
 
     distances_iter = distances(bitsets1, bitsets2,
                                number_of_bits, corr_st, corr_sto,
