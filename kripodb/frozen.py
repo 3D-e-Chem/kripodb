@@ -20,7 +20,6 @@ except ImportError:
     from time import clock as process_time
 
 import numpy as np
-from tables import parameters
 import tables
 
 
@@ -75,10 +74,7 @@ class FrozenDistanceMatrix(object):
         self.cache_i2l = dict(enumerate(self.labels))
         self.cache_l2i = {v: k for k, v in self.cache_i2l.items()}
 
-    def from_pairs(self, distance_matrix, frame_size, memory, limit=None):
-        parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
-        parameters.CHUNK_CACHE_NELMTS = 2 ** 14
-
+    def from_pairs(self, distance_matrix, frame_size, limit=None):
         nr_frags = len(distance_matrix.labels)
 
         print('Filling labels ... ', end='')

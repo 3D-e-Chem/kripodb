@@ -16,13 +16,13 @@ import argparse
 import csv
 import gzip
 import logging
+import tarfile
 import shelve
 import sys
 
 import six
-import tarfile
-
 from rdkit.Chem.rdmolfiles import SDMolSupplier
+from tables import parameters
 
 from . import makebits
 from . import pairs
@@ -535,8 +535,8 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
         if frag_label in frag_labels2keep:
             frag_ids2keep.add(frag_id)
 
-    print('copy subset of pairs table, full matrix')
-    all_frags2keep = set()
+    print('Copying subset of pairs table')
+    all_frags2keep = set(frag_ids2keep)
     hit = distmatrix_out.pairs.table.row
     for row in distmatrix_in.pairs.table:
         if row[0] in frag_ids2keep and row[1] in frag_ids2keep:
@@ -544,12 +544,6 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
             hit['b'] = row[1]
             hit['score'] = row[2]
             hit.append()
-            all_frags2keep.add(row[1])
-            hit['a'] = row[1]
-            hit['b'] = row[0]
-            hit['score'] = row[2]
-            hit.append()
-            all_frags2keep.add(row[0])
         elif row[0] in frag_ids2keep:
             hit['a'] = row[0]
             hit['b'] = row[1]
@@ -563,9 +557,9 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
             all_frags2keep.add(row[0])
 
     print('Adding indices')
-    distmatrix_out.pairs.table.cols.a.create_csindex(filters=distmatrix_out.pairs.filters)
+    distmatrix_out.pairs.add_indexes()
 
-    print('copy subset of labels table')
+    print('Copying subset of labels table')
     hit = distmatrix_out.labels.table.row
     for row in distmatrix_in.labels.table:
         if row[0] in all_frags2keep:
@@ -588,9 +582,11 @@ def dismatrix_freeze_sc(subparsers):
 
 
 def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit):
+    parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
+    parameters.CHUNK_CACHE_NELMTS = 2 ** 14
     dm = DistanceMatrix(in_fn, 'r')
     dfm = FrozenDistanceMatrix(out_fn, 'w')
-    dfm.from_pairs(dm, frame_size, memory, limit)
+    dfm.from_pairs(dm, frame_size, limit)
     dm.close()
     dfm.close()
 
