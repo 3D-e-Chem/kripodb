@@ -61,7 +61,7 @@ class FrozenDistanceMatrix(object):
         precision10 = float(10**(floor(log10(precision))))
         scutoff = int(cutoff * precision)
         query_id = self.cache_l2i[query]
-        subjects = self.table.root.scores[query_id, ...]
+        subjects = self.h5file.root.scores[query_id, ...]
         filled_subjects_ids = subjects.nonzero()[0]
         filled_subjects = [(i, subjects[i]) for i in filled_subjects_ids]
         hits = [(self.cache_i2l[k], ceil(precision10 * v / precision) / precision10) for k, v in filled_subjects if v >= scutoff]
@@ -71,7 +71,7 @@ class FrozenDistanceMatrix(object):
         return sorted_hits
 
     def build_label_cache(self):
-        self.cache_i2l = dict(enumerate(self.labels))
+        self.cache_i2l = {k: v.decode() for k, v in enumerate(self.labels)}
         self.cache_l2i = {v: k for k, v in self.cache_i2l.items()}
 
     def from_pairs(self, distance_matrix, frame_size, limit=None, single_sided=False):

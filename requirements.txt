@@ -11,4 +11,3 @@ webtest
 requests_mock
 # for faster pydev debugging
 cython
-numba

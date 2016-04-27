@@ -14,7 +14,11 @@
 """Module handling generation and retrieval of distance matrix"""
 
 from __future__ import absolute_import
+
+import tables
+
 import logging
+from kripodb.frozen import FrozenDistanceMatrix
 
 from .hdf5 import DistanceMatrix
 from .modifiedtanimoto import distances, corrections
@@ -177,7 +181,13 @@ def similar_run(query, pairsdbfn, cutoff, out):
         hits = [(h['query_frag_id'], h['hit_frag_id'], h['score']) for h in hits]
         dump_pairs_tsv(hits, out)
     else:
-        matrix = DistanceMatrix(pairsdbfn)
+        f = tables.open_file(pairsdbfn, 'r')
+        is_frozen = 'scores' in f.root
+        f.close()
+        if is_frozen:
+            matrix = FrozenDistanceMatrix(pairsdbfn)
+        else:
+            matrix = DistanceMatrix(pairsdbfn)
         hits = similar(query, matrix, cutoff)
         dump_pairs_tsv(hits, out)
         matrix.close()
