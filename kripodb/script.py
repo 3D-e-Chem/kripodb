@@ -578,15 +578,16 @@ def dismatrix_freeze_sc(subparsers):
     sc.add_argument('-f', '--frame_size', type=int, default=10**6, help='Size of frame (default: %(default)s)')
     sc.add_argument('--memory', type=int, default=2, help='Memory cache in Gigabytes (default: %(default)s)')
     sc.add_argument('--limit', type=int, help='Number of pairs to copy, None for no limit (default: %(default)s)')
+    sc.add_argument('-s', '--single_sided', action='store_true', help='Store half matrix (default: %(default)s)')
     sc.set_defaults(func=dismatrix_freeze)
 
 
-def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit):
+def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit, single_sided):
+    dm = DistanceMatrix(in_fn, 'r')
     parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
     parameters.CHUNK_CACHE_NELMTS = 2 ** 14
-    dm = DistanceMatrix(in_fn, 'r')
     dfm = FrozenDistanceMatrix(out_fn, 'w')
-    dfm.from_pairs(dm, frame_size, limit)
+    dfm.from_pairs(dm, frame_size, limit, single_sided)
     dm.close()
     dfm.close()
 
