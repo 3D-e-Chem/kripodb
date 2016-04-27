@@ -23,13 +23,11 @@ import six
 import tarfile
 
 from rdkit.Chem.rdmolfiles import SDMolSupplier
-import numpy as np
-from tables import parameters
-import tables
 
 from . import makebits
 from . import pairs
 from .db import FragmentsDb, FingerprintsDb
+from .frozen import FrozenDistanceMatrix
 from .hdf5 import DistanceMatrix
 from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
@@ -79,7 +77,7 @@ def make_parser():
 
     distmatrix_filter_sc(dm_sc)
 
-    dismatrix_optimize_sc(dm_sc)
+    dismatrix_freeze_sc(dm_sc)
 
     fpneigh2tsv_sc(dm_sc)
 
@@ -101,34 +99,34 @@ def pairs_sc(subparsers):
     sc = subparsers.add_parser('distances',
                                help=sc_help,
                                description=sc_description)
-    sc.add_argument("fingerprintsfn1",
-                    help="Name of reference fingerprints db file")
-    sc.add_argument("fingerprintsfn2",
-                    help="Name of query fingerprints db file")
-    sc.add_argument("out_file",
-                    help="Name of output file (use - for stdout)")
-    sc.add_argument("--out_format",
+    sc.add_argument('fingerprintsfn1',
+                    help='Name of reference fingerprints db file')
+    sc.add_argument('fingerprintsfn2',
+                    help='Name of query fingerprints db file')
+    sc.add_argument('out_file',
+                    help='Name of output file (use - for stdout)')
+    sc.add_argument('--out_format',
                     choices=out_formats,
                     default='hdf5',
-                    help="Format of output")
-    sc.add_argument("--fragmentsdbfn",
+                    help='Format of output (default: %(default)s)')
+    sc.add_argument('--fragmentsdbfn',
                     help='Name of fragments db file (only required for hdf5 format)')
-    sc.add_argument("--mean_onbit_density",
+    sc.add_argument('--mean_onbit_density',
                     type=float,
                     default=0.01)
-    sc.add_argument("--cutoff",
+    sc.add_argument('--cutoff',
                     type=float,
                     default=0.45,
-                    help="Set Tanimoto cutoff")
+                    help='Set Tanimoto cutoff')
     ph = '''Distance precision for compact formats,
-    distance range from 0..<precision>'''
-    sc.add_argument("--precision",
+    distance range from 0..<precision> (default: %(default)s)'''
+    sc.add_argument('--precision',
                     type=int,
                     default=65535,
                     help=ph)
-    sc.add_argument("--nomemory",
+    sc.add_argument('--nomemory',
                     action='store_true',
-                    help='Do not store query fingerprints in memory')
+                    help='Do not store query fingerprints in memory (default: %(default)s)')
     sc.set_defaults(func=pairs_run)
 
 
@@ -223,21 +221,21 @@ def fingerprintsdb2makebits(infile, outfile):
 def distance2query_sc(subparsers):
     sc_help = 'Find the fragments closests to query based on fingerprints'
     sc = subparsers.add_parser('similar', help=sc_help)
-    sc.add_argument("fingerprintsdb",
+    sc.add_argument('fingerprintsdb',
                     default='fingerprints.db',
-                    help="Name of fingerprints db file")
-    sc.add_argument("query", type=str, help='Query identifier or beginning of it')
-    sc.add_argument("out", type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
-    sc.add_argument("--mean_onbit_density",
+                    help='Name of fingerprints db file')
+    sc.add_argument('query', type=str, help='Query identifier or beginning of it')
+    sc.add_argument('out', type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
+    sc.add_argument('--mean_onbit_density',
                     type=float,
                     default=0.01)
-    sc.add_argument("--cutoff",
+    sc.add_argument('--cutoff',
                     type=float,
                     default=0.55,
-                    help="Set Tanimoto cutoff")
-    sc.add_argument("--memory",
+                    help='Set Tanimoto cutoff (default: %(default)s)')
+    sc.add_argument('--memory',
                     action='store_true',
-                    help='Store bitsets in memory')
+                    help='Store bitsets in memory (default: %(default)s)')
     sc.set_defaults(func=pairs.distance2query)
 
 
@@ -249,25 +247,25 @@ def distance2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, m
 def similar_sc(subparsers):
     sc_help = 'Find the fragments closets to query based on distance matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
-    sc.add_argument("pairsdbfn", type=str, help='hdf5 distance matrix file or base url of kripodb webservice')
-    sc.add_argument("query", type=str, help='Query fragment identifier')
-    sc.add_argument("--out", type=argparse.FileType('w'), default='-',
+    sc.add_argument('pairsdbfn', type=str, help='hdf5 distance matrix file or base url of kripodb webservice')
+    sc.add_argument('query', type=str, help='Query fragment identifier')
+    sc.add_argument('--out', type=argparse.FileType('w'), default='-',
                     help='Output file tab delimited (query, hit, distance score)')
-    sc.add_argument("--cutoff",
+    sc.add_argument('--cutoff',
                     type=float,
                     default=0.55,
-                    help="Distance cutoff")
+                    help='Distance cutoff (default: %(default)s)')
     sc.set_defaults(func=pairs.similar_run)
 
 
 def meanbitdensity_sc(subparsers):
     sc = subparsers.add_parser('meanbitdensity', help='Compute mean bit density of fingerprints')
-    sc.add_argument("fingerprintsdb",
+    sc.add_argument('fingerprintsdb',
                     default='fingerprints.db',
-                    help="Name of fingerprints db file")
-    sc.add_argument("--out", type=argparse.FileType('w'),
+                    help='Name of fingerprints db file (default: %(default)s)')
+    sc.add_argument('--out', type=argparse.FileType('w'),
                     default='-',
-                    help='Output file, default is stdout')
+                    help='Output file, default is stdout (default: %(default)s)')
     sc.set_defaults(func=meanbitdensity_run)
 
 
@@ -282,7 +280,7 @@ def shelve2fragmentsdb_sc(subparsers):
     sc.add_argument('shelvefn', type=str)
     sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help="Name of fragments db file")
+                    help='Name of fragments db file (default: %(default)s)')
     sc.set_defaults(func=shelve2fragmentsdb_run)
 
 
@@ -295,9 +293,9 @@ def shelve2fragmentsdb_run(shelvefn, fragmentsdb):
 def sdf2fragmentsdb_sc(subparsers):
     sc = subparsers.add_parser('sdf', help='Add fragments sdf to sqlite')
     sc.add_argument('sdffns', help='SDF filename', nargs='+')
-    sc.add_argument("fragmentsdb",
+    sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help="Name of fragments db file")
+                    help='Name of fragments db file (default: %(default)s)')
 
     sc.set_defaults(func=sdf2fragmentsdb_run)
 
@@ -312,9 +310,9 @@ def sdf2fragmentsdb_run(sdffns, fragmentsdb):
 
 def pdb2fragmentsdb_sc(subparsers):
     sc = subparsers.add_parser('pdb', help='Add pdb metadata from RCSB PDB website to fragment sqlite db')
-    sc.add_argument("fragmentsdb",
+    sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help="Name of fragments db file")
+                    help='Name of fragments db file')
 
     sc.set_defaults(func=pdb2fragmentsdb_run)
 
@@ -335,13 +333,13 @@ def merge_pairs_sc(subparsers):
 
 def fragmentsdb_filter_sc(subparsers):
     sc = subparsers.add_parser('filter', help='Filter fragments database')
-    sc.add_argument("input", type=str,
+    sc.add_argument('input', type=str,
                     help='Name of fragments db input file')
-    sc.add_argument("output", type=str,
+    sc.add_argument('output', type=str,
                     help='Name of fragments db output file, will overwrite file if it exists')
-    sc.add_argument("--pdbs", type=argparse.FileType('r'),
+    sc.add_argument('--pdbs', type=argparse.FileType('r'),
                     help='Keep fragments from any of the supplied pdb codes, one pdb code per line, use - for stdin')
-    sc.add_argument("--matrix", type=str, help='Keep fragments which are in distance matrix file')
+    sc.add_argument('--matrix', type=str, help='Keep fragments which are in distance matrix file')
     sc.set_defaults(func=fragmentsdb_filter)
 
 
@@ -413,8 +411,8 @@ def fragmentsdb_filter_pdbs(input, output, pdbs):
 
 def distmatrix_export_sc(subparsers):
     sc = subparsers.add_parser('export', help='Export distance matrix to tab delimited file')
-    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix filename')
-    sc.add_argument("outputfile", type=argparse.FileType('w'),
+    sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix filename')
+    sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
     sc.set_defaults(func=distmatrix_export_run)
 
@@ -436,24 +434,24 @@ def distmatrix_export_run(distmatrixfn, outputfile):
 
 def distmatrix_import_sc(subparsers):
     sc = subparsers.add_parser('import', help='Import distance matrix from tab delimited file')
-    sc.add_argument("inputfile", type=argparse.FileType('r'),
+    sc.add_argument('inputfile', type=argparse.FileType('r'),
                     help='Input file, use - for stdin')
-    sc.add_argument("fragmentsdb",
+    sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help="Name of fragments db file")
-    sc.add_argument("distmatrixfn", type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
-    sc.add_argument('--format', choices=['tsv', 'fpneigh'], default='fpneigh', help='tab delimited (tsv) or fpneigh formatted input')
+                    help='Name of fragments db file')
+    sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    sc.add_argument('--format', choices=['tsv', 'fpneigh'], default='fpneigh', help='tab delimited (tsv) or fpneigh formatted input (default: %(default)s)')
     ph = '''Distance precision for compact formats,
-    distance range from 0..<precision>'''
-    sc.add_argument("--precision",
+    distance range from 0..<precision> (default: %(default)s)'''
+    sc.add_argument('--precision',
                     type=int,
                     default=65535,
                     help=ph)
     # Have to ask, because inputfile can be stdin so can't do 2 passes through file
-    sc.add_argument("--nrrows",
+    sc.add_argument('--nrrows',
                     type=int,
                     default=2**16,
-                    help='Number of rows in inputfile')
+                    help='Number of rows in inputfile (default: %(default)s)')
     sc.set_defaults(func=distmatrix_import_run)
 
 
@@ -500,16 +498,16 @@ def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision
 
 def distmatrix_filter_sc(subparsers):
     sc = subparsers.add_parser('filter', help='Filter distance matrix')
-    sc.add_argument("input", type=str,
+    sc.add_argument('input', type=str,
                     help='Input hdf5 distance matrix file')
-    sc.add_argument("output", type=str,
+    sc.add_argument('output', type=str,
                     help='Output hdf5 distance matrix file, will overwrite file if it exists')
     sc.add_argument('--fragmentsdb',
                     default='fragments.db',
-                    help="Name of fragments db file")
+                    help='Name of fragments db file (default: %(default)s)')
     ph = '''Distance precision for compact formats,
-    distance range from 0..<precision>'''
-    sc.add_argument("--precision",
+    distance range from 0..<precision> (default: %(default)s)'''
+    sc.add_argument('--precision',
                     type=int,
                     default=65535,
                     help=ph)
@@ -579,86 +577,22 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
     distmatrix_out.close()
 
 
-def dismatrix_optimize_sc(subparsers):
+def dismatrix_freeze_sc(subparsers):
     sc = subparsers.add_parser('freeze', help='Optimize distance matrix for reading')
     sc.add_argument('in_fn', type=str, help='Input pairs file')
     sc.add_argument('out_fn', type=str, help='Output array file, file is overwritten')
-    sc.add_argument('-f', '--frame_size', type=int, default=10**6, help='Size of frame')
-    sc.add_argument('--memory', type=int, default=2, help='Memory cache in Gigabytes')
-    sc.add_argument('--limit', type=int, help='Number of pairs to copy')
-    sc.set_defaults(func=dismatrix_optimize)
+    sc.add_argument('-f', '--frame_size', type=int, default=10**6, help='Size of frame (default: %(default)s)')
+    sc.add_argument('--memory', type=int, default=2, help='Memory cache in Gigabytes (default: %(default)s)')
+    sc.add_argument('--limit', type=int, help='Number of pairs to copy, None for no limit (default: %(default)s)')
+    sc.set_defaults(func=dismatrix_freeze)
 
 
-def fill_matrix(framenp, scores):
-    print('Sorting a>b')
-    framenf = np.sort(framenp, order=('a', 'b'))
-    print('Inserting a>b')
-    for row in framenf:
-        scores[row[0], row[1]] = row[2]
-    print('Sorting b>a')
-    framenr = np.sort(framenp, order=('b', 'a'))
-    print('Inserting b>a')
-    for row in framenr:
-        scores[row[1], row[0]] = row[2]
-
-
-def copy(pairs, matrix, id2nid, frame_size, limit):
-    nr_cells = 0
-    for start in range(0, limit, frame_size):
-        stop = frame_size + start
-        frame = pairs.read(start=start, stop=stop)
-        print('Translating frame {0}:{1}'.format(start, stop))
-        framet = []
-        for pair in frame:
-            framet.append((id2nid[pair[0]], id2nid[pair[1]], pair[2]))
-        framenp = np.array(framet, dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
-        nr_cells += len(frame) * 2
-        fill_matrix(framenp, matrix)
-        print('Filled {0} cells in matrix'.format(nr_cells))
-
-
-def dismatrix_optimize(in_fn, out_fn, frame_size, memory, limit=None):
-    parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
-    parameters.CHUNK_CACHE_NELMTS = 2 ** 14
-
-    dm = DistanceMatrix(in_fn)
-    nr_frags = len(dm.labels)
-
-    f = tables.open_file(out_fn, mode='w')
-
-    print('Labels lookup')
-
-    id2labels = {v: k for k, v in dm.labels.label2ids().items()}
-    id2nid = {v: k for k, v in enumerate(id2labels)}
-    labels2nid = [None] * nr_frags
-    for myid in id2nid:
-        labels2nid[id2nid[myid]] = np.string_(id2labels[myid])
-    f.create_carray('/', 'labels', obj=labels2nid, filters=dm.filters)
-    f.flush()
-
-    print('Filling')
-    scores = f.create_carray('/', 'scores', atom=tables.UInt16Atom(),
-                             shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
-                             filters=dm.filters)
-    if limit is None:
-        limit = len(dm.pairs)
-
-    copy(dm.pairs.table, scores, id2nid, frame_size, limit)
-    f.flush()
-    f.close()
+def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit):
+    dm = DistanceMatrix(in_fn, 'r')
+    dfm = FrozenDistanceMatrix(out_fn, 'w')
+    dfm.from_pairs(dm, frame_size, memory, limit)
     dm.close()
-
-    # Query pattern
-    # f = tables.open_file('mytestfile.h5', mode='r')
-    # i2l = dict(enumerate(f.root.labels))
-    # l2i = {v: k for k, v in i2l.items()}
-    # ql = b'1wnt_NAP_frag4'
-    # qi = l2i[ql]
-    # rh = f.root.scores[qi, ...]
-    # p = rh.nonzero()[0]
-    # z = {i2l[i]: rh[i] for i in p}
-    # h = sorted([(k, v) for k, v in z.items() if v > 40000], key=lambda r: r[1], reverse=True)[:10]
-    #
+    dfm.close()
 
 
 def read_fpneighpairs_file(inputfile):
@@ -683,9 +617,9 @@ def read_fpneighpairs_file(inputfile):
 
 def fpneigh2tsv_sc(subparsers):
     sc = subparsers.add_parser('fpneigh2tsv', help='Convert fpneigh formatted file to tab delimited file')
-    sc.add_argument("inputfile", type=argparse.FileType('r'),
+    sc.add_argument('inputfile', type=argparse.FileType('r'),
                     help='Input file, use - for stdin')
-    sc.add_argument("outputfile", type=argparse.FileType('w'),
+    sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
     sc.set_defaults(func=fpneigh2tsv_run)
 
