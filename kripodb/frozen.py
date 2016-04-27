@@ -107,10 +107,10 @@ class FrozenDistanceMatrix(object):
             print('Fetching pairs {0}:{1} of {2} ... '.format(start, stop, limit), end='', flush=True)
             raw_frame = pairs.read(start=start, stop=stop)
             t2 = process_time()
-            print('{0}s, Parsing ... '.format(int(t2 - t1)), end='', flush=True)
+            print('{0}s, Parsing '.format(int(t2 - t1)), end='', flush=True)
             frame = self._translate_frame(raw_frame, id2nid, single_sided)
             t3 = process_time()
-            print('{0}s, Writing ... '.format(int(t3 - t2)), end='', flush=True)
+            print(' {0}s, Writing ... '.format(int(t3 - t2)), end='', flush=True)
             # alternate direction, to make use of cached chunks of prev frame
             direction = 1
             if i % 2 == 0:
@@ -122,14 +122,23 @@ class FrozenDistanceMatrix(object):
             i += 1
 
     def _translate_frame(self, raw_frame, id2nid, single_sided):
-        py_frame = []
+        frame = np.array([], dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
+        print('.', end='', flush=True)
+        if single_sided:
+            frame.resize((len(raw_frame),))
+        else:
+            frame.resize((len(raw_frame) * 2,))
+        i = 0
+        print('.', end='', flush=True)
         for pair in raw_frame:
             a = id2nid[pair[0]]
             b = id2nid[pair[1]]
-            py_frame.append((a, b, pair[2]))
+            frame[i] = (a, b, pair[2])
+            i += 1
             if not single_sided:
-                py_frame.append((b, a, pair[2]))
-        frame = np.array(py_frame, dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
+                frame[i] = (b, a, pair[2])
+                i += 1
+        print('.', end='', flush=True)
         frame.sort(order=('a', 'b'))
         return frame
 
