@@ -17,7 +17,11 @@ For using Kripo data files inside Knime (http://www.knime.org)
 """
 
 from __future__ import absolute_import
+
+import tables
+
 import pandas as pd
+from kripodb.frozen import FrozenDistanceMatrix
 from .db import FragmentsDb
 from .hdf5 import DistanceMatrix
 from .pairs import similar
@@ -61,7 +65,13 @@ def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):
             qhits = client.similar_fragments(query, cutoff, limit)
             hits.extend(qhits)
     else:
-        distance_matrix = DistanceMatrix(distance_matrix_filename_or_url)
+        f = tables.open_file(distance_matrix_filename_or_url, 'r')
+        is_frozen = 'scores' in f.root
+        f.close()
+        if is_frozen:
+            distance_matrix = FrozenDistanceMatrix(distance_matrix_filename_or_url)
+        else:
+            distance_matrix = DistanceMatrix(distance_matrix_filename_or_url)
         for query in queries:
             for query_id, hit_id, score in similar(query, distance_matrix, cutoff, limit):
                 hit = {'query_frag_id': query_id,
