@@ -16,6 +16,7 @@ API
 
     kripodb.canned <canned.rst>
     kripodb.db <db.rst>
+    kripodb.frozen <frozen.rst>
     kripodb.hdf5 <hdf5.rst>
     kripodb.makebits <makebits.rst>
     kripodb.modifiedtanimoto <modifiedtanimoto.rst>

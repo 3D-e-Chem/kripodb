@@ -20,10 +20,28 @@ except ImportError:
     from time import clock as process_time
 
 import numpy as np
+import pandas as pd
 import tables
 
 
 class FrozenDistanceMatrix(object):
+    """Frozen distances matrix
+
+    Compression is used so None/0 take no space.
+
+    Warning! Can not be enlarged.
+
+    Args:
+        filename (str): File name of hdf5 file to write or read distance matrix from
+        mode (str): Can be 'r' for reading or 'w' for writing
+        **kwargs: Passed though to tables.open_file()
+
+    Attributes:
+        h5file (tables.File): Object representing an open hdf5 file
+        scores (tables.CArray): HDF5 Table that contains matrix
+        labels (tables.CArray): Table to look up label of fragment by id or id of fragment by label
+
+    """
     filters = tables.Filters(complevel=6, complib='blosc')
 
     def __init__(self, filename, mode='r'):
@@ -75,6 +93,16 @@ class FrozenDistanceMatrix(object):
         self.cache_l2i = {v: k for k, v in self.cache_i2l.items()}
 
     def from_pairs(self, distance_matrix, frame_size, limit=None, single_sided=False):
+        """Fills self with matrix which is stored in pairs.
+
+        Also known as COOrdinate format, the ‘ijv’ or ‘triplet’ format.
+
+        Args:
+            distance_matrix (kripodb.hdf5.DistanceMatrix):
+            frame_size (int): Number of pairs to append in a single go
+            limit (int|None): Number of pairs to add, None for no limit, default is None.
+            single_sided (bool): If false add stored direction and reverse direction. Default is False.
+        """
         nr_frags = len(distance_matrix.labels)
 
         print('Filling labels ... ', end='')
@@ -146,3 +174,21 @@ class FrozenDistanceMatrix(object):
         scores = self.scores
         for row in frame[::direction]:
             scores[row[0], row[1]] = row[2]
+
+    def to_pandas(self):
+        """Pandas dataframe with labelled colums and rows.
+
+        Warning! Only use on matrices that fit in memory
+
+        Returns:
+            pd.DataFrame
+
+        """
+        precision = float(self.score_precision)
+        decimals = floor(log10(precision))
+        labels = [v.decode() for v in self.labels]
+        subjects = pd.DataFrame(self.scores.read(), index=labels, columns=labels)
+        subjects /= precision
+        subjects = subjects.round(decimals)
+        return subjects
+
