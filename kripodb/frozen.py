@@ -21,6 +21,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
+import six
 import tables
 
 
@@ -44,8 +45,8 @@ class FrozenDistanceMatrix(object):
     """
     filters = tables.Filters(complevel=6, complib='blosc')
 
-    def __init__(self, filename, mode='r'):
-        self.h5file = tables.open_file(filename, mode, filters=self.filters)
+    def __init__(self, filename, mode='r', **kwargs):
+        self.h5file = tables.open_file(filename, mode, filters=self.filters, **kwargs)
         self.score_precision = 2**16-1
         if 'labels' in self.h5file.root:
             self.labels = self.h5file.root.labels
@@ -95,7 +96,7 @@ class FrozenDistanceMatrix(object):
     def from_pairs(self, distance_matrix, frame_size, limit=None, single_sided=False):
         """Fills self with matrix which is stored in pairs.
 
-        Also known as COOrdinate format, the ‘ijv’ or ‘triplet’ format.
+        Also known as COOrdinate format, the 'ijv' or 'triplet' format.
 
         Args:
             distance_matrix (kripodb.hdf5.DistanceMatrix):
@@ -105,7 +106,7 @@ class FrozenDistanceMatrix(object):
         """
         nr_frags = len(distance_matrix.labels)
 
-        print('Filling labels ... ', end='')
+        six.print_('Filling labels ... ', end='')
 
         id2labels = {v: k for k, v in distance_matrix.labels.label2ids().items()}
         id2nid = {v: k for k, v in enumerate(id2labels)}
@@ -116,8 +117,8 @@ class FrozenDistanceMatrix(object):
         self.h5file.flush()
         self.build_label_cache()
 
-        print('Done')
-        print('Filling matrix')
+        six.print_('Done')
+        six.print_('Filling matrix')
         self.scores = self.h5file.create_carray('/', 'scores', atom=tables.UInt16Atom(),
                                                 shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
                                                 filters=self.filters)
@@ -132,13 +133,13 @@ class FrozenDistanceMatrix(object):
         for start in range(0, limit, frame_size):
             stop = frame_size + start
             t1 = process_time()
-            print('Fetching pairs {0}:{1} of {2} ... '.format(start, stop, limit), end='', flush=True)
+            six.print_('Fetching pairs {0}:{1} of {2} ... '.format(start, stop, limit), end='', flush=True)
             raw_frame = pairs.read(start=start, stop=stop)
             t2 = process_time()
-            print('{0}s, Parsing '.format(int(t2 - t1)), end='', flush=True)
+            six.print_('{0}s, Parsing '.format(int(t2 - t1)), end='', flush=True)
             frame = self._translate_frame(raw_frame, id2nid, single_sided)
             t3 = process_time()
-            print(' {0}s, Writing ... '.format(int(t3 - t2)), end='', flush=True)
+            six.print_(' {0}s, Writing ... '.format(int(t3 - t2)), end='', flush=True)
             # alternate direction, to make use of cached chunks of prev frame
             direction = 1
             if i % 2 == 0:
@@ -146,18 +147,18 @@ class FrozenDistanceMatrix(object):
             self._ingest_pairs_frame(frame, direction)
             del frame
             t4 = process_time()
-            print('{0}s, Done'.format(int(t4 - t3)), flush=True)
+            six.print_('{0}s, Done'.format(int(t4 - t3)), flush=True)
             i += 1
 
     def _translate_frame(self, raw_frame, id2nid, single_sided):
         frame = np.array([], dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
-        print('.', end='', flush=True)
+        six.print_('.', end='', flush=True)
         if single_sided:
             frame.resize((len(raw_frame),))
         else:
             frame.resize((len(raw_frame) * 2,))
         i = 0
-        print('.', end='', flush=True)
+        six.print_('.', end='', flush=True)
         for pair in raw_frame:
             a = id2nid[pair[0]]
             b = id2nid[pair[1]]
@@ -166,7 +167,7 @@ class FrozenDistanceMatrix(object):
             if not single_sided:
                 frame[i] = (b, a, pair[2])
                 i += 1
-        print('.', end='', flush=True)
+        six.print_('.', end='', flush=True)
         frame.sort(order=('a', 'b'))
         return frame
 
@@ -185,10 +186,10 @@ class FrozenDistanceMatrix(object):
 
         """
         precision = float(self.score_precision)
-        decimals = floor(log10(precision))
+        decimals = int(log10(precision))
         labels = [v.decode() for v in self.labels]
-        subjects = pd.DataFrame(self.scores.read(), index=labels, columns=labels)
-        subjects /= precision
-        subjects = subjects.round(decimals)
-        return subjects
+        df = pd.DataFrame(self.scores.read(), index=labels, columns=labels)
+        df /= precision
+        df = df.round(decimals)
+        return df
 
