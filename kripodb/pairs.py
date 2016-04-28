@@ -34,7 +34,6 @@ def dump_pairs(bitsets1,
                mean_onbit_density,
                cutoff,
                label2id,
-               precision,
                nomemory):
     """Dump pairs of bitset collection
 
@@ -49,7 +48,6 @@ def dump_pairs(bitsets1,
     :param mean_onbit_density:
     :param cutoff:
     :param label2id: dict to translate label to id (string to int)
-    :param precision:
     :param nomemory: If true bitset2 is not loaded into memory
     :return:
     """
@@ -76,7 +74,6 @@ def dump_pairs(bitsets1,
     elif out_format == 'hdf5':
         dump_pairs_hdf5(distances_iter,
                         label2id,
-                        precision,
                         expectedrows,
                         out_file)
     else:
@@ -102,7 +99,6 @@ def dump_pairs_tsv(distances_iter, out):
 
 def dump_pairs_hdf5(distances_iter,
                     label2id,
-                    precision,
                     expectedrows,
                     out_file):
     """Dump pairs in hdf5 file
@@ -114,13 +110,12 @@ def dump_pairs_hdf5(distances_iter,
 
     :param distances_iter:
     :param label2id: dict to translate label to id (string to int)
-    :param precision:
     :param expectedrows:
     :param out_file:
     :return:
     """
     matrix = DistanceMatrix(out_file, 'w',
-                            expectedpairrows=expectedrows, precision=precision,
+                            expectedpairrows=expectedrows,
                             expectedlabelrows=len(label2id))
 
     matrix.update(distances_iter, label2id)

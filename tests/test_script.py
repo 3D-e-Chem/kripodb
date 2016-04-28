@@ -39,7 +39,6 @@ def test_pairs_subcommand_defaults():
         'out_file': 'outfn',
         'fragmentsdbfn': 'fragdb',
         'mean_onbit_density': 0.01,
-        'precision': 65535,
         'nomemory': False,
         'fingerprintsfn2': 'fp2',
         'fingerprintsfn1': 'fp1'
@@ -69,7 +68,6 @@ def test_distmatrix_import_run():
                                      format='tsv',
                                      distmatrixfn=output_fn,
                                      fragmentsdb='data/fragments.sqlite',
-                                     precision=65535,
                                      nrrows=2)
 
         distmatrix = DistanceMatrix(output_fn)
@@ -127,7 +125,6 @@ Compounds similar to 2mlm_2W7_frag2:
         script.distmatrix_importfpneigh_run(inputfile=inputfile,
                                             distmatrixfn=output_fn,
                                             fragmentsdb='data/fragments.sqlite',
-                                            precision=65535,
                                             nrrows=3)
 
         distmatrix = DistanceMatrix(output_fn)

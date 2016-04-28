@@ -118,12 +118,6 @@ def pairs_sc(subparsers):
                     type=float,
                     default=0.45,
                     help='Set Tanimoto cutoff')
-    ph = '''Distance precision for compact formats,
-    distance range from 0..<precision> (default: %(default)s)'''
-    sc.add_argument('--precision',
-                    type=int,
-                    default=65535,
-                    help=ph)
     sc.add_argument('--nomemory',
                     action='store_true',
                     help='Do not store query fingerprints in memory (default: %(default)s)')
@@ -135,7 +129,7 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
               mean_onbit_density,
               cutoff,
               fragmentsdbfn,
-              precision, nomemory):
+              nomemory):
 
     if 'hdf5' in out_format and fragmentsdbfn is None:
         raise Exception('Hdf5 format requires fragments db')
@@ -166,7 +160,6 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
                      mean_onbit_density,
                      cutoff,
                      label2id,
-                     precision,
                      nomemory)
 
 
@@ -441,12 +434,6 @@ def distmatrix_import_sc(subparsers):
                     help='Name of fragments db file')
     sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
     sc.add_argument('--format', choices=['tsv', 'fpneigh'], default='fpneigh', help='tab delimited (tsv) or fpneigh formatted input (default: %(default)s)')
-    ph = '''Distance precision for compact formats,
-    distance range from 0..<precision> (default: %(default)s)'''
-    sc.add_argument('--precision',
-                    type=int,
-                    default=65535,
-                    help=ph)
     # Have to ask, because inputfile can be stdin so can't do 2 passes through file
     sc.add_argument('--nrrows',
                     type=int,
@@ -455,18 +442,17 @@ def distmatrix_import_sc(subparsers):
     sc.set_defaults(func=distmatrix_import_run)
 
 
-def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, format, precision, nrrows):
+def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, format, nrrows):
     if format == 'tsv':
-        distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, precision, nrrows)
+        distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows)
     elif format == 'fpneigh':
-        distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows)
+        distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows)
 
 
-def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
+def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
-                                precision=precision,
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
@@ -484,11 +470,10 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, precision, nrrow
     distmatrix.close()
 
 
-def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, precision, nrrows):
+def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
-                                precision=precision,
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
@@ -505,16 +490,10 @@ def distmatrix_filter_sc(subparsers):
     sc.add_argument('--fragmentsdb',
                     default='fragments.db',
                     help='Name of fragments db file (default: %(default)s)')
-    ph = '''Distance precision for compact formats,
-    distance range from 0..<precision> (default: %(default)s)'''
-    sc.add_argument('--precision',
-                    type=int,
-                    default=65535,
-                    help=ph)
     sc.set_defaults(func=distmatrix_filter)
 
 
-def distmatrix_filter(input, output, fragmentsdb, precision):
+def distmatrix_filter(input, output, fragmentsdb):
     distmatrix_in = DistanceMatrix(input)
     frags = FragmentsDb(fragmentsdb)
     print('Counting')
@@ -526,7 +505,7 @@ def distmatrix_filter(input, output, fragmentsdb, precision):
                                     'w',
                                     expectedlabelrows=expectedlabelrows,
                                     expectedpairrows=expectedpairrows,
-                                    precision=precision)
+                                    )
 
     print('Building frag_id keep list')
     frag_labels2keep = set(frags.id2label().values())

@@ -27,8 +27,6 @@ class DistanceMatrix(object):
         mode (str): Can be 'r' for reading or 'w' for writing
         expectedpairrows (int): Expected number of pairs to be added.
             Required when distance matrix is opened in write mode, helps optimize storage
-        precision (int): Distance score is a fraction,
-            the score is converted to an int by multiplying it with the precision
         expectedlabelrows (int): Expected number of labels to be added.
             Required when distance matrix is opened in write mode, helps optimize storage
         cache_labels (bool): Cache labels, speed up label lookups
@@ -40,9 +38,9 @@ class DistanceMatrix(object):
     """
     filters = tables.Filters(complevel=6, complib='blosc')
 
-    def __init__(self, filename, mode='r', expectedpairrows=None, precision=None, expectedlabelrows=None, cache_labels=False):
-        self.h5file = tables.open_file(filename, mode, filters=self.filters)
-        self.pairs = PairsTable(self.h5file, expectedpairrows, precision)
+    def __init__(self, filename, mode='r', expectedpairrows=None, expectedlabelrows=None, cache_labels=False, **kwargs):
+        self.h5file = tables.open_file(filename, mode, filters=self.filters, **kwargs)
+        self.pairs = PairsTable(self.h5file, expectedpairrows)
         self.labels = LabelsLookup(self.h5file, expectedlabelrows)
         self.cache_i2l = {}
         self.cache_l2i = {}
@@ -167,8 +165,6 @@ class PairsTable(AbstractSimpleTable):
         h5file (tables.File): Object representing an open hdf5 file
         expectedrows (int): Expected number of pairs to be added.
             Required when distance matrix is opened in write mode, helps optimize storage
-        precision (int): Distance score is a fraction,
-                the score is converted to an int by multiplying it with the precision
 
     Attributes:
         score_precision (int): Distance score is a fraction,
@@ -178,7 +174,7 @@ class PairsTable(AbstractSimpleTable):
     table_name = 'pairs'
     filters = tables.Filters(complevel=6, complib='blosc')
 
-    def __init__(self, h5file, expectedrows=0, precision=None):
+    def __init__(self, h5file, expectedrows=0):
         if self.table_name in h5file.root:
             table = h5file.root.__getattr__(self.table_name)
         else:
@@ -189,19 +185,7 @@ class PairsTable(AbstractSimpleTable):
                                         expectedrows=expectedrows)
 
         self.table = table
-        if precision is not None:
-            self.score_precision = precision
-
-    @property
-    def score_precision(self):
-        try:
-            return self.table.attrs['score_precision']
-        except KeyError:
-            return None
-
-    @score_precision.setter
-    def score_precision(self, value):
-        self.table.attrs['score_precision'] = value
+        self.score_precision = 2 ** 16 - 1
 
     @property
     def full_matrix(self):

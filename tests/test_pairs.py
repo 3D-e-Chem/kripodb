@@ -73,8 +73,7 @@ class Testpairs(object):
             'b': 2,
             'c': 3
         }
-        self.compact_pairs = [(1, 3, 75), (2, 3, 83)]
-        self.precision = 100
+        self.compact_pairs = [(1, 3, 49301), (2, 3, 54669)]
         self.h5filename = tmpname()
 
     def tearDown(self):
@@ -93,14 +92,12 @@ class Testpairs(object):
     def fill_matrix(self):
         kripodb.pairs.dump_pairs_hdf5(self.pairs,
                                       self.label2id,
-                                      self.precision,
                                       2,
                                       self.h5filename)
 
     def empty_matrix(self):
         kripodb.pairs.dump_pairs_hdf5([],
                                       {},
-                                      self.precision,
                                       0,
                                       self.h5filename)
 
@@ -111,7 +108,7 @@ class Testpairs(object):
         pairs.similar_run('a', self.h5filename, 0.55, out)
 
         result = out.getvalue()
-        expected = "a\tc\t0.75\n"
+        expected = "a\tc\t0.7523\n"
         eq_(result, expected)
 
     def test_similar_run_nohits(self):
@@ -128,7 +125,6 @@ class Testpairs(object):
         expectedrows = 2
         kripodb.pairs.dump_pairs_hdf5(self.pairs,
                                       self.label2id,
-                                      self.precision,
                                       expectedrows,
                                       self.h5filename)
 
@@ -150,7 +146,6 @@ class Testpairs(object):
                              0.4,
                              0.05,
                              self.label2id,
-                             self.precision,
                              False
                              )
 
@@ -167,7 +162,6 @@ class Testpairs(object):
                              0.4,
                              0.05,
                              self.label2id,
-                             self.precision,
                              False
                              )
 
@@ -185,7 +179,6 @@ class Testpairs(object):
                          0.4,
                          0.05,
                          self.label2id,
-                         self.precision,
                          False
                          )
         result = out.getvalue()
@@ -205,7 +198,6 @@ class Testpairs(object):
                          0.4,
                          0.05,
                          self.label2id,
-                         self.precision,
                          True
                          )
         result = out.getvalue()
