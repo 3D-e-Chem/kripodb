@@ -92,6 +92,7 @@ class TestFrozenDistanceMatrix(object):
         self.matrix.from_pairs(self.pair_matrix, 10, None, True)
 
         result = self.matrix.to_pandas()
+        print(result)
         labels = ['a', 'b', 'c', 'd']
         expected = pd.DataFrame([
             [0.0, 0.9, 0.5, 0.0],
@@ -127,3 +128,10 @@ class TestFrozenDistanceMatrix(object):
 
         with assert_raises(KeyError):
             self.matrix.find('f', 0.45)
+
+    def test_find_singlesided(self):
+        self.matrix.from_pairs(self.pair_matrix, 10, None, True)
+        print(self.matrix.scores.read())
+        hits = self.matrix.find('c', 0.0)
+        expected = []
+        eq_(hits, expected)

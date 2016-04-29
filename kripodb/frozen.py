@@ -21,6 +21,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import coo_matrix
 import six
 import tables
 
@@ -103,6 +104,19 @@ class FrozenDistanceMatrix(object):
             frame_size (int): Number of pairs to append in a single go
             limit (int|None): Number of pairs to add, None for no limit, default is None.
             single_sided (bool): If false add stored direction and reverse direction. Default is False.
+
+
+        time kripodb distances freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 percell.h5
+        47.2s
+        time kripodb distances freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 coo.h5
+        0.2m - 2m6s
+        .4m - 2m19s
+        .8m - 2m33s
+        1.6m - 2m48s
+        3.2m - 3m4s
+        6.4m  - 3m50s
+        12.8m - 4m59s
+        25.6m - 7m27s
         """
         nr_frags = len(distance_matrix.labels)
 
@@ -164,17 +178,27 @@ class FrozenDistanceMatrix(object):
             b = id2nid[pair[1]]
             frame[i] = (a, b, pair[2])
             i += 1
-            if not single_sided:
-                frame[i] = (b, a, pair[2])
-                i += 1
         six.print_('.', end='', flush=True)
-        frame.sort(order=('a', 'b'))
-        return frame
+        a = frame['a']
+        b = frame['b']
+        data = frame['score']
+        nr_frags = len(id2nid)
+        smat = coo_matrix((data, (b, a)), shape=(nr_frags, nr_frags)).tocsc()
+        if not single_sided:
+            smat += smat.transpose()
+        return smat
 
     def _ingest_pairs_frame(self, frame, direction):
         scores = self.scores
-        for row in frame[::direction]:
-            scores[row[0], row[1]] = row[2]
+        for current_col_idx in six.moves.range(frame.shape[0]):
+            new_col = frame.getcol(current_col_idx)
+            if not new_col.nnz:
+                # new col has only zeros, skipping
+                continue
+            current_col = scores[current_col_idx, ...]
+            # write whole column, so chunk compression + shuffle only performed once
+            scores[current_col_idx, ...] = current_col + new_col.toarray()[:, 0]
+            # TODO use [x,y] = v when nnz is low fraction of nr_frags
 
     def to_pandas(self):
         """Pandas dataframe with labelled colums and rows.
