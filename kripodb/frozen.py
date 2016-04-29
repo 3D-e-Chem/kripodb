@@ -15,12 +15,13 @@
 from __future__ import absolute_import, print_function
 from math import log10, ceil, floor
 try:
+    # for Python >3.3
     from time import process_time
 except ImportError:
     from time import clock as process_time
-
 import numpy as np
 import pandas as pd
+from progressbar import ProgressBar
 from scipy.sparse import coo_matrix
 import six
 import tables
@@ -29,7 +30,8 @@ import tables
 class FrozenDistanceMatrix(object):
     """Frozen distances matrix
 
-    Compression is used so None/0 take no space.
+    Store as compressed dense matrix.
+    Due to compression the zeros use up little space.
 
     Warning! Can not be enlarged.
 
@@ -142,63 +144,53 @@ class FrozenDistanceMatrix(object):
         self._ingest_pairs(distance_matrix.pairs.table, id2nid, frame_size, limit, single_sided)
         self.h5file.flush()
 
-    def _ingest_pairs(self, pairs, id2nid, frame_size, limit, single_sided):
-        i = 0
+    def _ingest_pairs(self, pairs, oid2nid, frame_size, limit, single_sided):
+        oid2nid_v = np.vectorize(oid2nid.get)
+        # whole pairs set does not fit in memory, so split it in frames with `frame_size` number of pairs.
         for start in range(0, limit, frame_size):
             stop = frame_size + start
             t1 = process_time()
             six.print_('Fetching pairs {0}:{1} of {2} ... '.format(start, stop, limit), end='', flush=True)
             raw_frame = pairs.read(start=start, stop=stop)
             t2 = process_time()
-            six.print_('{0}s, Parsing '.format(int(t2 - t1)), end='', flush=True)
-            frame = self._translate_frame(raw_frame, id2nid, single_sided)
+            six.print_('{0}s, Parsing ... '.format(int(t2 - t1)), flush=True)
+            frame = self._translate_frame(raw_frame, oid2nid_v, single_sided)
             t3 = process_time()
-            six.print_(' {0}s, Writing ... '.format(int(t3 - t2)), end='', flush=True)
+            six.print_('Writing ... '.format(int(t3 - t2)), flush=True)
             # alternate direction, to make use of cached chunks of prev frame
-            direction = 1
-            if i % 2 == 0:
-                direction = -1
-            self._ingest_pairs_frame(frame, direction)
+            self._ingest_pairs_frame(frame)
             del frame
             t4 = process_time()
-            six.print_('{0}s, Done'.format(int(t4 - t3)), flush=True)
-            i += 1
+            six.print_('{0}s, Done with {1}:{2} in {3}s'.format(int(t4 - t3), start, stop, int(t4 - t1)), flush=True)
 
-    def _translate_frame(self, raw_frame, id2nid, single_sided):
-        frame = np.array([], dtype=[('a', '<u4'), ('b', '<u4'), ('score', '<u2')])
-        six.print_('.', end='', flush=True)
-        if single_sided:
-            frame.resize((len(raw_frame),))
-        else:
-            frame.resize((len(raw_frame) * 2,))
-        i = 0
-        six.print_('.', end='', flush=True)
-        for pair in raw_frame:
-            a = id2nid[pair[0]]
-            b = id2nid[pair[1]]
-            frame[i] = (a, b, pair[2])
-            i += 1
-        six.print_('.', end='', flush=True)
-        a = frame['a']
-        b = frame['b']
-        data = frame['score']
-        nr_frags = len(id2nid)
+    def _translate_frame(self, raw_frame, oid2nid, single_sided):
+        bar = ProgressBar(max_value=4)
+        bar.update(0)
+        a = oid2nid(raw_frame['a'])
+        bar.update(1)
+        b = oid2nid(raw_frame['b'])
+        bar.update(2)
+        data = raw_frame['score']
+        nr_frags = len(self.labels)
         smat = coo_matrix((data, (b, a)), shape=(nr_frags, nr_frags)).tocsc()
+        bar.update(3)
         if not single_sided:
             smat += smat.transpose()
+        bar.update(4)
         return smat
 
-    def _ingest_pairs_frame(self, frame, direction):
+    def _ingest_pairs_frame(self, frame):
         scores = self.scores
-        for current_col_idx in six.moves.range(frame.shape[0]):
-            new_col = frame.getcol(current_col_idx)
-            if not new_col.nnz:
+        # loop each
+        bar = ProgressBar()
+        for row_idx in bar(six.moves.range(frame.shape[0])):
+            new_row = frame.getcol(row_idx)
+            if not new_row.nnz:
                 # new col has only zeros, skipping
                 continue
-            current_col = scores[current_col_idx, ...]
-            # write whole column, so chunk compression + shuffle only performed once
-            scores[current_col_idx, ...] = current_col + new_col.toarray()[:, 0]
-            # TODO use [x,y] = v when nnz is low fraction of nr_frags
+            current_row = scores[row_idx, ...]
+            # write whole column, so chunk compression + shuffle only performed once per row_idx
+            scores[row_idx, ...] = current_row + new_row.toarray()[:, 0]
 
     def to_pandas(self):
         """Pandas dataframe with labelled colums and rows.
