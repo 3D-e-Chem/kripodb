@@ -559,7 +559,7 @@ def dismatrix_freeze_sc(subparsers):
     sc = subparsers.add_parser('freeze', help='Optimize distance matrix for reading')
     sc.add_argument('in_fn', type=str, help='Input pairs file')
     sc.add_argument('out_fn', type=str, help='Output array file, file is overwritten')
-    sc.add_argument('-f', '--frame_size', type=int, default=10**7, help='Size of frame (default: %(default)s)')
+    sc.add_argument('-f', '--frame_size', type=int, default=10**8, help='Size of frame (default: %(default)s)')
     sc.add_argument('-m', '--memory', type=int, default=1, help='Memory cache in Gigabytes (default: %(default)s)')
     sc.add_argument('-l', '--limit', type=int, help='Number of pairs to copy, None for no limit (default: %(default)s)')
     sc.add_argument('-s', '--single_sided', action='store_true', help='Store half matrix (default: %(default)s)')

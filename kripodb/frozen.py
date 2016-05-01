@@ -30,10 +30,30 @@ import tables
 class FrozenDistanceMatrix(object):
     """Frozen distances matrix
 
+    Can retrieve whole column of a specific row fairly quickly.
     Store as compressed dense matrix.
     Due to compression the zeros use up little space.
 
     Warning! Can not be enlarged.
+
+    Compared find performance FrozenDistanceMatrix with DistanceMatrix:
+    >>> from kripodb.db import FragmentsDb
+    >>> db = FragmentsDb('data/feb2016/Kripo20151223.sqlite')
+    >>> ids = [v[0] for v in db.cursor.execute('SELECT frag_id FROM fragments ORDER BY RANDOM() LIMIT 20')]
+    >>> from kripodb.frozen import FrozenDistanceMatrix
+    >>> fdm = FrozenDistanceMatrix('01-01_to_13-13.out.frozen.blosczlib.h5')
+    >>> from kripodb.hdf5 import DistanceMatrix
+    >>> dm = DistanceMatrix('data/feb2016/01-01_to_13-13.out.h5', cache_labels=True)
+    >>> %timeit list(dm.find(ids[0], 0.45, None))
+    ... 1 loop, best of 3: 1.96 s per loop
+    >>>  %timeit list(fdm.find(ids[0], 0.45, None))
+    ... The slowest run took 6.21 times longer than the fastest. This could mean that an intermediate result is being cached.
+    ... 10 loops, best of 3: 19.3 ms per loop
+    >>> ids = [v[0] for v in db.cursor.execute('SELECT frag_id FROM fragments ORDER BY RANDOM() LIMIT 20')]
+    >>> %timeit -n1 [list(fdm.find(v, 0.45, None)) for v in ids]
+    ... 1 loop, best of 3: 677 ms per loop
+    >>> %timeit -n1 [list(dm.find(v, 0.45, None)) for v in ids]
+    ... 1 loop, best of 3: 29.7 s per loop
 
     Args:
         filename (str): File name of hdf5 file to write or read distance matrix from
@@ -46,7 +66,7 @@ class FrozenDistanceMatrix(object):
         labels (tables.CArray): Table to look up label of fragment by id or id of fragment by label
 
     """
-    filters = tables.Filters(complevel=6, complib='blosc')
+    filters = tables.Filters(complevel=6, complib='blosc', shuffle=True)
 
     def __init__(self, filename, mode='r', **kwargs):
         self.h5file = tables.open_file(filename, mode, filters=self.filters, **kwargs)

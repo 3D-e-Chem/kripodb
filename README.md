@@ -44,8 +44,11 @@ kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.d
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
 kripodb distances merge dist_*_*.h5  dist_all.h5
-kripodb distances optimize dist_all.h5
-kripodb distances serve dist_all.h5
+kripodb distances freeze dist_all.h5 dist_all.frozen.h5
+# Make froze distance matrix smaller, by using slower compression
+ptrepack --complevel 6 --complib blosc:zlib dist_all.frozen.h5 dist_all.packedfrozen.h5
+rm dist_all.frozen.h5
+kripodb distances serve dist_all.packedfrozen.h5
 ```
 
 ## Search for most similar fragments
