@@ -176,16 +176,31 @@ def similar_run(query, pairsdbfn, cutoff, out):
         hits = [(h['query_frag_id'], h['hit_frag_id'], h['score']) for h in hits]
         dump_pairs_tsv(hits, out)
     else:
-        f = tables.open_file(pairsdbfn, 'r')
-        is_frozen = 'scores' in f.root
-        f.close()
-        if is_frozen:
-            matrix = FrozenDistanceMatrix(pairsdbfn)
-        else:
-            matrix = DistanceMatrix(pairsdbfn)
+        matrix = open_distance_matrix(pairsdbfn)
         hits = similar(query, matrix, cutoff)
         dump_pairs_tsv(hits, out)
         matrix.close()
+
+
+def open_distance_matrix(fn):
+    """Open read-only distance matrix file.
+
+    Args:
+        fn (str): Filename of distance matrix
+
+    Returns:
+        DistanceMatrix|FrozenDistanceMatrix: A read-only distance matrix object
+
+    """
+    # peek in file to detect format
+    f = tables.open_file(fn, 'r')
+    is_frozen = 'scores' in f.root
+    f.close()
+    if is_frozen:
+        matrix = FrozenDistanceMatrix(fn)
+    else:
+        matrix = DistanceMatrix(fn, cache_labels=True)
+    return matrix
 
 
 def similar(query, distance_matrix, cutoff, limit=None):
