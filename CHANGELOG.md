@@ -11,7 +11,7 @@
 ### Added
 
 * Faster distance matrix storage format
-* Python3 support
+* Python3 support (#12)
 * Automated build to docker hub.
 
 ### Removed
