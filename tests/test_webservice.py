@@ -14,7 +14,7 @@
 from __future__ import absolute_import
 from nose.tools import eq_
 import requests_mock
-from kripodb import webservice
+from kripodb.webservice import server
 from kripodb.hdf5 import DistanceMatrix
 from kripodb.version import __version__
 from kripodb.webservice.client import WebserviceClient
@@ -23,7 +23,7 @@ from kripodb.webservice.client import WebserviceClient
 class TestWebservice(object):
     def setUp(self):
         self.matrix = DistanceMatrix('data/distances.h5')
-        self.app = webservice.wsgi_app(self.matrix)
+        self.app = server.wsgi_app(self.matrix)
 
     def tearDown(self):
         self.matrix.close()
@@ -33,14 +33,14 @@ class TestWebservice(object):
         cutoff = 0.85
 
         with self.app.app.test_request_context():
-            result = webservice.get_similar_fragments(fragment_id, cutoff, 1000)
+            result = server.get_similar_fragments(fragment_id, cutoff, 1000)
             expected = [
                 {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
             ]
             eq_(result, expected)
 
     def test_get_version(self):
-        result = webservice.get_version()
+        result = server.get_version()
 
         expected = {'version': __version__}
         eq_(result, expected)

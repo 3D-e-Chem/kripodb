@@ -31,7 +31,7 @@ from .frozen import FrozenDistanceMatrix
 from .hdf5 import DistanceMatrix
 from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
-from .webservice import serve_app
+from .webservice.server import serve_app
 from .version import __version__
 
 

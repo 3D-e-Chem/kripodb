@@ -18,7 +18,8 @@
       "get": {
         "summary": "Similar fragments",
         "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by distance score.\n",
-        "operationId": "kripodb.webservice.get_similar_fragments",
+        "x-swagger-router-controller": "kripodb.webservice.server",
+        "operationId": "get_similar_fragments",
         "parameters": [
           {
             "name": "fragment_id",
@@ -75,7 +76,8 @@
     "/version": {
       "get": {
         "summary": "Version of webservice",
-        "operationId": "kripodb.webservice.get_version",
+        "x-swagger-router-controller": "kripodb.webservice.server",
+        "operationId": "get_version",
         "tags": ["Version"],
         "responses": {
           "200": {
