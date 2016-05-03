@@ -2,10 +2,21 @@
 
 ## Unreleased
 
+## 1.4.0 - 3 May 2016
+
+### Changed
+
+* Using nested sub-commands instead of long sub-command. For example `kripodb distmatrix_import` now is `kripodb distances import`
+
 ### Added
 
-* Added Python3 support
-* Added automated build to docker hub.
+* Faster distance matrix storage format
+* Python3 support
+* Automated build to docker hub.
+
+### Removed
+
+* CLI argument `--precision`
 
 ## 1.3.0 - 23 Apr 2016
 
