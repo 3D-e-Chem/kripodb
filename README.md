@@ -109,6 +109,8 @@ It will print the urls for the swagger spec and UI.
 
 Note! The webservice returns a limited amount of results. To get all results use local files.
 
+On http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/ there is a KripoDB webservice with the full PDB fragment all vs all matrix.
+
 # Reference
 
 KRIPO – a structure-based pharmacophores approach explains polypharmacological effects;
