@@ -464,6 +464,8 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_u
     # distmatrix wants score as float instead of str
     def csv_iter(rows):
         for row in rows:
+            if row[0] == row[1]:
+                continue
             if ignore_upper_triangle and row[0] > row[1]:
                 continue
             row[2] = float(row[2])
@@ -584,6 +586,7 @@ def read_fpneighpairs_file(inputfile, ignore_upper_triangle=False):
 
     Args:
         inputfile (file): File object to read
+        ignore_upper_triangle (bool): Ignore upper triangle of input
 
     Yields:
         Tuple((Str,Str,Float)): List of (query fragment identifier, hit fragment identifier, distance score)
@@ -591,10 +594,9 @@ def read_fpneighpairs_file(inputfile, ignore_upper_triangle=False):
     """
     current_query = None
     reader = csv.reader(inputfile, delimiter=' ', skipinitialspace=True)
-
     for row in reader:
         if len(row) == 2 and current_query != row[0]:
-            if ignore_upper_triangle and current_query > row[1]:
+            if ignore_upper_triangle and current_query > row[0]:
                 continue
             yield (current_query, row[0], float(row[1]))
         elif len(row) == 4:

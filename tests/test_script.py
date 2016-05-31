@@ -81,6 +81,39 @@ def test_distmatrix_import_run():
             os.remove(output_fn)
 
 
+def test_distmatrix_import_run_ignore_upper_triangle():
+    output_fn = tmpname()
+
+    tsv = '''frag_id1	frag_id2	score
+2mlm_2W7_frag1	2mlm_2W7_frag1	1.0000000000000000
+2mlm_2W7_frag2	2mlm_2W7_frag2	1.0000000000000000
+2mlm_2W7_frag1	2mlm_2W7_frag2	0.5877164873731594
+2mlm_2W7_frag2	3wvm_STE_frag1	0.4633096818493935
+2mlm_2W7_frag2	2mlm_2W7_frag1	0.5877164873731594
+3wvm_STE_frag1	2mlm_2W7_frag2	0.4633096818493935
+'''
+    inputfile = StringIO(tsv)
+
+    try:
+        script.distmatrix_import_run(inputfile=inputfile,
+                                     format='tsv',
+                                     distmatrixfn=output_fn,
+                                     fragmentsdb='data/fragments.sqlite',
+                                     nrrows=2,
+                                     ignore_upper_triangle=True)
+
+        distmatrix = DistanceMatrix(output_fn)
+        result = [r for r in distmatrix]
+        distmatrix.close()
+        print(result)
+        expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
+        assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
+        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
+    finally:
+        if os.path.exists(output_fn):
+            os.remove(output_fn)
+
+
 def test_distmatrix_export_run():
     outputfile = StringIO()
     script.distmatrix_export_run('data/distances.h5', outputfile)
@@ -126,6 +159,35 @@ Compounds similar to 2mlm_2W7_frag2:
                                             distmatrixfn=output_fn,
                                             fragmentsdb='data/fragments.sqlite',
                                             nrrows=3)
+
+        distmatrix = DistanceMatrix(output_fn)
+        rows = [r for r in distmatrix]
+        distmatrix.close()
+        expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
+        eq_(rows, expected)
+    finally:
+        os.remove(output_fn)
+
+
+def test_distmatrix_importfpneigh_run_ignore_upper_triangle():
+    output_fn = tmpname()
+
+    tsv = '''Compounds similar to 2mlm_2W7_frag1:
+2mlm_2W7_frag1   1.0000
+2mlm_2W7_frag2   0.5877
+Compounds similar to 2mlm_2W7_frag2:
+2mlm_2W7_frag2   1.0000
+2mlm_2W7_frag1   0.5877
+3wvm_STE_frag1   0.4633
+'''
+    inputfile = StringIO(tsv)
+
+    try:
+        script.distmatrix_importfpneigh_run(inputfile=inputfile,
+                                            distmatrixfn=output_fn,
+                                            fragmentsdb='data/fragments.sqlite',
+                                            nrrows=3,
+                                            ignore_upper_triangle=True)
 
         distmatrix = DistanceMatrix(output_fn)
         rows = [r for r in distmatrix]
