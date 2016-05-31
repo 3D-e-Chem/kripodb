@@ -439,17 +439,18 @@ def distmatrix_import_sc(subparsers):
                     type=int,
                     default=2**16,
                     help='Number of rows in inputfile (default: %(default)s)')
+    sc.add_argument('--ignore_upper_triangle', action='store_true', help='Ignore upper triangle')
     sc.set_defaults(func=distmatrix_import_run)
 
 
-def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, format, nrrows):
+def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, format, nrrows, ignore_upper_triangle=False):
     if format == 'tsv':
-        distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows)
+        distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle)
     elif format == 'fpneigh':
-        distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows)
+        distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle)
 
 
-def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows):
+def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
@@ -463,6 +464,8 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows):
     # distmatrix wants score as float instead of str
     def csv_iter(rows):
         for row in rows:
+            if ignore_upper_triangle and row[0] > row[1]:
+                continue
             row[2] = float(row[2])
             yield row
 
@@ -470,14 +473,14 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows):
     distmatrix.close()
 
 
-def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows):
+def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     distmatrix = DistanceMatrix(distmatrixfn, 'w',
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
-    distmatrix.update(read_fpneighpairs_file(inputfile), label2id)
+    distmatrix.update(read_fpneighpairs_file(inputfile, ignore_upper_triangle), label2id)
     distmatrix.close()
 
 
@@ -576,7 +579,7 @@ def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit, single_sided):
     dfm.close()
 
 
-def read_fpneighpairs_file(inputfile):
+def read_fpneighpairs_file(inputfile, ignore_upper_triangle=False):
     """Read fpneigh formatted distance matrix file.
 
     Args:
@@ -591,6 +594,8 @@ def read_fpneighpairs_file(inputfile):
 
     for row in reader:
         if len(row) == 2 and current_query != row[0]:
+            if ignore_upper_triangle and current_query > row[1]:
+                continue
             yield (current_query, row[0], float(row[1]))
         elif len(row) == 4:
             current_query = row[3][:-1]
