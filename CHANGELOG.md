@@ -2,9 +2,12 @@
 
 ## Unreleased
 
-## Added
+## 1.4.1 - 31 May 2016
+
+### Added
 
 * Webservice online at http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/
+* Ignore_upper triangle option in distance import sub command
 
 ## 1.4.0 - 3 May 2016
 
