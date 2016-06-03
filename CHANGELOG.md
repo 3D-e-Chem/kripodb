@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.4.2 - 3 June 2016
+
+### Changed
+
+* Lower webservice cutoff to 0.45 (#18)
+
 ## 1.4.1 - 31 May 2016
 
 ### Added
