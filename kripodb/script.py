@@ -124,12 +124,13 @@ def pairs_sc(subparsers):
     sc.add_argument('--fragmentsdbfn',
                     help='Name of fragments db file (only required for hdf5 format)')
     sc.add_argument('--mean_onbit_density',
+                    help='Mean on bit density (default: %(default)s)',
                     type=float,
                     default=0.01)
     sc.add_argument('--cutoff',
                     type=float,
                     default=0.45,
-                    help='Set Tanimoto cutoff')
+                    help='Set Tanimoto cutoff (default: %(default)s)')
     sc.add_argument('--nomemory',
                     action='store_true',
                     help='Do not store query fingerprints in memory (default: %(default)s)')
@@ -232,6 +233,7 @@ def distance2query_sc(subparsers):
     sc.add_argument('query', type=str, help='Query identifier or beginning of it')
     sc.add_argument('out', type=argparse.FileType('w'), help='Output file tabdelimited (query, hit, score)')
     sc.add_argument('--mean_onbit_density',
+                    help='Mean on bit density (default: %(default)s)',
                     type=float,
                     default=0.01)
     sc.add_argument('--cutoff',
@@ -317,7 +319,7 @@ def pdb2fragmentsdb_sc(subparsers):
     sc = subparsers.add_parser('pdb', help='Add pdb metadata from RCSB PDB website to fragment sqlite db')
     sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help='Name of fragments db file')
+                    help='Name of fragments db file (default: %(default)s)')
 
     sc.set_defaults(func=pdb2fragmentsdb_run)
 
@@ -443,15 +445,18 @@ def distmatrix_import_sc(subparsers):
                     help='Input file, use - for stdin')
     sc.add_argument('fragmentsdb',
                     default='fragments.db',
-                    help='Name of fragments db file')
+                    help='Name of fragments db file (default: %(default)s)')
     sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
-    sc.add_argument('--format', choices=['tsv', 'fpneigh'], default='fpneigh', help='tab delimited (tsv) or fpneigh formatted input (default: %(default)s)')
+    sc.add_argument('--format',
+                    choices=['tsv', 'fpneigh'],
+                    default='fpneigh',
+                    help='tab delimited (tsv) or fpneigh formatted input (default: %(default)s)')
     # Have to ask, because inputfile can be stdin so can't do 2 passes through file
     sc.add_argument('--nrrows',
                     type=int,
                     default=2**16,
                     help='Number of rows in inputfile (default: %(default)s)')
-    sc.add_argument('--ignore_upper_triangle', action='store_true', help='Ignore upper triangle')
+    sc.add_argument('--ignore_upper_triangle', action='store_true', help='Ignore upper triangle (default: %(default)s)')
     sc.set_defaults(func=distmatrix_import_run)
 
 

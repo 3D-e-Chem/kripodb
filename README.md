@@ -39,10 +39,10 @@ kripodb fragments sdf fragment??.sdf fragments.sqlite
 kripodb fragments pdb fragments.sqlite
 kripodb fingerprints import 01.fp 01.fp.db
 kripodb fingerprints import 02.fp 02.fp.db
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db dist_01_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db dist_02_02.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
 kripodb distances merge dist_*_*.h5  dist_all.h5
 kripodb distances freeze dist_all.h5 dist_all.frozen.h5
 # Make froze distance matrix smaller, by using slower compression
@@ -57,6 +57,24 @@ Command to find fragments most similar to `3kxm_K74_frag1` fragment.
 ```
 kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
 ```
+
+## Create distance matrix from text files
+
+Input files `dist_??_??.txt.gz` looks like:
+```
+Compounds similar to 2xry_FAD_frag4:
+2xry_FAD_frag4   1.0000
+3cvv_FAD_frag3   0.5600
+```
+
+To create a single distance matrix from multiple text files:
+```
+gunzip -c dist_01_01.txt | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_01_01.h5
+gunzip -c dist_01_02.txt | kripodb distances import - fragments.sqlite dist_01_02.h5
+kripodb distances merge dist_??_??.h5 dist_all.h5
+```
+
+The `--ignore_upper_triangle` flag is used to prevent scores corruption when freezing distance matrix.
 
 # Data sets
 
@@ -75,7 +93,7 @@ The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/
 
 ## Protein Data Bank
 
-All fragments form all proteins in PDB compared with all.
+All fragments form all proteins-ligand complexes in PDB compared with all.
 Data set contains PDB entries that where available at 23 December 2015.
 
 * kripo.sqlite - Fragments sqlite database
