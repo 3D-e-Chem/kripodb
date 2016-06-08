@@ -58,9 +58,31 @@ Command to find fragments most similar to `3kxm_K74_frag1` fragment.
 kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
 ```
 
-# Data
+# Data sets
 
-An example data set included in the [data/](data/) directory. See [data/README.md](data/README.md) for more information.
+## Example
+
+An example data set included in the [data/](data/) directory of this repo. See [data/README.md](data/README.md) for more information.
+
+## GPCR
+
+All fragments based on GPCR proteins compared with all proteins in PDB.
+
+* kripo.gpcrandhits.sqlite - Fragments sqlite database
+* kripo.gpcr.h5 - HDF5 file with distance matrix
+ 
+The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.50835.svg)](http://dx.doi.org/10.5281/zenodo.50835)
+
+## Protein Data Bank
+
+All fragments form all proteins in PDB compared with all.
+Data set contains PDB entries that where available at 23 December 2015.
+
+* kripo.sqlite - Fragments sqlite database
+* Distance matrix is too big to ship with VM so use http://3d-e-chem.vu-compmedchem.nl/kripodb webservice url to query.
+* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [Create all](#create-all) for instructions how to convert to a distance matrix.
+
+The data set has been published at TODO
 
 # Knime
 
