@@ -6,3 +6,6 @@ kripodb.webservice
 
 .. automodule:: kripodb.webservice.client
     :members:
+
+.. automodule:: kripodb.webservice.server
+    :members:

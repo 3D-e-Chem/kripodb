@@ -8,7 +8,7 @@
 
 1. Create fingerprints db with 1000 fingerprints
 ```
-gunzip -c fingerprint01.fp.gz | head -1001 | kripodb makebits2fingerprintsdb - fingerprints.sqlite
+gunzip -c fingerprint01.fp.gz | head -1001 | kripodb fingerprints import - fingerprints.sqlite
 ```
 
 2. Shrink fragments db to only contain fragments which have a fingerprint
@@ -26,5 +26,5 @@ EOF
 3. Create distance matrix
 
 ```
-kripodb pairs --fragmentsdbfn fragments.sqlite fingerprints.sqlite fingerprints.sqlite distances.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite fingerprints.sqlite fingerprints.sqlite distances.h5
 ```

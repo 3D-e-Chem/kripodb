@@ -45,45 +45,57 @@ def make_parser():
     parser.add_argument('--version', action='version', version=__version__)
     subparsers = parser.add_subparsers(dest='subcommand')
 
-    fp_sc = subparsers.add_parser('fingerprints', help='Fingerpints').add_subparsers()
-    dm_sc = subparsers.add_parser('distances', help='Distance matrix').add_subparsers()
-    fr_sc = subparsers.add_parser('fragments', help='Fragments').add_subparsers()
+    make_fingerprints_parser(subparsers)
 
-    makebits2fingerprintsdb_sc(fp_sc)
+    make_fragments_parser(subparsers)
 
-    fingerprintsdb2makebits_sc(fp_sc)
-
-    meanbitdensity_sc(fp_sc)
-
-    distance2query_sc(fp_sc)
-
-    similar_sc(dm_sc)
-
-    pairs_sc(fp_sc)
-
-    shelve2fragmentsdb_sc(fr_sc)
-
-    sdf2fragmentsdb_sc(fr_sc)
-
-    pdb2fragmentsdb_sc(fr_sc)
-
-    fragmentsdb_filter_sc(fr_sc)
-
-    merge_pairs_sc(dm_sc)
-
-    distmatrix_export_sc(dm_sc)
-
-    distmatrix_import_sc(dm_sc)
-
-    distmatrix_filter_sc(dm_sc)
-
-    dismatrix_freeze_sc(dm_sc)
-
-    fpneigh2tsv_sc(dm_sc)
-
-    serve_sc(dm_sc)
+    make_distances_parser(subparsers)
 
     return parser
+
+
+def make_distances_parser(subparsers):
+    """Creates a parser for distances sub commands
+
+    Args:
+        subparsers (argparse.ArgumentParser): Parser to which to add sub commands to
+    """
+    dm_sc = subparsers.add_parser('distances', help='Distance matrix').add_subparsers()
+    similar_sc(dm_sc)
+    merge_pairs_sc(dm_sc)
+    distmatrix_export_sc(dm_sc)
+    distmatrix_import_sc(dm_sc)
+    distmatrix_filter_sc(dm_sc)
+    dismatrix_freeze_sc(dm_sc)
+    fpneigh2tsv_sc(dm_sc)
+    serve_sc(dm_sc)
+
+
+def make_fragments_parser(subparsers):
+    """Creates a parser for fragments sub commands
+
+    Args:
+        subparsers (argparse.ArgumentParser): Parser to which to add sub commands to
+    """
+    fr_sc = subparsers.add_parser('fragments', help='Fragments').add_subparsers()
+    shelve2fragmentsdb_sc(fr_sc)
+    sdf2fragmentsdb_sc(fr_sc)
+    pdb2fragmentsdb_sc(fr_sc)
+    fragmentsdb_filter_sc(fr_sc)
+
+
+def make_fingerprints_parser(subparsers):
+    """Creates a parser for fingerprints sub commands
+
+    Args:
+        subparsers (argparse.ArgumentParser): Parser to which to add sub commands to
+    """
+    fp_sc = subparsers.add_parser('fingerprints', help='Fingerprints').add_subparsers()
+    makebits2fingerprintsdb_sc(fp_sc)
+    fingerprintsdb2makebits_sc(fp_sc)
+    meanbitdensity_sc(fp_sc)
+    distance2query_sc(fp_sc)
+    pairs_sc(fp_sc)
 
 
 def pairs_sc(subparsers):
@@ -91,8 +103,8 @@ def pairs_sc(subparsers):
     sc_description = '''
 
     Output formats:
-    * tsv, tab seperated id1,id2, distance
-    * hdf5, hdf5 file contstructed with pytables with a, b and score, but but a and b have been replaced
+    * tsv, tab separated id1,id2, distance
+    * hdf5, hdf5 file constructed with pytables with a, b and score, but but a and b have been replaced
       by numbers and distance has been converted to scaled int
     '''
     out_formats = ['tsv', 'hdf5']

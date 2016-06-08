@@ -39,10 +39,10 @@ kripodb fragments sdf fragment??.sdf fragments.sqlite
 kripodb fragments pdb fragments.sqlite
 kripodb fingerprints import 01.fp 01.fp.db
 kripodb fingerprints import 02.fp 02.fp.db
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db dist_01_01.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db dist_02_02.h5
 kripodb distances merge dist_*_*.h5  dist_all.h5
 kripodb distances freeze dist_all.h5 dist_all.frozen.h5
 # Make froze distance matrix smaller, by using slower compression
@@ -66,7 +66,7 @@ An example data set included in the [data/](data/) directory. See [data/README.m
 
 The [Knime-KripoDB-example.zip](https://github.com/3D-e-Chem/knime-kripodb/blob/master/examples/Knime-KripoDB-example.zip) file is an example workflow showing how to use KripoDB python package inside Knime (http://www.knime.org).
 It can be run by importing it into Knime.
-Make sure the Python used by Knime is the same the Python with kripodb package installed.
+Make sure the Python used by Knime is the same as the Python with kripodb package installed.
 
 The https://github.com/3D-e-Chem/knime-kripodb repo adds KripoDB code templates to Knime.
 
