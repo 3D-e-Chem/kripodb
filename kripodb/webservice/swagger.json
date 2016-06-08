@@ -17,7 +17,7 @@
     "/fragments/{fragment_id}/similar": {
       "get": {
         "summary": "Similar fragments",
-        "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by distance score.\n",
+        "description": "Retrieve fragments similar to query based on Kripo fingerprint. Hits are ordered by decreasing similarity score (this score ranges from 0, completely dissimilar, to 1, identical).\n",
         "x-swagger-router-controller": "kripodb.webservice.server",
         "operationId": "get_similar_fragments",
         "parameters": [
@@ -31,7 +31,7 @@
           {
             "name": "cutoff",
             "in": "query",
-            "description": "Distance score cutoff.",
+            "description": "Similarity score cutoff.",
             "required": false,
             "default": 0.45,
             "type": "number",
@@ -105,7 +105,7 @@
         "score": {
           "type": "number",
           "format": "double",
-          "description": "Distance score"
+          "description": "Similarity score"
         }
       }
     },
