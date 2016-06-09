@@ -106,6 +106,10 @@ def pairs_sc(subparsers):
     * tsv, tab separated id1,id2, distance
     * hdf5, hdf5 file constructed with pytables with a, b and score, but but a and b have been replaced
       by numbers and distance has been converted to scaled int
+
+    When input has been split into chunks,
+    use `--ignore_upper_triangle` flag for computing distances between same chunk.
+    This prevents storing pair a->b also as b->a.
     '''
     out_formats = ['tsv', 'hdf5']
     sc = subparsers.add_parser('distances',
@@ -134,6 +138,9 @@ def pairs_sc(subparsers):
     sc.add_argument('--nomemory',
                     action='store_true',
                     help='Do not store query fingerprints in memory (default: %(default)s)')
+    sc.add_argument('--ignore_upper_triangle',
+                    action='store_true',
+                    help='Ignore upper triangle (default: %(default)s)')
     sc.set_defaults(func=pairs_run)
 
 
@@ -142,7 +149,8 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
               mean_onbit_density,
               cutoff,
               fragmentsdbfn,
-              nomemory):
+              nomemory,
+              ignore_upper_triangle):
 
     if 'hdf5' in out_format and fragmentsdbfn is None:
         raise Exception('Hdf5 format requires fragments db')
@@ -173,7 +181,8 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
                      mean_onbit_density,
                      cutoff,
                      label2id,
-                     nomemory)
+                     nomemory,
+                     ignore_upper_triangle)
 
 
 def makebits2fingerprintsdb_sc(subparsers):
@@ -440,7 +449,11 @@ def distmatrix_export_run(distmatrixfn, outputfile):
 
 
 def distmatrix_import_sc(subparsers):
-    sc = subparsers.add_parser('import', help='Import distance matrix from tab delimited file')
+    sc = subparsers.add_parser('import',
+                               help='Import distance matrix from tab delimited file',
+                               description='''When input has been split into chunks,
+                                           use `--ignore_upper_triangle` flag for distances between same chunk.
+                                           This prevents storing pair a->b also as b->a.''')
     sc.add_argument('inputfile', type=argparse.FileType('r'),
                     help='Input file, use - for stdin')
     sc.add_argument('fragmentsdb',
@@ -456,7 +469,9 @@ def distmatrix_import_sc(subparsers):
                     type=int,
                     default=2**16,
                     help='Number of rows in inputfile (default: %(default)s)')
-    sc.add_argument('--ignore_upper_triangle', action='store_true', help='Ignore upper triangle (default: %(default)s)')
+    sc.add_argument('--ignore_upper_triangle',
+                    action='store_true',
+                    help='Ignore upper triangle (default: %(default)s)')
     sc.set_defaults(func=distmatrix_import_run)
 
 

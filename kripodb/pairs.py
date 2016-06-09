@@ -34,22 +34,28 @@ def dump_pairs(bitsets1,
                mean_onbit_density,
                cutoff,
                label2id,
-               nomemory):
-    """Dump pairs of bitset collection
+               nomemory,
+               ignore_upper_triangle=False):
+    """Dump pairs of bitset collection.
 
-    :param bitsets1: dictionary of bitset identifier as key
-        and a intbitset object as value
-    :param bitsets2: dictionary of bitset identifier as key
-        and a intbitset object as value
-    :param out_format:
-    :param out_file:
-    :param out:
-    :param number_of_bits: Maximum number of bits in bitset
-    :param mean_onbit_density:
-    :param cutoff:
-    :param label2id: dict to translate label to id (string to int)
-    :param nomemory: If true bitset2 is not loaded into memory
-    :return:
+    A pairs are rows of the bitset identifier of both bitsets with a distance score.
+
+    Args:
+        bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
+            with fingerprint label as key and intbitset as value
+        bitsets2 (Dict{str, intbitset.intbitset}): Second dict of fingerprints
+            with fingerprint label as key and intbitset as value
+        out_format: 'tsv' or 'hdf5'
+        out_file: Filename of output file where 'hdf5' format is written to.
+        out (File): File object where 'tsv' format is written to.
+        number_of_bits (int): Number of bits for all bitsets
+        mean_onbit_density (float): Mean on bit density
+        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        label2id: dict to translate label to id (string to int)
+        nomemory: If true bitset2 is not loaded into memory
+        ignore_upper_triangle: When true returns distance where label1 > label2,
+            when false returns all distances
+
     """
     if out_file == '-' and out_format.startswith('hdf5'):
         raise Exception("hdf5 formats can't be outputted to stdout")
@@ -67,7 +73,8 @@ def dump_pairs(bitsets1,
 
     distances_iter = distances(bitsets1, bitsets2,
                                number_of_bits, corr_st, corr_sto,
-                               cutoff)
+                               cutoff,
+                               ignore_upper_triangle)
 
     if out_format == 'tsv':
         dump_pairs_tsv(distances_iter, out)

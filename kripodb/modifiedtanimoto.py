@@ -97,7 +97,7 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     return smt
 
 
-def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, full_matrix=False):
+def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ignore_upper_triangle=False):
     """Calculate modified tanimoto distance between two collections of fingerprints
 
     Excludes distance of the same fingerprint.
@@ -111,8 +111,8 @@ def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ful
         corr_st (float): St correction
         corr_sto (float): Sto correction
         cutoff (float): Cutoff, distance scores below cutoff are discarded.
-        full_matrix (Optional[bool]): When false returns distance where label1 > label2,
-            when true returns all distances
+        ignore_upper_triangle (Optional[bool]): When true returns distance where label1 > label2,
+            when false returns all distances
 
     Yields:
         (fingerprint label 1, fingerprint label2, distance)
@@ -123,7 +123,7 @@ def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ful
             if label1 == label2:
                 # always skip self
                 continue
-            if not full_matrix and label1 > label2:
+            if ignore_upper_triangle and label1 > label2:
                 continue
 
             d = distance(bs1, bs2, number_of_bits, corr_st, corr_sto)

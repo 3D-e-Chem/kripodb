@@ -61,11 +61,30 @@ class TestAlgorithm(object):
         bitset2 = intbitset([1, 2, 4, 8])
 
         result = modifiedtanimoto.distance(bitset1, bitset2,
-                                    self.number_of_bits,
-                                    self.corr_st, self.corr_sto)
+                                           self.number_of_bits,
+                                           self.corr_st, self.corr_sto)
 
         expected = 0.5779523809525572
         assert_almost_equal(result, expected)
+
+    def test_distances_ignore_upper_triangle(self):
+        bitsets = {
+            'a': intbitset([1, 2, 3]),
+            'b': intbitset([1, 2, 4, 5, 8]),
+            'c': intbitset([1, 2, 4, 8])
+        }
+
+        iterator = modifiedtanimoto.distances(bitsets, bitsets,
+                                              self.number_of_bits,
+                                              self.corr_st, self.corr_sto,
+                                              0.55, True)
+        result = [r for r in iterator]
+
+        expected = [
+            ('a', 'c', 0.5779523809525572),
+            ('b', 'c', 0.8357708333333689)]
+        # pair a-c is below cutoff with distance of 0.53
+        assert_distances(result, expected)
 
     def test_distances(self):
         bitsets = {
@@ -75,28 +94,9 @@ class TestAlgorithm(object):
         }
 
         iterator = modifiedtanimoto.distances(bitsets, bitsets,
-                                       self.number_of_bits,
-                                       self.corr_st, self.corr_sto,
-                                       0.55)
-        result = [r for r in iterator]
-
-        expected = [
-            ('a', 'c', 0.5779523809525572),
-            ('b', 'c', 0.8357708333333689)]
-        # pair a-c is below cutoff with distance of 0.53
-        assert_distances(result, expected)
-
-    def test_distances_fullmatrix(self):
-        bitsets = {
-            'a': intbitset([1, 2, 3]),
-            'b': intbitset([1, 2, 4, 5, 8]),
-            'c': intbitset([1, 2, 4, 8])
-        }
-
-        iterator = modifiedtanimoto.distances(bitsets, bitsets,
-                                       self.number_of_bits,
-                                       self.corr_st, self.corr_sto,
-                                       0.55, True)
+                                              self.number_of_bits,
+                                              self.corr_st, self.corr_sto,
+                                              0.55, False)
         result = [r for r in iterator]
 
         expected = [

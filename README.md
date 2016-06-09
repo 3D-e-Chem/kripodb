@@ -39,10 +39,9 @@ kripodb fragments sdf fragment??.sdf fragments.sqlite
 kripodb fragments pdb fragments.sqlite
 kripodb fingerprints import 01.fp 01.fp.db
 kripodb fingerprints import 02.fp 02.fp.db
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 01.fp.db dist_01_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db dist_01_01.h5
+kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db dist_02_02.h5
 kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 01.fp.db dist_02_01.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 02.fp.db 02.fp.db dist_02_02.h5
 kripodb distances merge dist_*_*.h5  dist_all.h5
 kripodb distances freeze dist_all.h5 dist_all.frozen.h5
 # Make froze distance matrix smaller, by using slower compression
@@ -69,8 +68,9 @@ Compounds similar to 2xry_FAD_frag4:
 
 To create a single distance matrix from multiple text files:
 ```
-gunzip -c dist_01_01.txt | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_01_01.h5
-gunzip -c dist_01_02.txt | kripodb distances import - fragments.sqlite dist_01_02.h5
+gunzip -c dist_01_01.txt.gz | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_01_01.h5
+gunzip -c dist_01_02.txt.gz | kripodb distances import - fragments.sqlite dist_01_02.h5
+gunzip -c dist_02_02.txt.gz | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_02_02.h5
 kripodb distances merge dist_??_??.h5 dist_all.h5
 ```
 

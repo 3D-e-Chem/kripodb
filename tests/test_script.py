@@ -41,7 +41,8 @@ def test_pairs_subcommand_defaults():
         'mean_onbit_density': 0.01,
         'nomemory': False,
         'fingerprintsfn2': 'fp2',
-        'fingerprintsfn1': 'fp1'
+        'fingerprintsfn1': 'fp1',
+        'ignore_upper_triangle': False,
     }
     eq_(fargs, expected)
 

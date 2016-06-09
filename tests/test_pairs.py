@@ -146,7 +146,7 @@ class Testpairs(object):
                              0.4,
                              0.05,
                              self.label2id,
-                             False
+                             True
                              )
 
         eq_(cm.exception.args, ('Invalid output format',))
@@ -162,7 +162,7 @@ class Testpairs(object):
                              0.4,
                              0.05,
                              self.label2id,
-                             False
+                             True
                              )
 
         eq_(cm.exception.args, ("hdf5 formats can't be outputted to stdout",))
@@ -179,7 +179,8 @@ class Testpairs(object):
                          0.4,
                          0.05,
                          self.label2id,
-                         False
+                         False,
+                         True,
                          )
         result = out.getvalue()
 
@@ -198,7 +199,8 @@ class Testpairs(object):
                          0.4,
                          0.05,
                          self.label2id,
-                         True
+                         True,
+                         True,
                          )
         result = out.getvalue()
 
