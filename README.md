@@ -98,9 +98,9 @@ Data set contains PDB entries that where available at 23 December 2015.
 
 * kripo.sqlite - Fragments sqlite database
 * Distance matrix is too big to ship with VM so use http://3d-e-chem.vu-compmedchem.nl/kripodb webservice url to query.
-* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [Create all](#create-all) for instructions how to convert to a distance matrix.
+* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [here](#create-distance-matrix-from-text-files) for instructions how to convert to a distance matrix.
 
-The data set has been published at TODO
+The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
 
 # Knime
 
