@@ -24,9 +24,18 @@ steps:
       - id: fingerprinttxt
         source: "#fingerprinttxt"
       - id: fingerprintdb
-        source: "#fingerpintdb"
+        source: "#fingerprintdb"
   - id: distance-generate
     run: kripodb-fingerprints-distances.cwl
+    inputs:
+      - id: fragmentsdb
+        source: "#fragmentsdb"
+      - id: fingerprintdb1
+        source: "#import-fingerprint/fingerprintdb"
+      - id: fingerprintdb2
+        source: "#import-fingerprint/fingerprintdb"
+  - id: distance-freeze
+    run: kripodb-distances-freeze.cwl
     inputs:
       - id: fragmentsdb
         source: "#fingerpintdb"
