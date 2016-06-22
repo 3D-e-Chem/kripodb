@@ -82,6 +82,7 @@ def make_fragments_parser(subparsers):
     sdf2fragmentsdb_sc(fr_sc)
     pdb2fragmentsdb_sc(fr_sc)
     fragmentsdb_filter_sc(fr_sc)
+    cclustera_sphere_sc(fr_sc)
 
 
 def make_fingerprints_parser(subparsers):
@@ -423,6 +424,48 @@ def fragmentsdb_filter_pdbs(input, output, pdbs):
     output_db.cursor.execute('VACUUM')
 
     print('Wrote: ' + output)
+
+
+def cclustera_sphere_sc(subparsers):
+    sc = subparsers.add_parser('cclustera', help='Export cclustera sphere')
+    sc.add_argument('inputfile', type=str,
+                    help='Name of fragments db input file')
+    sc.add_argument('outputfile', type=argparse.FileType('w'),
+                    help='Name of fragments cclustera output file, use - for stdout')
+    sc.set_defaults(func=cclustera_sphere)
+
+
+def cclustera_sphere(inputfile, outputfile):
+    import json, math
+    frags_db = FragmentsDb(inputfile)
+    nodes = {}
+
+    # distribute fragments evenly on sphere using Fibonacci sphere algorithm
+    # from http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    samples = len(frags_db)
+    rnd = 1.
+    offset = 2. / samples
+    increment = math.pi * (3. - math.sqrt(5.));
+
+    frag_ids = frags_db.cursor.execute('SELECT frag_id, pdb_code, het_code FROM fragments')
+    for i, frag in enumerate(frag_ids):
+        y = ((i * offset) - 1) + (offset / 2);
+        r = math.sqrt(1 - pow(y, 2))
+
+        phi = ((i + rnd) % samples) * increment
+
+        x = math.cos(phi) * r
+        z = math.sin(phi) * r
+
+        node_info = {
+            'Path': [],
+            'Coordinates': [x, y, z],
+            'Categories': [],
+            'Properties': []
+        }
+        nodes[frag[0]] = node_info
+
+    json.dump(nodes, outputfile)
 
 
 def distmatrix_export_sc(subparsers):
