@@ -460,7 +460,7 @@ def cclustera_sphere(inputfile, outputfile):
         node_info = {
             'Path': [],
             'Coordinates': [x, y, z],
-            'Categories': [],
+            'Categories': [frag[1], frag[2]],
             'Properties': []
         }
         nodes[frag[0]] = node_info
