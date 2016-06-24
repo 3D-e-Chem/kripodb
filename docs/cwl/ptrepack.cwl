@@ -31,14 +31,16 @@ inputs:
       prefix: --complevel
   - id: sourcefile
     type: File
+    description: Source file
     inputBinding:
       position: 1
-  - id: destfile
+  - id: destfile_name
     type: string
+    description: Destination file
     inputBinding:
       position: 2
 outputs:
-  - id: dest
+  - id: destfile
     type: File
     outputBinding:
-      glob: $(inputs.destfile)
+      glob: $(inputs.destfile_name)

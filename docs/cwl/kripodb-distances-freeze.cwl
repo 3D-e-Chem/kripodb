@@ -24,25 +24,28 @@ inputs:
     inputBinding:
       prefix: --memory
   - id: limit
-    type: int
+    type: ["null", int]
     description: Number of pairs to copy, None for no limit
     inputBinding:
       prefix: --limit
   - id: single_sided
     type: boolean
     description: Store half matrix
+    default: false
     inputBinding:
       prefix: --single_sided
-  - id: sourcefile
+  - id: sparsematrix
+    description: Input pairs file
     type: File
     inputBinding:
       position: 1
-  - id: frozenmatrix
+  - id: frozenmatrix_name
+    description: Output array file, file is overwritten
     type: string
     inputBinding:
       position: 2
 outputs:
-  - id: dest
+  - id: frozenmatrix
     type: File
     outputBinding:
-      glob: $(inputs.destfile)
+      glob: $(inputs.frozenmatrix_name)

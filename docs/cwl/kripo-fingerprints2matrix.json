@@ -1,0 +1,11 @@
+{
+    "fingerprinttxt": {
+        "class": "File",
+        "path": "fingerprints.txt"
+    },
+    "fragmentsdb": {
+        "class": "File",
+        "path": "fragments.sqlite"
+    },
+    "distmatrixpackedfrozen": "dist.packedfrozen.h5"
+}

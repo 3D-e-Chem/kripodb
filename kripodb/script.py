@@ -341,9 +341,9 @@ def pdb2fragmentsdb_run(fragmentsdb):
 
 
 def merge_pairs_sc(subparsers):
-    sc = subparsers.add_parser('merge', help='Combine pairs files into a new file')
-    sc.add_argument('ins', help='Input pair file in hdf5_compact format', nargs='+')
-    sc.add_argument('out', help='Output pair file in hdf5_compact format')
+    sc = subparsers.add_parser('merge', help='Merge distance pairs files into a new file')
+    sc.add_argument('ins', help='Input distance pairs files', nargs='+')
+    sc.add_argument('out', help='Output distance pairs file')
     sc.set_defaults(func=pairs.merge)
 
 

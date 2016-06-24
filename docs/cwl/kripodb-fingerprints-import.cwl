@@ -15,12 +15,12 @@ inputs:
     type: File
     inputBinding:
       position: 1
-  - id: destfile
+  - id: fingerprintdb_name
     type: string
     inputBinding:
       position: 2
 outputs:
-  - id: dest
+  - id: fingerprintdb
     type: File
     outputBinding:
-      glob: $(inputs.destfile)
+      glob: $(inputs.fingerprintdb_name)

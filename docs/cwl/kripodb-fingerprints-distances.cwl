@@ -11,7 +11,7 @@ arguments:
   - fingerprints
   - distances
 inputs:
-  - id: fragmentsdbfn
+  - id: fragmentsdb
     type: File
     description: Name of fragments db file (only required for hdf5 format)
     inputBinding:
@@ -19,8 +19,38 @@ inputs:
   - id: ignore_upper_triangle
     type: boolean
     description: Ignore upper triangle
+    default: false
     inputBinding:
       prefix: --ignore_upper_triangle
+  - id: nomemory
+    type: boolean
+    description: Do not store query fingerprints in memory
+    default: false
+    inputBinding:
+      prefix: --nomemory
+  - id: cutoff
+    type: float
+    description: Set Tanimoto cutoff
+    default: 0.45
+    inputBinding:
+      prefix: --cutoff
+  - id: mean_onbit_density
+    type: float
+    description: Mean on bit density
+    default: 0.01
+    inputBinding:
+      prefix: --mean_onbit_density
+  - id: out_format
+    type:
+      type: enum
+      name: out formats
+      symbols:
+        - tsv
+        - hdf5
+    description: Format of output
+    default: hdf5
+    inputBinding:
+      prefix: --out_format
   - id: fingerprintdb1
     type: File
     inputBinding:
@@ -29,12 +59,12 @@ inputs:
     type: File
     inputBinding:
       position: 2
-  - id: destfile
+  - id: sparsematrix_name
     type: string
     inputBinding:
       position: 3
 outputs:
-  - id: dest
+  - id: sparsematrix
     type: File
     outputBinding:
-      glob: $(inputs.destfile)
+      glob: $(inputs.sparsematrix_name)
