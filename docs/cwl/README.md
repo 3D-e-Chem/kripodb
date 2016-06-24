@@ -27,6 +27,9 @@ cwl-runner --verbose kripo-fingerprints2matrix.cwl kripo-fingerprints2matrix.jso
 
 Check output using, pytables (http://www.pytables.org/) dumper
 ```
-ptdump -vd dist.packedfrozen.h5 | less
+docker run \
+  -v $PWD/dist.packedfrozen.h5:/data/dist.packedfrozen.h5:ro \
+  rcsa/python2-hdf5 \
+  ptdump -vd /data/dist.packedfrozen.h5 | less
 ```
 The '/scores' node should contain a 1000x1000 matrix with some non-zero values.
