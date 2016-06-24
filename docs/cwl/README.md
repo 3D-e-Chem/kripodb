@@ -15,7 +15,9 @@ The pipeline can be run on the tiny example dataset included in `/data` director
 Prepare input files
 ```
 cp ../../data/fragments.sqlite .
-kripodb fingerprints export ../../data/fingerprints.sqlite fingerprints.txt
+cwl-runner kripodb-fingerprints-export.cwl \
+  --fingerprintdb ../../data/fingerprints.sqlite \
+  --fingerprinttxt_name fingerprints.txt
 ```
 
 Run workflow
