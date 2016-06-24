@@ -4,6 +4,9 @@ class: CommandLineTool
 label: ptrepack
 description: Recompress PyTable formatted file
 baseCommand: ptrepack
+requirements:
+  - class: DockerRequirement
+    dockerPull: rcsa/python2-hdf5
 inputs:
   - id: complib
     type:
