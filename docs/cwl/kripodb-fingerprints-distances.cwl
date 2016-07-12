@@ -1,8 +1,8 @@
 #!/usr/bin/env cwl-runner
-cwlVersion: "cwl:draft-3"
+cwlVersion: v1.0
 class: CommandLineTool
 label: kripodb-fingerprints-distances
-description: Calculate distance matrix from 2 fingerprint files
+doc: Calculate distance matrix from 2 fingerprint files
 requirements:
   - class: DockerRequirement
     dockerPull: 3dechem/kripodb
@@ -11,60 +11,60 @@ arguments:
   - fingerprints
   - distances
 inputs:
-  - id: fragmentsdb
+  fragmentsdb:
     type: File
-    description: Name of fragments db file (only required for hdf5 format)
+    doc: Name of fragments db file (only required for hdf5 format)
     inputBinding:
       prefix: --fragmentsdbfn
-  - id: ignore_upper_triangle
+  ignore_upper_triangle:
     type: boolean
-    description: Ignore upper triangle
+    doc: Ignore upper triangle
     default: false
     inputBinding:
       prefix: --ignore_upper_triangle
-  - id: nomemory
+  nomemory:
     type: boolean
-    description: Do not store query fingerprints in memory
+    doc: Do not store query fingerprints in memory
     default: false
     inputBinding:
       prefix: --nomemory
-  - id: cutoff
+  cutoff:
     type: float
-    description: Set Tanimoto cutoff
+    doc: Set Tanimoto cutoff
     default: 0.45
     inputBinding:
       prefix: --cutoff
-  - id: mean_onbit_density
+  mean_onbit_density:
     type: float
-    description: Mean on bit density
+    doc: Mean on bit density
     default: 0.01
     inputBinding:
       prefix: --mean_onbit_density
-  - id: out_format
+  out_format:
     type:
       type: enum
       name: out formats
       symbols:
         - tsv
         - hdf5
-    description: Format of output
+    doc: Format of output
     default: hdf5
     inputBinding:
       prefix: --out_format
-  - id: fingerprintdb1
+  fingerprintdb1:
     type: File
     inputBinding:
       position: 1
-  - id: fingerprintdb2
+  fingerprintdb2:
     type: File
     inputBinding:
       position: 2
-  - id: sparsematrix_name
+  sparsematrix_name:
     type: string
     inputBinding:
       position: 3
 outputs:
-  - id: sparsematrix
+  sparsematrix:
     type: File
     outputBinding:
       glob: $(inputs.sparsematrix_name)

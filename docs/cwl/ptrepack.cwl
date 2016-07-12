@@ -2,7 +2,7 @@
 cwlVersion: "cwl:draft-3"
 class: CommandLineTool
 label: ptrepack
-description: Recompress PyTable formatted file
+doc: Recompress PyTable formatted file
 baseCommand: ptrepack
 requirements:
   - class: DockerRequirement
@@ -22,24 +22,24 @@ inputs:
         - "blosc:lz4hc"
         - "blosc:snappy"
         - "blosc:zlib"
-    description: compression library
+    doc: compression library
     default: zlib
     inputBinding:
       prefix: --complib
   - id: complevel
     type: int
     default: 0
-    description: Compression level
+    doc: Compression level
     inputBinding:
       prefix: --complevel
   - id: sourcefile
     type: File
-    description: Source file
+    doc: Source file
     inputBinding:
       position: 1
   - id: destfile_name
     type: string
-    description: Destination file
+    doc: Destination file
     inputBinding:
       position: 2
 outputs:

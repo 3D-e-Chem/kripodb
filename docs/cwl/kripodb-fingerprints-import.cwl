@@ -1,8 +1,8 @@
 #!/usr/bin/env cwl-runner
-cwlVersion: "cwl:draft-3"
+cwlVersion: v1.0
 class: CommandLineTool
 label: kripodb-fingerprints-import
-description: Convert Kripo fingerprint text file to Kripo internal fingerprint format
+doc: Convert Kripo fingerprint text file to Kripo internal fingerprint format
 requirements:
   - class: DockerRequirement
     dockerPull: 3dechem/kripodb
@@ -11,16 +11,16 @@ arguments:
   - fingerprints
   - import
 inputs:
-  - id: fingerprinttxt
+  fingerprinttxt:
     type: File
     inputBinding:
       position: 1
-  - id: fingerprintdb_name
+  fingerprintdb_name:
     type: string
     inputBinding:
       position: 2
 outputs:
-  - id: fingerprintdb
+  fingerprintdb:
     type: File
     outputBinding:
       glob: $(inputs.fingerprintdb_name)
