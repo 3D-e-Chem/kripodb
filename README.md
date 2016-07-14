@@ -10,6 +10,15 @@ Library to interact with Kripo fragment, fingerprint and similarity data files.
 
 KRIPO stands for Key Representation of Interaction in POckets, see [reference](http://dx.doi.org/10.1186/1758-2946-6-S1-O26) for more information.
 
+# Glossary
+
+* Pocket, binding site of the ligand in the protein of a crystal structure
+* Fragment, part of the ligand
+* Subpocket, part of the protein pocket which binds with the fragment
+* Fingerprint, fingerprint of structure-based pharmacophore of subpocket
+* Similarity matrix, similarities between all fingerprint pairs calculated using the modified tanimoto similarity index
+* Kripo identifier, used as identifier for fragment, subpocket and fingerprint
+
 # Install
 
 Requirements:
