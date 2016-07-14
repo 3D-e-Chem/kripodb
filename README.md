@@ -17,7 +17,7 @@ KRIPO stands for Key Representation of Interaction in POckets, see [reference](h
 * Subpocket, part of the protein pocket which binds with the fragment
 * Fingerprint, fingerprint of structure-based pharmacophore of subpocket
 * Similarity matrix, similarities between all fingerprint pairs calculated using the modified tanimoto similarity index
-* Kripo identifier, used as identifier for fragment, subpocket and fingerprint
+* Kripo fragment identifier, used as identifier for fragment, subpocket and fingerprint
 
 # Install
 

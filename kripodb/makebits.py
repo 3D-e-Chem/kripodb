@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module to read/write Makebits file format"""
+"""Module to read/write fingerprints in Makebits file format"""
 
 from __future__ import absolute_import
 from intbitset import intbitset
