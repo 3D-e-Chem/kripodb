@@ -13,7 +13,7 @@
 # limitations under the License.
 """Module with functions which use pandas DataFrame as input and output.
 
-For using Kripo data files inside Knime (http://www.knime.org)
+For using Kripo data files inside KNIME (http://www.knime.org)
 """
 
 from __future__ import absolute_import
@@ -21,20 +21,20 @@ from __future__ import absolute_import
 import tables
 
 import pandas as pd
-from kripodb.frozen import FrozenDistanceMatrix
+from kripodb.frozen import FrozenSimilarityMatrix
 from .db import FragmentsDb
-from .hdf5 import DistanceMatrix
-from .pairs import similar
+from .hdf5 import SimilarityMatrix
+from .pairs import similar, open_similarity_matrix
 from .webservice.client import WebserviceClient
 
 
-def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):
-    """Find similar fragments to queries based on distance matrix.
+def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000):
+    """Find similar fragments to queries based on similarity matrix.
 
     Args:
         queries (List[str]): Query fragment identifiers
-        distance_matrix_filename_or_url (str): Filename of distance matrix file or base url of kripodb webservice
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        similarity_matrix_filename_or_url (str): Filename of similarity matrix file or base url of kripodb webservice
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         limit (int): Maximum number of hits for each query.
             Default is 1000. Use is None for no limit.
 
@@ -44,12 +44,12 @@ def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):
         >>> import pandas as pd
         >>> from kripodb.canned import similarities
         >>> queries = pd.Series(['3j7u_NDP_frag24'])
-        >>> hits = similarities(queries, 'data/distances.h5', 0.55)
+        >>> hits = similarities(queries, 'data/similaritys.h5', 0.55)
         >>> len(hits)
         11
 
-        Retrieved from web service instead of local distance matrix file.
-        Make sure the web service is running, for example by `kripodb serve data/distances.h5`.
+        Retrieved from web service instead of local similarity matrix file.
+        Make sure the web service is running, for example by `kripodb serve data/similaritys.h5`.
 
         >>> hits = similarities(queries, 'http://localhost:8084/kripo', 0.55)
         >>> len(hits)
@@ -59,28 +59,22 @@ def similarities(queries, distance_matrix_filename_or_url, cutoff, limit=1000):
         pandas.DataFrame: Data frame with query_fragment_id, hit_frag_id and score columns
     """
     hits = []
-    if distance_matrix_filename_or_url.startswith('http'):
-        client = WebserviceClient(distance_matrix_filename_or_url)
+    if similarity_matrix_filename_or_url.startswith('http'):
+        client = WebserviceClient(similarity_matrix_filename_or_url)
         for query in queries:
             qhits = client.similar_fragments(query, cutoff, limit)
             hits.extend(qhits)
     else:
-        f = tables.open_file(distance_matrix_filename_or_url, 'r')
-        is_frozen = 'scores' in f.root
-        f.close()
-        if is_frozen:
-            distance_matrix = FrozenDistanceMatrix(distance_matrix_filename_or_url)
-        else:
-            distance_matrix = DistanceMatrix(distance_matrix_filename_or_url)
+        similarity_matrix = open_similarity_matrix(similarity_matrix_filename_or_url)
         for query in queries:
-            for query_id, hit_id, score in similar(query, distance_matrix, cutoff, limit):
+            for query_id, hit_id, score in similar(query, similarity_matrix, cutoff, limit):
                 hit = {'query_frag_id': query_id,
                        'hit_frag_id': hit_id,
                        'score': score,
                        }
                 hits.append(hit)
 
-        distance_matrix.close()
+        similarity_matrix.close()
 
     return pd.DataFrame(hits)
 

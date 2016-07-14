@@ -17,14 +17,14 @@ KRIPO stands for Key Representation of Interaction in POckets, see [reference](h
 * Subpocket, part of the protein pocket which binds with the fragment
 * Fingerprint, fingerprint of structure-based pharmacophore of subpocket
 * Similarity matrix, similarities between all fingerprint pairs calculated using the modified tanimoto similarity index
-* Kripo identifier, used as identifier for fragment, subpocket and fingerprint
+* Kripo fragment identifier, used as identifier for fragment, subpocket and fingerprint
 
 # Install
 
 Requirements:
 
 * rdkit, http://rdkit.org, to read SDF files and generate smile strings from molecules
-* libhdf5 headers, to read/write distance matrix in hdf5 format
+* libhdf5 headers, to read/write similarity matrix in hdf5 format
 
 ```
 pip install -U setuptools
@@ -48,42 +48,42 @@ kripodb fragments sdf fragment??.sdf fragments.sqlite
 kripodb fragments pdb fragments.sqlite
 kripodb fingerprints import 01.fp 01.fp.db
 kripodb fingerprints import 02.fp 02.fp.db
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db dist_01_01.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db dist_02_02.h5
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
-kripodb distances merge dist_*_*.h5  dist_all.h5
-kripodb distances freeze dist_all.h5 dist_all.frozen.h5
-# Make froze distance matrix smaller, by using slower compression
-ptrepack --complevel 6 --complib blosc:zlib dist_all.frozen.h5 dist_all.packedfrozen.h5
-rm dist_all.frozen.h5
-kripodb distances serve dist_all.packedfrozen.h5
+kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db sim_01_01.h5
+kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db sim_02_02.h5
+kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db sim_01_02.h5
+kripodb similarities merge sim_*_*.h5  sim_all.h5
+kripodb similarities freeze sim_all.h5 sim_all.frozen.h5
+# Make froze similarity matrix smaller, by using slower compression
+ptrepack --complevel 6 --complib blosc:zlib sim_all.frozen.h5 sim_all.packedfrozen.h5
+rm sim_all.frozen.h5
+kripodb similarities serve sim_all.packedfrozen.h5
 ```
 
 ## Search for most similar fragments
 
 Command to find fragments most similar to `3kxm_K74_frag1` fragment.
 ```
-kripodb similar dist_all.h5 3kxm_K74_frag1 --cutoff 0.45
+kripodb similar sim_all.h5 3kxm_K74_frag1 --cutoff 0.45
 ```
 
-## Create distance matrix from text files
+## Create similarity matrix from text files
 
-Input files `dist_??_??.txt.gz` looks like:
+Input files `sim_??_??.txt.gz` looks like:
 ```
 Compounds similar to 2xry_FAD_frag4:
 2xry_FAD_frag4   1.0000
 3cvv_FAD_frag3   0.5600
 ```
 
-To create a single distance matrix from multiple text files:
+To create a single similarity matrix from multiple text files:
 ```
-gunzip -c dist_01_01.txt.gz | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_01_01.h5
-gunzip -c dist_01_02.txt.gz | kripodb distances import - fragments.sqlite dist_01_02.h5
-gunzip -c dist_02_02.txt.gz | kripodb distances import --ignore_upper_triangle - fragments.sqlite dist_02_02.h5
-kripodb distances merge dist_??_??.h5 dist_all.h5
+gunzip -c sim_01_01.txt.gz | kripodb similarities import --ignore_upper_triangle - fragments.sqlite sim_01_01.h5
+gunzip -c sim_01_02.txt.gz | kripodb similarities import - fragments.sqlite sim_01_02.h5
+gunzip -c sim_02_02.txt.gz | kripodb similarities import --ignore_upper_triangle - fragments.sqlite sim_02_02.h5
+kripodb similarities merge sim_??_??.h5 sim_all.h5
 ```
 
-The `--ignore_upper_triangle` flag is used to prevent scores corruption when freezing distance matrix.
+The `--ignore_upper_triangle` flag is used to prevent scores corruption when freezing similarity matrix.
 
 # Data sets
 
@@ -96,7 +96,7 @@ An example data set included in the [data/](data/) directory of this repo. See [
 All fragments based on GPCR proteins compared with all proteins in PDB.
 
 * kripo.gpcrandhits.sqlite - Fragments sqlite database
-* kripo.gpcr.h5 - HDF5 file with distance matrix
+* kripo.gpcr.h5 - HDF5 file with similarity matrix
 
 The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.50835.svg)](http://dx.doi.org/10.5281/zenodo.50835)
 
@@ -106,8 +106,8 @@ All fragments form all proteins-ligand complexes in PDB compared with all.
 Data set contains PDB entries that where available at 23 December 2015.
 
 * kripo.sqlite - Fragments sqlite database
-* Distance matrix is too big to ship with VM so use http://3d-e-chem.vu-compmedchem.nl/kripodb webservice url to query.
-* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [here](#create-distance-matrix-from-text-files) for instructions how to convert to a distance matrix.
+* Similarity matrix is too big to ship with VM so use http://3d-e-chem.vu-compmedchem.nl/kripodb webservice url to query.
+* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [here](#create-similarity-matrix-from-text-files) for instructions how to convert to a similarity matrix.
 
 The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
 
@@ -152,7 +152,7 @@ The Kripo data files can be queried using a web service.
 
 Start webservice with:
 ```
-kripodb serve --port 8084 data/distances.h5
+kripodb serve --port 8084 data/similarities.h5
 ```
 It will print the urls for the swagger spec and UI.
 

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Distance matrix using pytables carray"""
+"""Similarity matrix using pytables carray"""
 from __future__ import absolute_import, print_function
 from math import log10, ceil, floor
 try:
@@ -27,8 +27,8 @@ import six
 import tables
 
 
-class FrozenDistanceMatrix(object):
-    """Frozen distances matrix
+class FrozenSimilarityMatrix(object):
+    """Frozen similarities matrix
 
     Can retrieve whole column of a specific row fairly quickly.
     Store as compressed dense matrix.
@@ -36,14 +36,14 @@ class FrozenDistanceMatrix(object):
 
     Warning! Can not be enlarged.
 
-    Compared find performance FrozenDistanceMatrix with DistanceMatrix:
+    Compared find performance FrozenSimilarityMatrix with SimilarityMatrix:
     >>> from kripodb.db import FragmentsDb
     >>> db = FragmentsDb('data/feb2016/Kripo20151223.sqlite')
     >>> ids = [v[0] for v in db.cursor.execute('SELECT frag_id FROM fragments ORDER BY RANDOM() LIMIT 20')]
-    >>> from kripodb.frozen import FrozenDistanceMatrix
-    >>> fdm = FrozenDistanceMatrix('01-01_to_13-13.out.frozen.blosczlib.h5')
-    >>> from kripodb.hdf5 import DistanceMatrix
-    >>> dm = DistanceMatrix('data/feb2016/01-01_to_13-13.out.h5', cache_labels=True)
+    >>> from kripodb.frozen import FrozenSimilarityMatrix
+    >>> fdm = FrozenSimilarityMatrix('01-01_to_13-13.out.frozen.blosczlib.h5')
+    >>> from kripodb.hdf5 import SimilarityMatrix
+    >>> dm = SimilarityMatrix('data/feb2016/01-01_to_13-13.out.h5', cache_labels=True)
     >>> %timeit list(dm.find(ids[0], 0.45, None))
     ... 1 loop, best of 3: 1.96 s per loop
     >>>  %timeit list(fdm.find(ids[0], 0.45, None))
@@ -56,7 +56,7 @@ class FrozenDistanceMatrix(object):
     ... 1 loop, best of 3: 29.7 s per loop
 
     Args:
-        filename (str): File name of hdf5 file to write or read distance matrix from
+        filename (str): File name of hdf5 file to write or read similarity matrix from
         mode (str): Can be 'r' for reading or 'w' for writing
         **kwargs: Passed though to tables.open_file()
 
@@ -93,11 +93,11 @@ class FrozenDistanceMatrix(object):
 
         Args:
             query (str): Query fragment identifier
-            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+            cutoff (float): Cutoff, similarity scores below cutoff are discarded.
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Returns:
-            Tuple[(str, float)]: Hit fragment idenfier and distance score
+            Tuple[(str, float)]: Hit fragment idenfier and similarity score
         """
         precision = float(self.score_precision)
         precision10 = float(10**(floor(log10(precision))))
@@ -116,21 +116,21 @@ class FrozenDistanceMatrix(object):
         self.cache_i2l = {k: v.decode() for k, v in enumerate(self.labels)}
         self.cache_l2i = {v: k for k, v in self.cache_i2l.items()}
 
-    def from_pairs(self, distance_matrix, frame_size, limit=None, single_sided=False):
+    def from_pairs(self, similarity_matrix, frame_size, limit=None, single_sided=False):
         """Fills self with matrix which is stored in pairs.
 
         Also known as COOrdinate format, the 'ijv' or 'triplet' format.
 
         Args:
-            distance_matrix (kripodb.hdf5.DistanceMatrix):
+            similarity_matrix (kripodb.hdf5.SimilarityMatrix):
             frame_size (int): Number of pairs to append in a single go
             limit (int|None): Number of pairs to add, None for no limit, default is None.
             single_sided (bool): If false add stored direction and reverse direction. Default is False.
 
 
-        time kripodb distances freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 percell.h5
+        time kripodb similarities freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 percell.h5
         47.2s
-        time kripodb distances freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 coo.h5
+        time kripodb similarities freeze --limit 200000 -f 100000 data/feb2016/01-01_to_13-13.out.h5 coo.h5
         0.2m - 2m6s
         .4m - 2m19s
         .8m - 2m33s
@@ -140,11 +140,11 @@ class FrozenDistanceMatrix(object):
         12.8m - 4m59s
         25.6m - 7m27s
         """
-        nr_frags = len(distance_matrix.labels)
+        nr_frags = len(similarity_matrix.labels)
 
         six.print_('Filling labels ... ', end='')
 
-        id2labels = {v: k for k, v in distance_matrix.labels.label2ids().items()}
+        id2labels = {v: k for k, v in similarity_matrix.labels.label2ids().items()}
         id2nid = {v: k for k, v in enumerate(id2labels)}
         labels2nid = [None] * nr_frags
         for myid in id2nid:
@@ -159,9 +159,9 @@ class FrozenDistanceMatrix(object):
                                                 shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
                                                 filters=self.filters)
         if limit is None:
-            limit = len(distance_matrix.pairs)
+            limit = len(similarity_matrix.pairs)
 
-        self._ingest_pairs(distance_matrix.pairs.table, id2nid, frame_size, limit, single_sided)
+        self._ingest_pairs(similarity_matrix.pairs.table, id2nid, frame_size, limit, single_sided)
         self.h5file.flush()
 
     def _ingest_pairs(self, pairs, oid2nid, frame_size, limit, single_sided):

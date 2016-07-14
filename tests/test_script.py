@@ -18,7 +18,7 @@ from six import StringIO
 from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal
 
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.hdf5 import SimilarityMatrix
 import kripodb.script as script
 from tests.test_pairs import tmpname
 
@@ -26,7 +26,7 @@ from tests.test_pairs import tmpname
 def test_pairs_subcommand_defaults():
     parser = script.make_parser()
 
-    args = parser.parse_args(['fingerprints', 'distances', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
+    args = parser.parse_args(['fingerprints', 'similarities', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
 
     eq_(args.func, script.pairs_run)
 
@@ -55,7 +55,7 @@ def test_meanbitdensity():
     eq_(out.getvalue(), '0.0077683\n')
 
 
-def test_distmatrix_import_run():
+def test_simmatrix_import_run():
     output_fn = tmpname()
 
     tsv = '''frag_id1	frag_id2	score
@@ -65,15 +65,15 @@ def test_distmatrix_import_run():
     inputfile = StringIO(tsv)
 
     try:
-        script.distmatrix_import_run(inputfile=inputfile,
-                                     format='tsv',
-                                     distmatrixfn=output_fn,
-                                     fragmentsdb='data/fragments.sqlite',
-                                     nrrows=2)
+        script.simmatrix_import_run(inputfile=inputfile,
+                                    format='tsv',
+                                    simmatrixfn=output_fn,
+                                    fragmentsdb='data/fragments.sqlite',
+                                    nrrows=2)
 
-        distmatrix = DistanceMatrix(output_fn)
-        result = [r for r in distmatrix]
-        distmatrix.close()
+        simmatrix = SimilarityMatrix(output_fn)
+        result = [r for r in simmatrix]
+        simmatrix.close()
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
         assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
         eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
@@ -82,7 +82,7 @@ def test_distmatrix_import_run():
             os.remove(output_fn)
 
 
-def test_distmatrix_import_run_ignore_upper_triangle():
+def test_simmatrix_import_run_ignore_upper_triangle():
     output_fn = tmpname()
 
     tsv = '''frag_id1	frag_id2	score
@@ -96,16 +96,16 @@ def test_distmatrix_import_run_ignore_upper_triangle():
     inputfile = StringIO(tsv)
 
     try:
-        script.distmatrix_import_run(inputfile=inputfile,
-                                     format='tsv',
-                                     distmatrixfn=output_fn,
-                                     fragmentsdb='data/fragments.sqlite',
-                                     nrrows=2,
-                                     ignore_upper_triangle=True)
+        script.simmatrix_import_run(inputfile=inputfile,
+                                    format='tsv',
+                                    simmatrixfn=output_fn,
+                                    fragmentsdb='data/fragments.sqlite',
+                                    nrrows=2,
+                                    ignore_upper_triangle=True)
 
-        distmatrix = DistanceMatrix(output_fn)
-        result = [r for r in distmatrix]
-        distmatrix.close()
+        simmatrix = SimilarityMatrix(output_fn)
+        result = [r for r in simmatrix]
+        simmatrix.close()
         print(result)
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
         assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
@@ -115,9 +115,9 @@ def test_distmatrix_import_run_ignore_upper_triangle():
             os.remove(output_fn)
 
 
-def test_distmatrix_export_run():
+def test_simmatrix_export_run():
     outputfile = StringIO()
-    script.distmatrix_export_run('data/distances.h5', outputfile)
+    script.simmatrix_export_run('data/similarities.h5', outputfile)
 
     # go back to start of file
     outputfile.seek(0)
@@ -143,7 +143,7 @@ Compounds similar to 1wnt_NAP_frag1:
     eq_(result, expected)
 
 
-def test_distmatrix_importfpneigh_run():
+def test_simmatrix_importfpneigh_run():
     output_fn = tmpname()
 
     tsv = '''Compounds similar to 2mlm_2W7_frag1:
@@ -156,21 +156,21 @@ Compounds similar to 2mlm_2W7_frag2:
     inputfile = StringIO(tsv)
 
     try:
-        script.distmatrix_importfpneigh_run(inputfile=inputfile,
-                                            distmatrixfn=output_fn,
-                                            fragmentsdb='data/fragments.sqlite',
-                                            nrrows=3)
+        script.simmatrix_importfpneigh_run(inputfile=inputfile,
+                                           simmatrixfn=output_fn,
+                                           fragmentsdb='data/fragments.sqlite',
+                                           nrrows=3)
 
-        distmatrix = DistanceMatrix(output_fn)
-        rows = [r for r in distmatrix]
-        distmatrix.close()
+        simmatrix = SimilarityMatrix(output_fn)
+        rows = [r for r in simmatrix]
+        simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
         eq_(rows, expected)
     finally:
         os.remove(output_fn)
 
 
-def test_distmatrix_importfpneigh_run_ignore_upper_triangle():
+def test_simmatrix_importfpneigh_run_ignore_upper_triangle():
     output_fn = tmpname()
 
     tsv = '''Compounds similar to 2mlm_2W7_frag1:
@@ -184,15 +184,15 @@ Compounds similar to 2mlm_2W7_frag2:
     inputfile = StringIO(tsv)
 
     try:
-        script.distmatrix_importfpneigh_run(inputfile=inputfile,
-                                            distmatrixfn=output_fn,
-                                            fragmentsdb='data/fragments.sqlite',
-                                            nrrows=3,
-                                            ignore_upper_triangle=True)
+        script.simmatrix_importfpneigh_run(inputfile=inputfile,
+                                           simmatrixfn=output_fn,
+                                           fragmentsdb='data/fragments.sqlite',
+                                           nrrows=3,
+                                           ignore_upper_triangle=True)
 
-        distmatrix = DistanceMatrix(output_fn)
-        rows = [r for r in distmatrix]
-        distmatrix.close()
+        simmatrix = SimilarityMatrix(output_fn)
+        rows = [r for r in simmatrix]
+        simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
         eq_(rows, expected)
     finally:
