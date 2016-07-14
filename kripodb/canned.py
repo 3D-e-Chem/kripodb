@@ -18,12 +18,8 @@ For using Kripo data files inside KNIME (http://www.knime.org)
 
 from __future__ import absolute_import
 
-import tables
-
 import pandas as pd
-from kripodb.frozen import FrozenSimilarityMatrix
 from .db import FragmentsDb
-from .hdf5 import SimilarityMatrix
 from .pairs import similar, open_similarity_matrix
 from .webservice.client import WebserviceClient
 
