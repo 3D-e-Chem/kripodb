@@ -23,7 +23,7 @@ class TestDistanceMatrix(object):
     matrix = None
 
     def setUp(self):
-        self.matrix = DistanceMatrix('data/distances.h5')
+        self.matrix = DistanceMatrix('data/similarities.h5')
 
     def tearDown(self):
         self.matrix.close()

@@ -4,6 +4,7 @@
 
 ### Changed
 
+* Renamed distance to similarity
 * Flag to ignore upper triangle when calculating distances, instead of always ignore (#20)
 
 ## 1.4.2 - 3 June 2016

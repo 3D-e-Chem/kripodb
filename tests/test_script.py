@@ -117,7 +117,7 @@ def test_distmatrix_import_run_ignore_upper_triangle():
 
 def test_distmatrix_export_run():
     outputfile = StringIO()
-    script.distmatrix_export_run('data/distances.h5', outputfile)
+    script.distmatrix_export_run('data/similarities.h5', outputfile)
 
     # go back to start of file
     outputfile.seek(0)

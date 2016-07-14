@@ -152,7 +152,7 @@ The Kripo data files can be queried using a web service.
 
 Start webservice with:
 ```
-kripodb serve --port 8084 data/distances.h5
+kripodb serve --port 8084 data/similarities.h5
 ```
 It will print the urls for the swagger spec and UI.
 
