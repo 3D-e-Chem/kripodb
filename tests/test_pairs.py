@@ -24,7 +24,7 @@ from nose.tools import eq_, assert_raises
 
 import kripodb.hdf5
 import kripodb.pairs as pairs
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.hdf5 import SimilarityMatrix
 
 
 def tmpname():
@@ -236,24 +236,24 @@ def test_merge():
     outfile = tmpname()
     try:
         # fill infiles
-        inmatrix1 = DistanceMatrix(infiles[0], 'w', 1, 2**16-1, 2)
+        inmatrix1 = SimilarityMatrix(infiles[0], 'w', 1, 2**16-1, 2)
         inmatrix1.update([('a', 'b', 0.2)], {'a': 1, 'b': 2, 'c': 3})
         inmatrix1.close()
 
         # matrix with same labels -> copy pairs table by dump/append, ignores labels tables
-        inmatrix2 = DistanceMatrix(infiles[1], 'w', 2, 2**16-1, 3)
+        inmatrix2 = SimilarityMatrix(infiles[1], 'w', 2, 2**16-1, 3)
         inmatrix2.update([('a', 'c', 0.6)], {'a': 1, 'b': 2, 'c': 3})
         inmatrix2.close()
 
         # matrix generated with different labels -> copy pairs table by iterate/update, adds missing labels
-        inmatrix3 = DistanceMatrix(infiles[2], 'w', 2, 2**16-1, 3)
+        inmatrix3 = SimilarityMatrix(infiles[2], 'w', 2, 2**16-1, 3)
         inmatrix3.update([('b', 'e', 0.4), ('e', 'f', 0.8)], {'b': 1, 'e': 2, 'f': 3})
         inmatrix3.close()
 
         pairs.merge(infiles, outfile)
 
         # compare it
-        outmatrix = DistanceMatrix(outfile)
+        outmatrix = SimilarityMatrix(outfile)
         result = list(outmatrix)
         outmatrix.close()
         expected = [('a', 'b', 0.2), ('a', 'c', 0.6), ('b', 'e', 0.4), ('e', 'f', 0.8)]

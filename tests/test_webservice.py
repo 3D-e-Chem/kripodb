@@ -15,14 +15,14 @@ from __future__ import absolute_import
 from nose.tools import eq_
 import requests_mock
 from kripodb.webservice import server
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.hdf5 import SimilarityMatrix
 from kripodb.version import __version__
 from kripodb.webservice.client import WebserviceClient
 
 
 class TestWebservice(object):
     def setUp(self):
-        self.matrix = DistanceMatrix('data/similarities.h5')
+        self.matrix = SimilarityMatrix('data/similarities.h5')
         self.app = server.wsgi_app(self.matrix)
 
     def tearDown(self):

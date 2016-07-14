@@ -18,7 +18,7 @@ from six import StringIO
 from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal
 
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.hdf5 import SimilarityMatrix
 import kripodb.script as script
 from tests.test_pairs import tmpname
 
@@ -71,7 +71,7 @@ def test_simmatrix_import_run():
                                     fragmentsdb='data/fragments.sqlite',
                                     nrrows=2)
 
-        simmatrix = DistanceMatrix(output_fn)
+        simmatrix = SimilarityMatrix(output_fn)
         result = [r for r in simmatrix]
         simmatrix.close()
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
@@ -103,7 +103,7 @@ def test_simmatrix_import_run_ignore_upper_triangle():
                                     nrrows=2,
                                     ignore_upper_triangle=True)
 
-        simmatrix = DistanceMatrix(output_fn)
+        simmatrix = SimilarityMatrix(output_fn)
         result = [r for r in simmatrix]
         simmatrix.close()
         print(result)
@@ -161,7 +161,7 @@ Compounds similar to 2mlm_2W7_frag2:
                                            fragmentsdb='data/fragments.sqlite',
                                            nrrows=3)
 
-        simmatrix = DistanceMatrix(output_fn)
+        simmatrix = SimilarityMatrix(output_fn)
         rows = [r for r in simmatrix]
         simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
@@ -190,7 +190,7 @@ Compounds similar to 2mlm_2W7_frag2:
                                            nrrows=3,
                                            ignore_upper_triangle=True)
 
-        simmatrix = DistanceMatrix(output_fn)
+        simmatrix = SimilarityMatrix(output_fn)
         rows = [r for r in simmatrix]
         simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]

@@ -27,8 +27,8 @@ from tables import parameters
 from . import makebits
 from . import pairs
 from .db import FragmentsDb, FingerprintsDb
-from .frozen import FrozenDistanceMatrix
-from .hdf5 import DistanceMatrix
+from .frozen import FrozenSimilarityMatrix
+from .hdf5 import SimilarityMatrix
 from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
 from .webservice.server import serve_app
@@ -377,7 +377,7 @@ def fragmentsdb_filter_matrix(input, output, matrix):
     output_db.cursor.execute('CREATE TEMPORARY TABLE filter (frag_id TEXT PRIMARY KEY)')
     sql = 'INSERT OR REPLACE INTO filter (frag_id) VALUES (?)'
     print('Matrix labels')
-    simmatrix = DistanceMatrix(matrix)
+    simmatrix = SimilarityMatrix(matrix)
     for frag_id in simmatrix.labels.label2ids().keys():
         output_db.cursor.execute(sql, (frag_id,))
     simmatrix.close()
@@ -441,7 +441,7 @@ def simmatrix_export_run(simmatrixfn, outputfile):
         outputfile (file): Tab delimited output file
 
     """
-    simmatrix = DistanceMatrix(simmatrixfn)
+    simmatrix = SimilarityMatrix(simmatrixfn)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     writer.writerow(['frag_id1', 'frag_id2', 'score'])
     writer.writerows(simmatrix)
@@ -485,7 +485,7 @@ def simmatrix_import_run(inputfile, fragmentsdb, simmatrixfn, format, nrrows, ig
 def simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
-    simmatrix = DistanceMatrix(simmatrixfn, 'w',
+    simmatrix = SimilarityMatrix(simmatrixfn, 'w',
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
@@ -510,7 +510,7 @@ def simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upp
 def simmatrix_importfpneigh_run(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
-    simmatrix = DistanceMatrix(simmatrixfn, 'w',
+    simmatrix = SimilarityMatrix(simmatrixfn, 'w',
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
@@ -531,14 +531,14 @@ def simmatrix_filter_sc(subparsers):
 
 
 def simmatrix_filter(input, output, fragmentsdb):
-    simmatrix_in = DistanceMatrix(input)
+    simmatrix_in = SimilarityMatrix(input)
     frags = FragmentsDb(fragmentsdb)
     print('Counting')
     expectedlabelrows = len(frags)
     labelsin = len(simmatrix_in.labels)
     expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
 
-    simmatrix_out = DistanceMatrix(output,
+    simmatrix_out = SimilarityMatrix(output,
                                     'w',
                                     expectedlabelrows=expectedlabelrows,
                                     expectedpairrows=expectedpairrows,
@@ -604,10 +604,10 @@ def dismatrix_freeze_sc(subparsers):
 
 
 def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit, single_sided):
-    dm = DistanceMatrix(in_fn, 'r')
+    dm = SimilarityMatrix(in_fn, 'r')
     parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
     parameters.CHUNK_CACHE_NELMTS = 2 ** 14
-    dfm = FrozenDistanceMatrix(out_fn, 'w')
+    dfm = FrozenSimilarityMatrix(out_fn, 'w')
     dfm.from_pairs(dm, frame_size, limit, single_sided)
     dm.close()
     dfm.close()

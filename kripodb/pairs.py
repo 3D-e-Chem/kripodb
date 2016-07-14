@@ -18,9 +18,9 @@ from __future__ import absolute_import
 import tables
 
 import logging
-from kripodb.frozen import FrozenDistanceMatrix
+from kripodb.frozen import FrozenSimilarityMatrix
 
-from .hdf5 import DistanceMatrix
+from .hdf5 import SimilarityMatrix
 from .modifiedtanimoto import similarities, corrections
 from .webservice.client import WebserviceClient
 
@@ -121,7 +121,7 @@ def dump_pairs_hdf5(similarities_iter,
         out_file:
 
     """
-    matrix = DistanceMatrix(out_file, 'w',
+    matrix = SimilarityMatrix(out_file, 'w',
                             expectedpairrows=expectedrows,
                             expectedlabelrows=len(label2id))
 
@@ -196,7 +196,7 @@ def open_similarity_matrix(fn):
         fn (str): Filename of similarity matrix
 
     Returns:
-        DistanceMatrix|FrozenDistanceMatrix: A read-only similarity matrix object
+        SimilarityMatrix|FrozenSimilarityMatrix: A read-only similarity matrix object
 
     """
     # peek in file to detect format
@@ -204,9 +204,9 @@ def open_similarity_matrix(fn):
     is_frozen = 'scores' in f.root
     f.close()
     if is_frozen:
-        matrix = FrozenDistanceMatrix(fn)
+        matrix = FrozenSimilarityMatrix(fn)
     else:
-        matrix = DistanceMatrix(fn, cache_labels=True)
+        matrix = SimilarityMatrix(fn, cache_labels=True)
     return matrix
 
 
@@ -215,7 +215,7 @@ def similar(query, similarity_matrix, cutoff, limit=None):
 
     Args:
         query (str): Query fragment identifier
-        similarity_matrix (kripodb.db.DistanceMatrix): Similarity matrix
+        similarity_matrix (kripodb.db.SimilarityMatrix): Similarity matrix
         cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         limit (int): Maximum number of hits. Default is None for no limit.
 
@@ -240,7 +240,7 @@ def total_number_of_pairs(fingerprint_filenames):
     """
     sizes = []
     for filename in fingerprint_filenames:
-        matrix = DistanceMatrix(filename)
+        matrix = SimilarityMatrix(filename)
         pairs = matrix.pairs
         sizes.append(len(pairs))
         matrix.close()
@@ -259,11 +259,11 @@ def merge(ins, out):
 
     """
     expectedrows = total_number_of_pairs(ins)
-    out_matrix = DistanceMatrix(out, 'w', expectedpairrows=expectedrows)
+    out_matrix = SimilarityMatrix(out, 'w', expectedpairrows=expectedrows)
 
     # copy pairs
     for in_filename in ins:
-        in_matrix = DistanceMatrix(in_filename)
+        in_matrix = SimilarityMatrix(in_filename)
         out_matrix.append(in_matrix)
         in_matrix.close()
 

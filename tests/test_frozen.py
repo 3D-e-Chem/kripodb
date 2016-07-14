@@ -17,11 +17,11 @@ from nose.tools import eq_, assert_raises
 import pandas as pd
 import pandas.util.testing as pdt
 from tests.test_pairs import tmpname
-from kripodb.frozen import FrozenDistanceMatrix
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.frozen import FrozenSimilarityMatrix
+from kripodb.hdf5 import SimilarityMatrix
 
 
-class TestFrozenDistanceMatrix(object):
+class TestFrozenSimilarityMatrix(object):
     pair_matrix_fn = None
     pair_matrix = None
     matrix_fn = None
@@ -29,17 +29,17 @@ class TestFrozenDistanceMatrix(object):
 
     def setUp(self):
         self.pair_matrix_fn = tmpname()
-        self.pair_matrix = DistanceMatrix(self.pair_matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+        self.pair_matrix = SimilarityMatrix(self.pair_matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
         labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
-        distances = [
+        similarities = [
             ('a', 'b', 0.9),
             ('a', 'c', 0.5),
             ('b', 'c', 0.6),
             ('d', 'c', 0.7)
         ]
-        self.pair_matrix.update(distances, labels)
+        self.pair_matrix.update(similarities, labels)
         self.matrix_fn = tmpname()
-        self.matrix = FrozenDistanceMatrix(self.matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+        self.matrix = FrozenSimilarityMatrix(self.matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
 
     def tearDown(self):
         self.pair_matrix.close()
