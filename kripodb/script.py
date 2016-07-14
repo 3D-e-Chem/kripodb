@@ -257,7 +257,7 @@ def similarity2query_sc(subparsers):
 
 def similarity2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
-    pairs.distance2query(bitsets, query, out, mean_onbit_density, cutoff, memory)
+    pairs.similarity2query(bitsets, query, out, mean_onbit_density, cutoff, memory)
 
 
 def similar_sc(subparsers):

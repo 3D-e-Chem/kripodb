@@ -2,7 +2,7 @@
 
 * fragments.sqlite - Fragments sqlite database containing a small number of fragments with their smiles string and molblock.
 * fingerprints.sqlite - Fingerprints sqlite database with fingerprint stored as [fastdumped intbitset](http://intbitset.readthedocs.org/en/latest/index.html#intbitset.intbitset.fastdump)
-* similarities.h5 - HDF5 file with similarities matrix of fingerprints using modified tanimoto coefficient 
+* similarities.h5 - HDF5 file with similarities matrix of fingerprints using modified tanimoto similarity index 
 
 ## Creating tiny data set
 
@@ -23,8 +23,8 @@ EOF
 
 ```
 
-3. Create distance matrix
+3. Create similarity matrix
 
 ```
-kripodb fingerprints distances --fragmentsdbfn fragments.sqlite fingerprints.sqlite fingerprints.sqlite similarities.h5
+kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite fingerprints.sqlite fingerprints.sqlite similarities.h5
 ```

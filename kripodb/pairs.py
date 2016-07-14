@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module handling generation and retrieval of distance matrix"""
+"""Module handling generation and retrieval of similarity of fingerprint pairs"""
 
 from __future__ import absolute_import
 
@@ -21,7 +21,7 @@ import logging
 from kripodb.frozen import FrozenDistanceMatrix
 
 from .hdf5 import DistanceMatrix
-from .modifiedtanimoto import distances, corrections
+from .modifiedtanimoto import similarities, corrections
 from .webservice.client import WebserviceClient
 
 
@@ -38,7 +38,7 @@ def dump_pairs(bitsets1,
                ignore_upper_triangle=False):
     """Dump pairs of bitset collection.
 
-    A pairs are rows of the bitset identifier of both bitsets with a distance score.
+    A pairs are rows of the bitset identifier of both bitsets with a similarity score.
 
     Args:
         bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
@@ -50,11 +50,11 @@ def dump_pairs(bitsets1,
         out (File): File object where 'tsv' format is written to.
         number_of_bits (int): Number of bits for all bitsets
         mean_onbit_density (float): Mean on bit density
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         label2id: dict to translate label to id (string to int)
         nomemory: If true bitset2 is not loaded into memory
-        ignore_upper_triangle: When true returns distance where label1 > label2,
-            when false returns all distances
+        ignore_upper_triangle: When true returns similarity where label1 > label2,
+            when false returns all similarities
 
     """
     if out_file == '-' and out_format.startswith('hdf5'):
@@ -71,15 +71,15 @@ def dump_pairs(bitsets1,
 
     logging.warning('Generating pairs')
 
-    distances_iter = distances(bitsets1, bitsets2,
+    similarities_iter = similarities(bitsets1, bitsets2,
                                number_of_bits, corr_st, corr_sto,
                                cutoff,
                                ignore_upper_triangle)
 
     if out_format == 'tsv':
-        dump_pairs_tsv(distances_iter, out)
+        dump_pairs_tsv(similarities_iter, out)
     elif out_format == 'hdf5':
-        dump_pairs_hdf5(distances_iter,
+        dump_pairs_hdf5(similarities_iter,
                         label2id,
                         expectedrows,
                         out_file)
@@ -87,7 +87,7 @@ def dump_pairs(bitsets1,
         raise LookupError('Invalid output format')
 
 
-def dump_pairs_tsv(distances_iter, out):
+def dump_pairs_tsv(similarities_iter, out):
     """Dump pairs in tab delimited file
 
     Pro:
@@ -95,16 +95,15 @@ def dump_pairs_tsv(distances_iter, out):
     Con:
     * big, unless output is compressed
 
-    :param distances_iter:
-    :param out:
-    :return:
-
+    Args:
+        similarities_iter (Iterator): Iterator with tuple with fingerprint 1 label, fingerprint 2 label, similarity as members
+        out (File): Writeable file
     """
-    for label1, label2, distance in distances_iter:
-        out.write('{0}\t{1}\t{2:.5}\n'.format(label1, label2, distance))
+    for label1, label2, similarity in similarities_iter:
+        out.write('{0}\t{1}\t{2:.5}\n'.format(label1, label2, similarity))
 
 
-def dump_pairs_hdf5(distances_iter,
+def dump_pairs_hdf5(similarities_iter,
                     label2id,
                     expectedrows,
                     out_file):
@@ -115,30 +114,31 @@ def dump_pairs_hdf5(distances_iter,
     Con:
     * requires hdf5 library to access
 
-    :param distances_iter:
-    :param label2id: dict to translate label to id (string to int)
-    :param expectedrows:
-    :param out_file:
-    :return:
+    Args:
+        similarities_iter (Iterator): Iterator with tuple with fingerprint 1 label, fingerprint 2 label, similarity as members
+        label2id (dict): dict to translate label to id (string to int)
+        expectedrows:
+        out_file:
+
     """
     matrix = DistanceMatrix(out_file, 'w',
                             expectedpairrows=expectedrows,
                             expectedlabelrows=len(label2id))
 
-    matrix.update(distances_iter, label2id)
+    matrix.update(similarities_iter, label2id)
 
     matrix.close()
 
 
-def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
-    """Calculate distance of query against all fingerprints in bitsets2 and write to tab delimited file.
+def similarity2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
+    """Calculate similarity of query against all fingerprints in bitsets2 and write to tab delimited file.
 
     Args:
         bitsets2 (kripodb.db.IntbitsetDict):
         query (str): Query identifier or beginning of it
         out (File): File object to write output to
         mean_onbit_density (flaot): Mean on bit density
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         memory (Optional[bool]): When true will load bitset2 into memory, when false it doesn't
 
     """
@@ -160,20 +160,20 @@ def distance2query(bitsets2, query, out, mean_onbit_density, cutoff, memory):
 
     (corr_st, corr_sto) = corrections(mean_onbit_density)
 
-    distances_iter = distances(bitsets1, bitsets2,
+    similarities_iter = similarities(bitsets1, bitsets2,
                                number_of_bits, corr_st, corr_sto,
                                cutoff, True)
-    sorted_distances = sorted(distances_iter, key=lambda row: row[2], reverse=True)
-    dump_pairs_tsv(sorted_distances, out)
+    sorted_similarities = sorted(similarities_iter, key=lambda row: row[2], reverse=True)
+    dump_pairs_tsv(sorted_similarities, out)
 
 
 def similar_run(query, pairsdbfn, cutoff, out):
-    """Find similar fragments to query based on distance matrix and write to tab delimited file.
+    """Find similar fragments to query based on similarity matrix and write to tab delimited file.
 
     Args:
         query (str): Query fragment identifier
-        pairsdbfn (str): Filename of distance matrix file or url of kripodb webservice
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        pairsdbfn (str): Filename of similarity matrix file or url of kripodb webservice
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         out (File): File object to write output to
 
     """
@@ -183,20 +183,20 @@ def similar_run(query, pairsdbfn, cutoff, out):
         hits = [(h['query_frag_id'], h['hit_frag_id'], h['score']) for h in hits]
         dump_pairs_tsv(hits, out)
     else:
-        matrix = open_distance_matrix(pairsdbfn)
+        matrix = open_similarity_matrix(pairsdbfn)
         hits = similar(query, matrix, cutoff)
         dump_pairs_tsv(hits, out)
         matrix.close()
 
 
-def open_distance_matrix(fn):
-    """Open read-only distance matrix file.
+def open_similarity_matrix(fn):
+    """Open read-only similarity matrix file.
 
     Args:
-        fn (str): Filename of distance matrix
+        fn (str): Filename of similarity matrix
 
     Returns:
-        DistanceMatrix|FrozenDistanceMatrix: A read-only distance matrix object
+        DistanceMatrix|FrozenDistanceMatrix: A read-only similarity matrix object
 
     """
     # peek in file to detect format
@@ -210,30 +210,30 @@ def open_distance_matrix(fn):
     return matrix
 
 
-def similar(query, distance_matrix, cutoff, limit=None):
-    """Find similar fragments to query based on distance matrix.
+def similar(query, similarity_matrix, cutoff, limit=None):
+    """Find similar fragments to query based on similarity matrix.
 
     Args:
         query (str): Query fragment identifier
-        distance_matrix (kripodb.db.DistanceMatrix): Distance matrix
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        similarity_matrix (kripodb.db.DistanceMatrix): Similarity matrix
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         limit (int): Maximum number of hits. Default is None for no limit.
 
     Yields:
-        Tuple[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, distance score) sorted on distance score
+        Tuple[(str, str, float)]: List of (query fragment identifier, hit fragment identifier, similarity score) sorted on similarity score
 
     """
-    raw_hits = distance_matrix.find(query, cutoff, limit)
+    raw_hits = similarity_matrix.find(query, cutoff, limit)
     # add query column
     for hit_id, score in raw_hits:
         yield query, hit_id, score
 
 
 def total_number_of_pairs(fingerprint_filenames):
-    """Count number of pairs in distance matrix files
+    """Count number of pairs in similarity matrix files
 
     Args:
-        fingerprint_filenames (list[str]): List of file names of distance matrices
+        fingerprint_filenames (list[str]): List of file names of similarity matrices
 
     Returns:
         int: Total number of pairs
@@ -248,11 +248,11 @@ def total_number_of_pairs(fingerprint_filenames):
 
 
 def merge(ins, out):
-    """Concatenate distance matrix files into a single one.
+    """Concatenate similarity matrix files into a single one.
 
     Args:
-        ins (list[str]): List of input distance matrix filenames
-        out (str):  Output distance matrix filenames
+        ins (list[str]): List of input similarity matrix filenames
+        out (str):  Output similarity matrix filenames
 
     Raises:
         AssertionError: When nr of labels of input files is not the same

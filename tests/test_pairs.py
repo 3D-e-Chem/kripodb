@@ -207,10 +207,10 @@ class Testpairs(object):
         expected = "a\tc\t0.13556\n"
         eq_(result, expected)
 
-    def test_distance2query(self):
+    def test_similarity2query(self):
         out = StringIO()
 
-        pairs.distance2query(self.bitsets,
+        pairs.similarity2query(self.bitsets,
                              'a',
                              out,
                              0.4,
