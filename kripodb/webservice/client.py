@@ -35,11 +35,11 @@ class WebserviceClient(object):
 
         Args:
             fragment_id (str): Query fragment identifier
-            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+            cutoff (float): Cutoff, similarity scores below cutoff are discarded.
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Returns:
-            List(Dict()): Query fragment identifier, hit fragment identifier and distance score
+            List(Dict()): Query fragment identifier, hit fragment identifier and similarity score
         """
         url = self.base_url + '/fragments/{fragment_id}/similar'.format(fragment_id=fragment_id)
         params = {'cutoff': cutoff, 'limit': limit}

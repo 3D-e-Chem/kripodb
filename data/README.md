@@ -28,3 +28,4 @@ EOF
 ```
 kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite fingerprints.sqlite fingerprints.sqlite similarities.h5
 ```
+

@@ -66,7 +66,7 @@ def make_similarities_parser(subparsers):
     simmatrix_export_sc(dm_sc)
     simmatrix_import_sc(dm_sc)
     simmatrix_filter_sc(dm_sc)
-    dismatrix_freeze_sc(dm_sc)
+    similarity_freeze_sc(dm_sc)
     fpneigh2tsv_sc(dm_sc)
     serve_sc(dm_sc)
 
@@ -592,7 +592,7 @@ def simmatrix_filter(input, output, fragmentsdb):
     simmatrix_out.close()
 
 
-def dismatrix_freeze_sc(subparsers):
+def similarity_freeze_sc(subparsers):
     sc = subparsers.add_parser('freeze', help='Optimize similarity matrix for reading')
     sc.add_argument('in_fn', type=str, help='Input pairs file')
     sc.add_argument('out_fn', type=str, help='Output array file, file is overwritten')
@@ -600,10 +600,10 @@ def dismatrix_freeze_sc(subparsers):
     sc.add_argument('-m', '--memory', type=int, default=1, help='Memory cache in Gigabytes (default: %(default)s)')
     sc.add_argument('-l', '--limit', type=int, help='Number of pairs to copy, None for no limit (default: %(default)s)')
     sc.add_argument('-s', '--single_sided', action='store_true', help='Store half matrix (default: %(default)s)')
-    sc.set_defaults(func=dismatrix_freeze)
+    sc.set_defaults(func=similarity_freeze_run)
 
 
-def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit, single_sided):
+def similarity_freeze_run(in_fn, out_fn, frame_size, memory, limit, single_sided):
     dm = SimilarityMatrix(in_fn, 'r')
     parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
     parameters.CHUNK_CACHE_NELMTS = 2 ** 14
