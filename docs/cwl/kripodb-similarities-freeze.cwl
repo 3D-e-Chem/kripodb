@@ -1,14 +1,14 @@
 #!/usr/bin/env cwl-runner
 cwlVersion: v1.0
 class: CommandLineTool
-label: kripodb-distances-freeze
-doc: Convert kripo sparse distance matrix to a dense compressed version
+label: kripodb-similarities-freeze
+doc: Convert kripo sparse similarity matrix to a dense compressed version
 requirements:
   - class: DockerRequirement
     dockerPull: 3dechem/kripodb
 baseCommand: kripodb
 arguments:
-  - distances
+  - similarities
   - freeze
 inputs:
   frame_size:

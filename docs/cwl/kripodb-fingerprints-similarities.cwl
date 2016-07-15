@@ -1,15 +1,15 @@
 #!/usr/bin/env cwl-runner
 cwlVersion: v1.0
 class: CommandLineTool
-label: kripodb-fingerprints-distances
-doc: Calculate distance matrix from 2 fingerprint files
+label: kripodb-fingerprints-similarities
+doc: Calculate similarity matrix from 2 fingerprint files
 requirements:
   - class: DockerRequirement
     dockerPull: 3dechem/kripodb
 baseCommand: kripodb
 arguments:
   - fingerprints
-  - distances
+  - similarities
 inputs:
   fragmentsdb:
     type: File

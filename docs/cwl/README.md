@@ -8,7 +8,7 @@ pip install cwl-runner
 ```
 (Note! CWL runner does not yet support Python3 see https://github.com/common-workflow-language/cwltool/issues/8)
 
-## Compute distance matrix of Kripo fingerprints
+## Compute similarity matrix of Kripo fingerprints
 
 The pipeline can be run on the tiny example dataset included in `/data` directory of this repo.
 

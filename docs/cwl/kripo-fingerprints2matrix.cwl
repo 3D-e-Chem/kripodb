@@ -1,13 +1,13 @@
 #!/usr/bin/env cwl-runner
 cwlVersion: v1.0
 class: Workflow
-label: Compute distance matrix of Kripo fingerprints
+label: Compute similarity matrix of Kripo fingerprints
 doc: |
     Workflow that does:
     kripodb fingerprints import fingerprints_01.txt fingerprints_01.db
-    kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle fingerprints_01.db fingerprints_01.db dist_01_01.h5
-    kripodb distances freeze dist_01_01.h5 dist_01_01.frozen.h5
-    ptrepack --complevel 6 --complib blosc:zlib dist_01_01.frozen.h5 dist_01_01.packedfrozen.h5
+    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle fingerprints_01.db fingerprints_01.db sim_01_01.h5
+    kripodb similarities freeze sim_01_01.h5 sim_01_01.frozen.h5
+    ptrepack --complevel 6 --complib blosc:zlib sim_01_01.frozen.h5 sim_01_01.packedfrozen.h5
 inputs:
   fingerprinttxt: File
   fragmentsdb: File
@@ -25,8 +25,8 @@ steps:
         default: fingerprints.sqlite
     out:
       - fingerprintdb
-  distance-generate:
-    run: kripodb-fingerprints-distances.cwl
+  similarity-generate:
+    run: kripodb-fingerprints-similarities.cwl
     in:
       fragmentsdb: fragmentsdb
       fingerprintdb1: import-fingerprint/fingerprintdb
@@ -35,10 +35,10 @@ steps:
         default: sparse_matrix.h5
     out:
       - sparsematrix
-  distance-freeze:
-    run: kripodb-distances-freeze.cwl
+  similarity-freeze:
+    run: kripodb-similarities-freeze.cwl
     in:
-      sparsematrix: distance-generate/sparsematrix
+      sparsematrix: similarity-generate/sparsematrix
       frozenmatrix_name:
         default: "frozen_matrix.h5"
     out:
@@ -46,7 +46,7 @@ steps:
   ptrepack:
     run: ptrepack.cwl
     in:
-      sourcefile: distance-freeze/frozenmatrix
+      sourcefile: similarity-freeze/frozenmatrix
       destfile_name: distmatrixpackedfrozen
       complib:
         default: blosc:zlib

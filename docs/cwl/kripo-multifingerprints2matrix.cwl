@@ -1,17 +1,17 @@
 #!/usr/bin/env cwl-runner
 cwlVersion: v1.0
 class: Workflow
-label: Compute distance matrix of multiple Kripo fingerprint files
+label: Compute similarity matrix of multiple Kripo fingerprint files
 doc: |
     Workflow that does:
     kripodb fingerprints import 01.fp 01.fp.db
     kripodb fingerprints import 02.fp 02.fp.db
-    kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db dist_01_01.h5
-    kripodb fingerprints distances --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db dist_02_02.h5
-    kripodb fingerprints distances --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db dist_01_02.h5
-    kripodb distances merge dist_*_*.h5  dist_all.h5
-    kripodb distances freeze dist_all.h5 dist_all.frozen.h5
-    ptrepack --complevel 6 --complib blosc:zlib dist_all.frozen.h5 dist_all.packedfrozen.h5
+    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db sim_01_01.h5
+    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db sim_02_02.h5
+    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db sim_01_02.h5
+    kripodb similarities merge sim_*_*.h5  sim_all.h5
+    kripodb similarities freeze sim_all.h5 sim_all.frozen.h5
+    ptrepack --complevel 6 --complib blosc:zlib sim_all.frozen.h5 sim_all.packedfrozen.h5
 inputs:
   fingerprinttxt:
     type:
@@ -32,8 +32,8 @@ steps:
         default: fingerprints.sqlite
     out:
       - fingerprintdb
-  distance-generate:
-    run: kripodb-fingerprints-distances.cwl
+  similarity-generate:
+    run: kripodb-fingerprints-similarities.cwl
     in:
       fragmentsdb: fragmentsdb
       fingerprintdb1: import-fingerprint/fingerprintdb
@@ -42,10 +42,10 @@ steps:
         default: sparse_matrix.h5
     out:
       - sparsematrix
-  distance-freeze:
-    run: kripodb-distances-freeze.cwl
+  similarity-freeze:
+    run: kripodb-similarities-freeze.cwl
     in:
-      sparsematrix: distance-generate/sparsematrix
+      sparsematrix: similarity-generate/sparsematrix
       frozenmatrix_name:
         default: "frozen_matrix.h5"
     out:
@@ -53,7 +53,7 @@ steps:
   ptrepack:
     run: ptrepack.cwl
     in:
-      sourcefile: distance-freeze/frozenmatrix
+      sourcefile: similarity-freeze/frozenmatrix
       destfile_name: distmatrixpackedfrozen
       complib:
         default: blosc:zlib
