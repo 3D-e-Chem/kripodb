@@ -11,9 +11,9 @@ doc: |
 inputs:
   fingerprinttxt: File
   fragmentsdb: File
-  distmatrixpackedfrozen: string
+  sim_matrixpackedfrozen: string
 outputs:
-  distmatrixpackedfrozen_file:
+  sim_matrixpackedfrozen_file:
     type: File
     outputSource: ptrepack/destfile
 steps:
@@ -47,7 +47,7 @@ steps:
     run: ptrepack.cwl
     in:
       sourcefile: similarity-freeze/frozenmatrix
-      destfile_name: distmatrixpackedfrozen
+      destfile_name: sim_matrixpackedfrozen
       complib:
         default: blosc:zlib
       complevel:

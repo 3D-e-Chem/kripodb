@@ -19,6 +19,14 @@ inputs:
     type: string
     inputBinding:
       position: 2
+  start:
+    type: int
+    inputBinding:
+      prefix: --start
+  stop:
+    type: int
+    inputBinding:
+      prefix: --stop
 outputs:
   fingerprinttxt:
     type: File

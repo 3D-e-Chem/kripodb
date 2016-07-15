@@ -13,27 +13,33 @@ doc: |
     kripodb similarities freeze sim_all.h5 sim_all.frozen.h5
     ptrepack --complevel 6 --complib blosc:zlib sim_all.frozen.h5 sim_all.packedfrozen.h5
 inputs:
-  fingerprinttxt:
-    type:
-      - type: array
-        items: File
+  fingerprintstxt: File[]
   fragmentsdb: File
-  distmatrixpackedfrozen: string
+  sim_matrixpackedfrozen: string
 outputs:
-  distmatrixpackedfrozen_file:
+  sim_matrixpackedfrozen_file:
     type: File
     outputSource: ptrepack/destfile
 steps:
   import-fingerprint:
     run: kripodb-fingerprints-import.cwl
+    requirements:
+      - class: ScatterFeatureRequirement
+    scatter: fingerprinttxt
     in:
-      fingerprinttxt: fingerprinttxt
+      fingerprinttxt: fingerprintstxt
       fingerprintdb_name:
         default: fingerprints.sqlite
     out:
       - fingerprintdb
   similarity-generate:
     run: kripodb-fingerprints-similarities.cwl
+    requirements:
+      - class: ScatterFeatureRequirement
+    scatter:
+      - fingerprintdb1
+      - fingerprintdb2
+    scatterMethod: flat_crossproduct
     in:
       fragmentsdb: fragmentsdb
       fingerprintdb1: import-fingerprint/fingerprintdb
@@ -42,10 +48,18 @@ steps:
         default: sparse_matrix.h5
     out:
       - sparsematrix
+  similarity-merge:
+    run: kripodb-similarities-merge.cwl
+    in:
+      ins: similarity-generate/sparsematrix
+      out_name:
+        default: frozen_sparse_matrix.h5
+    out:
+      - out
   similarity-freeze:
     run: kripodb-similarities-freeze.cwl
     in:
-      sparsematrix: similarity-generate/sparsematrix
+      sparsematrix: similarity-merge/out
       frozenmatrix_name:
         default: "frozen_matrix.h5"
     out:
@@ -54,7 +68,7 @@ steps:
     run: ptrepack.cwl
     in:
       sourcefile: similarity-freeze/frozenmatrix
-      destfile_name: distmatrixpackedfrozen
+      destfile_name: sim_matrixpackedfrozen
       complib:
         default: blosc:zlib
       complevel:
