@@ -108,12 +108,15 @@ def write_file(fp_size, bitsets, fn, start=None, stop=None):
 
     """
     fn.write(write_header(fp_size))
-    i = 0
     if start is None:
         start = 0
     if stop is None:
         stop = len(bitsets)
-    for fid, bitset in six.iteritems(bitsets):
-        if i >= start and i < stop:
+    if start == 0 and stop == len(bitsets):
+        # write all bitsets
+        for fid, bitset in six.iteritems(bitsets):
             fn.write(write_bitset(fid, bitset))
-        i += 1
+    else:
+        for fid in sorted(six.iterkeys(bitsets))[start:stop]:
+            bitset = bitsets[fid]
+            fn.write(write_bitset(fid, bitset))
