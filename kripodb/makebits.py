@@ -91,13 +91,15 @@ def write_bitset(fid, bitset):
     return fid + " " + " ".join([str(d) for d in bits]) + "\n"
 
 
-def write_file(fp_size, bitsets, fn):
+def write_file(fp_size, bitsets, fn, start=None, stop=None):
     """Write makebits formatted file
 
     Args:
         fp_size (int): Number of bits
         bitsets (dict): Dict with fingerprint identifier as key and intbitset object as value
         fn (File): File object to write to
+        start (int): Start offset, inclusive
+        stop (int): Stop offset, exclusive
 
     Examples:
         Write a file
@@ -106,5 +108,12 @@ def write_file(fp_size, bitsets, fn):
 
     """
     fn.write(write_header(fp_size))
+    i = 0
+    if start is None:
+        start = 0
+    if stop is None:
+        stop = len(bitsets)
     for fid, bitset in six.iteritems(bitsets):
-        fn.write(write_bitset(fid, bitset))
+        if i >= start and i < stop:
+            fn.write(write_bitset(fid, bitset))
+        i += 1

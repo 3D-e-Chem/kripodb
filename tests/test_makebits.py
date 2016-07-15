@@ -90,3 +90,25 @@ def test_write_file():
 '''
     eq_(result, expected)
 
+def test_write_file_offset():
+    bitsets = {
+        'f1': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f2': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f3': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f4': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f5': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f6': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+        'f7': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]),
+    }
+    outfile = StringIO()
+    fp_size = 574331
+
+    makebits.write_file(fp_size, bitsets, outfile, 2, 5)
+
+    result = outfile.getvalue()
+    expected = '''MAKEBITS 1.0 574331 BigGrid
+f3 1 2 3 4 6 10 11 12 15 0 9
+f4 1 2 3 4 6 10 11 12 15 0 9
+f5 1 2 3 4 6 10 11 12 15 0 9
+'''
+    eq_(result, expected)

@@ -225,12 +225,18 @@ def fingerprintsdb2makebits_sc(subparsers):
     sc.add_argument('outfile',
                     type=argparse.FileType('w'),
                     help='Name of makebits formatted fingerprint file (or - for stdout)')
+    sc.add_argument('--start',
+                    type=int,
+                    help='Offset start')
+    sc.add_argument('--stop',
+                    type=int,
+                    help='Offset stop')
     sc.set_defaults(func=fingerprintsdb2makebits)
 
 
-def fingerprintsdb2makebits(infile, outfile):
+def fingerprintsdb2makebits(infile, outfile, start, stop):
     bitsets = FingerprintsDb(infile).as_dict()
-    makebits.write_file(bitsets.number_of_bits, bitsets, outfile)
+    makebits.write_file(bitsets.number_of_bits, bitsets, outfile, start, stop)
 
 
 def similarity2query_sc(subparsers):
