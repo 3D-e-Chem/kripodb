@@ -7,7 +7,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# simributed under the License is simributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -22,7 +22,7 @@ import connexion
 from flask import current_app, abort
 
 from ..version import __version__
-from ..pairs import open_distance_matrix
+from ..pairs import open_similarity_matrix
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,17 +32,17 @@ def get_similar_fragments(fragment_id, cutoff, limit):
 
     Args:
         fragment_id (str): Query fragment identifier
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
         limit (int): Maximum number of hits. Default is None for no limit.
 
     Returns:
-        List(Dict()): Query fragment identifier, hit fragment identifier and distance score
+        List(Dict()): Query fragment identifier, hit fragment identifier and similarity score
     """
-    distance_matrix = current_app.config['matrix']
+    similarity_matrix = current_app.config['matrix']
     query_id = fragment_id
     hits = []
     try:
-        raw_hits = distance_matrix.find(query_id, cutoff, limit)
+        raw_hits = similarity_matrix.find(query_id, cutoff, limit)
         # add query column
         for hit_id, score in raw_hits:
             hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
@@ -60,11 +60,11 @@ def get_version():
     return {'version': __version__}
 
 
-def wsgi_app(dist_matrix, external_url='http://localhost:8084/kripo'):
+def wsgi_app(sim_matrix, external_url='http://localhost:8084/kripo'):
     """Create wsgi app
 
     Args:
-        dist_matrix (DistanceMatrix): Distance matrix to use in webservice
+        sim_matrix (SimilarityMatrix): Similarity matrix to use in webservice
         external_url (str): URL which should be used in Swagger spec
 
     Returns:
@@ -74,7 +74,7 @@ def wsgi_app(dist_matrix, external_url='http://localhost:8084/kripo'):
     url = urlparse(external_url)
     swagger_file = resource_filename(__name__, 'swagger.json')
     app.add_api(swagger_file, base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
-    app.app.config['matrix'] = dist_matrix
+    app.app.config['matrix'] = sim_matrix
     return app
 
 
@@ -82,12 +82,12 @@ def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kr
     """Serve webservice forever
 
     Args:
-        matrix: Filename of distance matrix hdf5 file
+        matrix: Filename of similarity matrix hdf5 file
         internal_port: TCP port on which to listen
         external_url (str): URL which should be used in Swagger spec
     """
-    dist_matrix = open_distance_matrix(matrix)
-    app = wsgi_app(dist_matrix, external_url)
+    sim_matrix = open_similarity_matrix(matrix)
+    app = wsgi_app(sim_matrix, external_url)
     LOGGER.setLevel(logging.INFO)
     LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))
@@ -95,4 +95,4 @@ def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kr
     try:
         app.run(port=internal_port)
     finally:
-        dist_matrix.close()
+        sim_matrix.close()

@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module to calculate modified tanimoto distance"""
+"""Module to calculate modified tanimoto similarity"""
 
 from __future__ import absolute_import
 from math import fsum
@@ -39,7 +39,7 @@ def calc_mean_onbit_density(bitsets, number_of_bits):
 def corrections(mean_onbit_density):
     """Calculate corrections
 
-    See :func:`distance` for explanation of corrections.
+    See :func:`similarity` for explanation of corrections.
 
     Args:
         mean_onbit_density (float): Mean on bit density
@@ -53,8 +53,8 @@ def corrections(mean_onbit_density):
     return corr_st, corr_sto
 
 
-def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
-    """Calculate modified Tanimoto distance between two fingerprints
+def similarity(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
+    """Calculate modified Tanimoto similarity between two fingerprints
 
     Given two fingerprints of length n with a and b bits set in each fingerprint,
     respectively, and c bits set in both fingerprint,
@@ -85,7 +85,7 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
         corr_sto (float): Sto correction
 
     Returns:
-        float: modified Tanimoto distance
+        float: modified Tanimoto similarity
     """
     a = len(bitset1)
     b = len(bitset2)
@@ -97,10 +97,10 @@ def distance(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     return smt
 
 
-def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ignore_upper_triangle=False):
-    """Calculate modified tanimoto distance between two collections of fingerprints
+def similarities(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ignore_upper_triangle=False):
+    """Calculate modified tanimoto similarity between two collections of fingerprints
 
-    Excludes distance of the same fingerprint.
+    Excludes similarity of the same fingerprint.
 
     Args:
         bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
@@ -110,12 +110,12 @@ def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ign
         number_of_bits (int): Number of bits for all fingerprints
         corr_st (float): St correction
         corr_sto (float): Sto correction
-        cutoff (float): Cutoff, distance scores below cutoff are discarded.
-        ignore_upper_triangle (Optional[bool]): When true returns distance where label1 > label2,
-            when false returns all distances
+        cutoff (float): Cutoff, similarity scores below cutoff are discarded.
+        ignore_upper_triangle (Optional[bool]): When true returns similarity where label1 > label2,
+            when false returns all similarities
 
     Yields:
-        (fingerprint label 1, fingerprint label2, distance)
+        (fingerprint label 1, fingerprint label2, similarity score)
 
     """
     for (label1, bs1) in six.iteritems(bitsets1):
@@ -126,7 +126,7 @@ def distances(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, ign
             if ignore_upper_triangle and label1 > label2:
                 continue
 
-            d = distance(bs1, bs2, number_of_bits, corr_st, corr_sto)
+            score = similarity(bs1, bs2, number_of_bits, corr_st, corr_sto)
 
-            if d >= cutoff:
-                yield label1, label2, d
+            if score >= cutoff:
+                yield label1, label2, score
