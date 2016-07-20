@@ -7,3 +7,5 @@ dependencies:
 - pandas
 - coverage
 - bsddb
+- pip:
+  - kripodb
