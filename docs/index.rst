@@ -25,6 +25,13 @@ API
     kripodb.script <script.rst>
     kripodb.webservice <webservice.rst>
 
+Update pipeline
+---------------
+
+.. toctree::
+    :maxdepth: 2
+
+    Update pipeline <data-update.rst>
 
 Indices and tables
 ==================
@@ -32,4 +39,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
