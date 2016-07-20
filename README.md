@@ -5,6 +5,7 @@
 [![Codacy Coverage Badge](https://api.codacy.com/project/badge/Coverage/4878758675a0402bb75019672fa6e45c)](https://www.codacy.com/app/3D-e-Chem/kripodb?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=3D-e-Chem/kripodb&amp;utm_campaign=Badge_Coverage)
 [![DOI](https://zenodo.org/badge/19641/3D-e-Chem/kripodb.svg)](https://zenodo.org/badge/latestdoi/19641/3D-e-Chem/kripodb)
 [![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/3dechem/kripodb/)
+[![Documentation Status](https://readthedocs.org/projects/kripodb/badge/?version=latest)](http://kripodb.readthedocs.io/en/latest/?badge=latest)
 
 Library to interact with Kripo fragment, fingerprint and similarity data files.
 
@@ -159,6 +160,10 @@ It will print the urls for the swagger spec and UI.
 Note! The webservice returns a limited amount of results. To get all results use local files.
 
 On http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/ there is a KripoDB webservice with the full PDB fragment all vs all matrix.
+
+# Documentation
+
+API and data update pipeline documentation can be found at http://kripodb.readthedocs.io/en/latest/.
 
 # Reference
 
