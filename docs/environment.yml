@@ -8,4 +8,4 @@ dependencies:
 - coverage
 - bsddb
 - pip:
-  - ..
+  - .
