@@ -1,6 +1,8 @@
 Baseline update
 ===============
 
+.. contents::
+
 The Kripo data set is generated from scratch every year or when algorithms change.
 
 1. Create staging directory

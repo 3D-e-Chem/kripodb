@@ -1,6 +1,8 @@
 Weekly update
 =============
 
+.. contents::
+
 The Kripo data set is updated weekly with new PDB entries.
 
 1. Create staging directory
