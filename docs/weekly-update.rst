@@ -18,7 +18,7 @@ Create a new directory::
 
 Use directory listing of new pdb files as input::
 
-  ls $NEW_PDBS_DIR | pdblist2fps_final_local.py
+  ls $PDBS_ADDED_DIR | pdblist2fps_final_local.py
 
 3. Create fragment information
 ------------------------------

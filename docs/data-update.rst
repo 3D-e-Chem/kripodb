@@ -4,6 +4,12 @@ Update pipelines
 The Kripo data can be updated using pipelines.
 A pipeline is a sequence of steps, where each steps executes CLI commands.
 
+.. toctree::
+    :maxdepth: 1
+
+    Baseline update <baseline-update.rst>
+    Weekly update <weekly-update.rst>
+
 Steps
 -----
 
@@ -24,26 +30,14 @@ Overview of steps involved in updating Kripo:
 Disk layout
 -----------
 
-Current
-^^^^^^^
+Directories for Kripo:
 
-Directory called `current` which holds current pharmacophores, fingerprints, fragment information and similarity matrix.
+* **current/**, directory which holds current pharmacophores, fingerprints, fragment information and similarity matrix.
+* **staging/**, which is used to compute new items and combine new and old items.
+* **old/**, which is used as a backup containing the previous update.
 
-Staging
-^^^^^^^
+Input directories:
 
-Directory called `staging` which is used to compute new items and combine new and old items.
+* **$PDBS_ADDED_DIR**, directory containing new PDB files to be processed
 
-Old
-^^^
-
-Directory called `old` which is used as a backup containing the previous update.
-
-Pipelines
----------
-
-.. toctree::
-    :maxdepth: 2
-
-    Baseline update <baseline-update.rst>
-    Weekly update <weekly-update.rst>
+.. note: TODO remove Kripo fragment/fingerprints of obsolete PDBs
