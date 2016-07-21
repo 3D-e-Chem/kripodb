@@ -6,8 +6,10 @@ coverage
 setuptools>=18.8.1
 six>=1.7
 mock
-sphinx
 webtest
 requests_mock
+# Document generation
+sphinx
+sphinx_rtd_theme
 # for faster pydev debugging
 cython
