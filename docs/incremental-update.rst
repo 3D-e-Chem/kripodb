@@ -1,9 +1,9 @@
-Weekly update
-=============
+Incremental update
+==================
 
 .. contents::
 
-The Kripo data set is updated weekly with new PDB entries.
+The Kripo data set can be incrementally updated with new PDB entries.
 
 1. Create staging directory
 ---------------------------
@@ -84,25 +84,24 @@ The output of this step is ready to be served as a webservice using the `kripodb
 
 The webserver and webservice are configure to look in the `current` directory for files.
 
+The current and new pharmacophores need to be combined::
+
+    mv staging/FRAGMENT_PPHORES staging/FRAGMENT_PPHORES.new
+    rsync -a current/FRAGMENT_PPHORES staging/FRAGMENT_PPHORES
+    rm -r staging/FRAGMENT_PPHORES.new
+
+.. todo:: rsync of current/FRAGMENT_PPHORES to destination, maybe too slow due large number of files.
+    Switch to move old pharmacohores and rsync new pharmacophores into it when needed.
+
+The current and new fingerprints need to be combined::
+
+    mv staging/out.fp.sqlite staging/out.fp.sqlite.new
+    kripodb fingerprints merge current/out.fp.sqlite staging/out.fp.sqlite.new staging/out.fp.sqlite
+    rm -r staging/out.fp.sqlite.new
+
+.. todo:: `kripodb fingerprints merge` needs to be implemented.
+
 The staging can be made current with the following commands::
 
     mv current old
     mv staging current
-
-The old and new pharmacophores need to be combined::
-
-    mv current/FRAGMENT_PPHORES current/FRAGMENT_PPHORES.new
-    mv old/FRAGMENT_PPHORES current/FRAGMENT_PPHORES
-    rsync -a current/FRAGMENT_PPHORES.new current/FRAGMENT_PPHORES
-    rm -r current/FRAGMENT_PPHORES.new
-
-.. note:: Moving old to current and appending new, because making copy of old FRAGMENT_PPHORES takes too long due big number of files.
-
-The old and new fingerprints need to be combined::
-
-    mv current/out.fp.sqlite current/out.fp.sqlite.new
-    mv old/out.fp.sqlite current/out.fp.sqlite
-    kripodb fingerprints append current/out.fp.sqlite current/out.fp.sqlite.new
-    rm -r current/out.fp.sqlite.new
-
-.. todo:: `kripodb fingerprints append` needs to be implemented. Could also do `kripodb fingerprints import -a`. Need to see which is faster.

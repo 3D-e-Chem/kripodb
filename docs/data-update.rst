@@ -1,14 +1,13 @@
-Update pipelines
-================
+Data update
+===========
 
-The Kripo data can be updated using pipelines.
-A pipeline is a sequence of steps, where each steps executes CLI commands.
+The Kripo data can be updated in 2 ways:
 
 .. toctree::
     :maxdepth: 1
 
     Baseline update <baseline-update.rst>
-    Weekly update <weekly-update.rst>
+    Incremental update <incremental-update.rst>
 
 Steps
 -----
