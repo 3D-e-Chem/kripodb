@@ -20,7 +20,7 @@ Use directory listing of new pdb files as input::
 
   ls $PDBS_ADDED_DIR | pdblist2fps_final_local.py
 
-.. attention:: TODO Too slow when run on single cpu.
+.. todo:: Too slow when run on single cpu.
     Chunkify input, run in parallel and merge results
 
 .. _create-fragment-information:
@@ -61,7 +61,7 @@ The similarities between fingerprints can be calculated with::
     kripodb fingerprints import out.fp out.fp.db
     kripodb fingerprints similarities --ignore_upper_triangle --fragmentsdbfn fragments.sqlite out.fp.sqlite out.fp.sqlite similarities.h5
 
-.. attention:: TODO Too slow when run on single cpu.
+.. todo:: Too slow when run on single cpu.
     Chunkify input, run in parallel and merge results
 
 6. Add new similarity scores to similarity pairs file
@@ -74,7 +74,7 @@ The following command merges the current pairs file with the new pairs files::
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
 
-.. note:: Converting the pairs file into a dense matrix goes quicker with more memory.
+.. tip:: Converting the pairs file into a dense matrix goes quicker with more memory.
 
 The following commands converts the pairs into a compressed dense matrix::
 

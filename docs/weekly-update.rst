@@ -20,6 +20,8 @@ Use directory listing of new pdb files as input::
 
   ls $PDBS_ADDED_DIR | pdblist2fps_final_local.py
 
+.. note:: The process can run out of memory, so rerun can be required
+
 3. Create fragment information
 ------------------------------
 
@@ -53,7 +55,7 @@ The following commands add the fragment shelve and sdf to the fragments database
 
 The similarities between the new and existing fingerprints and between new fingerprints themselves can be calculated with::
 
-    kripodb fingerprints import out.fp out.fp.db
+    kripodb fingerprints import out.fp out.fp.sqlite
     kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite ../current/out.fp.sqlite out.fp.sqlite similarities.new_existing.h5
     kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite out.fp.sqlite out.fp.sqlite similarities.new_new.h5
 
@@ -62,7 +64,7 @@ The similarities between the new and existing fingerprints and between new finge
 
 The following command merges the current pairs file with the new pairs files::
 
-    kripodb similarities merge ../staging/similarities.h5 similarities.new_existing.h5 similarities.new_new.h5 similarities.h5
+    kripodb similarities merge ../current/similarities.h5 similarities.new_existing.h5 similarities.new_new.h5 similarities.h5
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
@@ -86,3 +88,21 @@ The staging can be made current with the following commands::
 
     mv current old
     mv staging current
+
+The old and new pharmacophores need to be combined::
+
+    mv current/FRAGMENT_PPHORES current/FRAGMENT_PPHORES.new
+    mv old/FRAGMENT_PPHORES current/FRAGMENT_PPHORES
+    rsync -a current/FRAGMENT_PPHORES.new current/FRAGMENT_PPHORES
+    rm -r current/FRAGMENT_PPHORES.new
+
+.. note:: Moving old to current and appending new, because making copy of old FRAGMENT_PPHORES takes too long due big number of files.
+
+The old and new fingerprints need to be combined::
+
+    mv current/out.fp.sqlite current/out.fp.sqlite.new
+    mv old/out.fp.sqlite current/out.fp.sqlite
+    kripodb fingerprints append current/out.fp.sqlite current/out.fp.sqlite.new
+    rm -r current/out.fp.sqlite.new
+
+.. todo:: `kripodb fingerprints append` needs to be implemented. Could also do `kripodb fingerprints import -a`. Need to see which is faster.
