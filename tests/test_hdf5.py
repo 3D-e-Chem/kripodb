@@ -16,14 +16,14 @@ from __future__ import absolute_import
 from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
-from kripodb.hdf5 import DistanceMatrix
+from kripodb.hdf5 import SimilarityMatrix
 
 
-class TestDistanceMatrix(object):
+class TestSimilarityMatrix(object):
     matrix = None
 
     def setUp(self):
-        self.matrix = DistanceMatrix('data/distances.h5')
+        self.matrix = SimilarityMatrix('data/similarities.h5')
 
     def tearDown(self):
         self.matrix.close()

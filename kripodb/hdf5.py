@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Distance matrix using hdf5 as storage backend."""
+"""Similarity matrix using hdf5 as storage backend."""
 from __future__ import absolute_import
 from math import log10, ceil, floor
 
@@ -19,16 +19,16 @@ import tables
 import six
 
 
-class DistanceMatrix(object):
-    """Distance matrix
+class SimilarityMatrix(object):
+    """Similarity matrix
 
     Args:
-        filename (str): File name of hdf5 file to write or read distance matrix from
+        filename (str): File name of hdf5 file to write or read similarity matrix from
         mode (str): Can be 'r' for reading or 'w' for writing
         expectedpairrows (int): Expected number of pairs to be added.
-            Required when distance matrix is opened in write mode, helps optimize storage
+            Required when similarity matrix is opened in write mode, helps optimize storage
         expectedlabelrows (int): Expected number of labels to be added.
-            Required when distance matrix is opened in write mode, helps optimize storage
+            Required when similarity matrix is opened in write mode, helps optimize storage
         cache_labels (bool): Cache labels, speed up label lookups
 
     Attributes:
@@ -57,10 +57,10 @@ class DistanceMatrix(object):
         self.h5file.close()
 
     def append(self, other):
-        """Append data from other distance matrix to me
+        """Append data from other similarity matrix to me
 
         Args:
-            other (DistanceMatrix): Other distance matrix
+            other (SimilarityMatrix): Other similarity matrix
         """
         if len(self.labels) == 0:
             # copy labels when self has no labels
@@ -81,15 +81,15 @@ class DistanceMatrix(object):
         for pair in self.pairs:
             yield self.cache_i2l[pair['a']], self.cache_i2l[pair['b']], pair['score']
 
-    def update(self, distances_iter, label2id):
-        """Store pairs of fragment identifier with their distance score and label 2 id lookup
+    def update(self, similarities_iter, label2id):
+        """Store pairs of fragment identifier with their similarity score and label 2 id lookup
 
         Args:
-            distances_iter (Iterator): Iterator which yields (label1, label2, distance_score)
+            similarities_iter (Iterator): Iterator which yields (label1, label2, similarity_score)
             label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
 
         """
-        self.pairs.update(distances_iter, label2id)
+        self.pairs.update(similarities_iter, label2id)
         self.pairs.add_indexes()
         self.labels.update(label2id)
 
@@ -98,11 +98,11 @@ class DistanceMatrix(object):
 
         Args:
             query (str): Query fragment identifier
-            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+            cutoff (float): Cutoff, similarity scores below cutoff are discarded.
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Yields:
-            Tuple[(str, float)]: Hit fragment idenfier and distance score
+            Tuple[(str, float)]: Hit fragment idenfier and similarity score
         """
         if self.cache_l2i:
             frag_id = self.cache_l2i[query]
@@ -149,25 +149,25 @@ class AbstractSimpleTable(object):
         return self.table.__iter__()
 
 
-class DistancePair(tables.IsDescription):
-    """Table description for distance pair"""
+class SimilarityPair(tables.IsDescription):
+    """Table description for similarity pair"""
     a = tables.UInt32Col()
     b = tables.UInt32Col()
     score = tables.UInt16Col()
 
 
 class PairsTable(AbstractSimpleTable):
-    """Tabel to store distance score of a pair of fragment fingerprints
+    """Tabel to store similarity score of a pair of fragment fingerprints
 
     When table does not exist in h5file it is created.
 
     Args:
         h5file (tables.File): Object representing an open hdf5 file
         expectedrows (int): Expected number of pairs to be added.
-            Required when distance matrix is opened in write mode, helps optimize storage
+            Required when similarity matrix is opened in write mode, helps optimize storage
 
     Attributes:
-        score_precision (int): Distance score is a fraction,
+        score_precision (int): Similarity score is a fraction,
             the score is converted to an int by multiplying it with the precision
         full_matrix (bool): Matrix is filled above and below diagonal.
     """
@@ -180,8 +180,8 @@ class PairsTable(AbstractSimpleTable):
         else:
             table = h5file.create_table('/',
                                         self.table_name,
-                                        DistancePair,
-                                        'Distance pairs',
+                                        SimilarityPair,
+                                        'Similarity pairs',
                                         expectedrows=expectedrows)
 
         self.table = table
@@ -207,32 +207,32 @@ class PairsTable(AbstractSimpleTable):
         if not self.full_matrix:
             self.table.cols.b.create_index(filters=self.filters)
 
-    def update(self, distances_iter, label2id):
-        """Store pairs of fragment identifier with their distance score
+    def update(self, similarities_iter, label2id):
+        """Store pairs of fragment identifier with their similarity score
 
         Args:
-            distances_iter (Iterator): Iterator which yields (label1, label2, distance_score)
+            similarities_iter (Iterator): Iterator which yields (label1, label2, similarity_score)
             label2id (Dict): Lookup with fragment label as key and fragment identifier as value
 
         """
         hit = self.table.row
-        for label1, label2, distance in distances_iter:
+        for label1, label2, similarity in similarities_iter:
             hit['a'] = label2id[label1]
             hit['b'] = label2id[label2]
-            hit['score'] = int(distance * self.score_precision)
+            hit['score'] = int(similarity * self.score_precision)
             hit.append()
         self.table.flush()
 
     def find(self, frag_id, cutoff, limit):
-        """Find fragment hits which has a distance score with frag_id above cutoff.
+        """Find fragment hits which has a similarity score with frag_id above cutoff.
 
         Args:
             frag_id (int): query fragment identifier
-            cutoff (float): Cutoff, distance scores below cutoff are discarded.
+            cutoff (float): Cutoff, similarity scores below cutoff are discarded.
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Returns:
-            List[Tuple]: Where first tuple value is hit fragment identifier and second value is distance score
+            List[Tuple]: Where first tuple value is hit fragment identifier and second value is similarity score
 
         """
         precision = float(self.score_precision)
@@ -295,7 +295,7 @@ class LabelsLookup(AbstractSimpleTable):
     Args:
         h5file (tables.File): Object representing an open hdf5 file
         expectedrows (int): Expected number of pairs to be added.
-            Required when distance matrix is opened in write mode, helps optimize storage
+            Required when similarity matrix is opened in write mode, helps optimize storage
     """
     table_name = 'labels'
     filters = tables.Filters(complevel=6, complib='blosc')

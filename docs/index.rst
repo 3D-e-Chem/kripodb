@@ -8,23 +8,11 @@ Welcome to KripoDB's documentation!
 
 For installation and usage see https://github.com/3D-e-Chem/kripodb/blob/master/README.md
 
-API
----
-
 .. toctree::
     :maxdepth: 2
 
-    kripodb.canned <canned.rst>
-    kripodb.db <db.rst>
-    kripodb.frozen <frozen.rst>
-    kripodb.hdf5 <hdf5.rst>
-    kripodb.makebits <makebits.rst>
-    kripodb.modifiedtanimoto <modifiedtanimoto.rst>
-    kripodb.pairs <pairs.rst>
-    kripodb.pdb <pdb.rst>
-    kripodb.script <script.rst>
-    kripodb.webservice <webservice.rst>
-
+    Update pipeline <data-update.rst>
+    API <api.rst>
 
 Indices and tables
 ==================
@@ -32,4 +20,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

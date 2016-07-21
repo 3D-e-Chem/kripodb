@@ -18,7 +18,7 @@ from intbitset import intbitset
 from kripodb import modifiedtanimoto
 
 
-def assert_distances(result, expected):
+def assert_similarities(result, expected):
     result = sorted(result)
     expected = sorted(expected)
     eq_(len(result), len(expected))
@@ -56,25 +56,25 @@ class TestAlgorithm(object):
         assert_almost_equal(corr_st, 0.663333333333)
         assert_almost_equal(corr_sto, 0.336666666667)
 
-    def test_distance(self):
+    def test_similarity(self):
         bitset1 = intbitset([1, 2, 3])
         bitset2 = intbitset([1, 2, 4, 8])
 
-        result = modifiedtanimoto.distance(bitset1, bitset2,
+        result = modifiedtanimoto.similarity(bitset1, bitset2,
                                            self.number_of_bits,
                                            self.corr_st, self.corr_sto)
 
         expected = 0.5779523809525572
         assert_almost_equal(result, expected)
 
-    def test_distances_ignore_upper_triangle(self):
+    def test_similarities_ignore_upper_triangle(self):
         bitsets = {
             'a': intbitset([1, 2, 3]),
             'b': intbitset([1, 2, 4, 5, 8]),
             'c': intbitset([1, 2, 4, 8])
         }
 
-        iterator = modifiedtanimoto.distances(bitsets, bitsets,
+        iterator = modifiedtanimoto.similarities(bitsets, bitsets,
                                               self.number_of_bits,
                                               self.corr_st, self.corr_sto,
                                               0.55, True)
@@ -83,17 +83,17 @@ class TestAlgorithm(object):
         expected = [
             ('a', 'c', 0.5779523809525572),
             ('b', 'c', 0.8357708333333689)]
-        # pair a-c is below cutoff with distance of 0.53
-        assert_distances(result, expected)
+        # pair a-c is below cutoff with similarity of 0.53
+        assert_similarities(result, expected)
 
-    def test_distances(self):
+    def test_similarities(self):
         bitsets = {
             'a': intbitset([1, 2, 3]),
             'b': intbitset([1, 2, 4, 5, 8]),
             'c': intbitset([1, 2, 4, 8])
         }
 
-        iterator = modifiedtanimoto.distances(bitsets, bitsets,
+        iterator = modifiedtanimoto.similarities(bitsets, bitsets,
                                               self.number_of_bits,
                                               self.corr_st, self.corr_sto,
                                               0.55, False)
@@ -104,5 +104,5 @@ class TestAlgorithm(object):
             ('c', 'a', 0.5779523809525572),
             ('c', 'b', 0.8357708333333689),
             ('b', 'c', 0.8357708333333689)]
-        # pair a-c is below cutoff with distance of 0.53
-        assert_distances(result, expected)
+        # pair a-c is below cutoff with similarity of 0.53
+        assert_similarities(result, expected)
