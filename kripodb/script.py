@@ -27,8 +27,8 @@ from tables import parameters
 from . import makebits
 from . import pairs
 from .db import FragmentsDb, FingerprintsDb
-from .frozen import FrozenDistanceMatrix
-from .hdf5 import DistanceMatrix
+from .frozen import FrozenSimilarityMatrix
+from .hdf5 import SimilarityMatrix
 from .pdb import PdbReport
 from .modifiedtanimoto import calc_mean_onbit_density
 from .webservice.server import serve_app
@@ -49,24 +49,24 @@ def make_parser():
 
     make_fragments_parser(subparsers)
 
-    make_distances_parser(subparsers)
+    make_similarities_parser(subparsers)
 
     return parser
 
 
-def make_distances_parser(subparsers):
-    """Creates a parser for distances sub commands
+def make_similarities_parser(subparsers):
+    """Creates a parser for similarities sub commands
 
     Args:
         subparsers (argparse.ArgumentParser): Parser to which to add sub commands to
     """
-    dm_sc = subparsers.add_parser('distances', help='Distance matrix').add_subparsers()
+    dm_sc = subparsers.add_parser('similarities', help='Similarity matrix').add_subparsers()
     similar_sc(dm_sc)
     merge_pairs_sc(dm_sc)
-    distmatrix_export_sc(dm_sc)
-    distmatrix_import_sc(dm_sc)
-    distmatrix_filter_sc(dm_sc)
-    dismatrix_freeze_sc(dm_sc)
+    simmatrix_export_sc(dm_sc)
+    simmatrix_import_sc(dm_sc)
+    simmatrix_filter_sc(dm_sc)
+    similarity_freeze_sc(dm_sc)
     fpneigh2tsv_sc(dm_sc)
     serve_sc(dm_sc)
 
@@ -95,25 +95,25 @@ def make_fingerprints_parser(subparsers):
     makebits2fingerprintsdb_sc(fp_sc)
     fingerprintsdb2makebits_sc(fp_sc)
     meanbitdensity_sc(fp_sc)
-    distance2query_sc(fp_sc)
+    similarity2query_sc(fp_sc)
     pairs_sc(fp_sc)
 
 
 def pairs_sc(subparsers):
-    sc_help = '''Calculate modified tanimoto distance between fingerprints'''
+    sc_help = '''Calculate modified tanimoto similarity between fingerprints'''
     sc_description = '''
 
     Output formats:
-    * tsv, tab separated id1,id2, distance
+    * tsv, tab separated id1,id2, similarity
     * hdf5, hdf5 file constructed with pytables with a, b and score, but but a and b have been replaced
-      by numbers and distance has been converted to scaled int
+      by numbers and similarity has been converted to scaled int
 
     When input has been split into chunks,
-    use `--ignore_upper_triangle` flag for computing distances between same chunk.
+    use `--ignore_upper_triangle` flag for computing similarities between same chunk.
     This prevents storing pair a->b also as b->a.
     '''
     out_formats = ['tsv', 'hdf5']
-    sc = subparsers.add_parser('distances',
+    sc = subparsers.add_parser('similarities',
                                help=sc_help,
                                description=sc_description)
     sc.add_argument('fingerprintsfn1',
@@ -234,7 +234,7 @@ def fingerprintsdb2makebits(infile, outfile):
     makebits.write_file(bitsets.number_of_bits, bitsets, outfile)
 
 
-def distance2query_sc(subparsers):
+def similarity2query_sc(subparsers):
     sc_help = 'Find the fragments closests to query based on fingerprints'
     sc = subparsers.add_parser('similar', help=sc_help)
     sc.add_argument('fingerprintsdb',
@@ -253,25 +253,25 @@ def distance2query_sc(subparsers):
     sc.add_argument('--memory',
                     action='store_true',
                     help='Store bitsets in memory (default: %(default)s)')
-    sc.set_defaults(func=pairs.distance2query)
+    sc.set_defaults(func=pairs.similarity2query)
 
 
-def distance2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
+def similarity2query_run(fingerprintsdb, query, out, mean_onbit_density, cutoff, memory):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
-    pairs.distance2query(bitsets, query, out, mean_onbit_density, cutoff, memory)
+    pairs.similarity2query(bitsets, query, out, mean_onbit_density, cutoff, memory)
 
 
 def similar_sc(subparsers):
-    sc_help = 'Find the fragments closets to query based on distance matrix'
+    sc_help = 'Find the fragments closets to query based on similarity matrix'
     sc = subparsers.add_parser('similar', help=sc_help)
-    sc.add_argument('pairsdbfn', type=str, help='hdf5 distance matrix file or base url of kripodb webservice')
+    sc.add_argument('pairsdbfn', type=str, help='hdf5 similarity matrix file or base url of kripodb webservice')
     sc.add_argument('query', type=str, help='Query fragment identifier')
     sc.add_argument('--out', type=argparse.FileType('w'), default='-',
-                    help='Output file tab delimited (query, hit, distance score)')
+                    help='Output file tab delimited (query, hit, similarity score)')
     sc.add_argument('--cutoff',
                     type=float,
                     default=0.55,
-                    help='Distance cutoff (default: %(default)s)')
+                    help='Similarity cutoff (default: %(default)s)')
     sc.set_defaults(func=pairs.similar_run)
 
 
@@ -356,7 +356,7 @@ def fragmentsdb_filter_sc(subparsers):
                     help='Name of fragments db output file, will overwrite file if it exists')
     sc.add_argument('--pdbs', type=argparse.FileType('r'),
                     help='Keep fragments from any of the supplied pdb codes, one pdb code per line, use - for stdin')
-    sc.add_argument('--matrix', type=str, help='Keep fragments which are in distance matrix file')
+    sc.add_argument('--matrix', type=str, help='Keep fragments which are in similarity matrix file')
     sc.set_defaults(func=fragmentsdb_filter)
 
 
@@ -378,10 +378,10 @@ def fragmentsdb_filter_matrix(input, output, matrix):
     output_db.cursor.execute('CREATE TEMPORARY TABLE filter (frag_id TEXT PRIMARY KEY)')
     sql = 'INSERT OR REPLACE INTO filter (frag_id) VALUES (?)'
     print('Matrix labels')
-    distmatrix = DistanceMatrix(matrix)
-    for frag_id in distmatrix.labels.label2ids().keys():
+    simmatrix = SimilarityMatrix(matrix)
+    for frag_id in simmatrix.labels.label2ids().keys():
         output_db.cursor.execute(sql, (frag_id,))
-    distmatrix.close()
+    simmatrix.close()
 
     # insert select
     output_db.cursor.execute('INSERT INTO fragments SELECT * FROM orig.fragments JOIN filter USING (frag_id)')
@@ -477,41 +477,41 @@ def cclustera_sphere(inputfile, outputfile, onlyfrag1):
     json.dump(nodes, outputfile)
 
 
-def distmatrix_export_sc(subparsers):
-    sc = subparsers.add_parser('export', help='Export distance matrix to tab delimited file')
-    sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix filename')
+def simmatrix_export_sc(subparsers):
+    sc = subparsers.add_parser('export', help='Export similarity matrix to tab delimited file')
+    sc.add_argument('simmatrixfn', type=str, help='Compact hdf5 similarity matrix filename')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
-    sc.set_defaults(func=distmatrix_export_run)
+    sc.set_defaults(func=simmatrix_export_run)
 
 
-def distmatrix_export_run(distmatrixfn, outputfile):
-    """Export distance matrix to tab delimited file
+def simmatrix_export_run(simmatrixfn, outputfile):
+    """Export similarity matrix to tab delimited file
 
     Args:
-        distmatrixfn (str): Compact hdf5 distance matrix filename
+        simmatrixfn (str): Compact hdf5 similarity matrix filename
         outputfile (file): Tab delimited output file
 
     """
-    distmatrix = DistanceMatrix(distmatrixfn)
+    simmatrix = SimilarityMatrix(simmatrixfn)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     writer.writerow(['frag_id1', 'frag_id2', 'score'])
-    writer.writerows(distmatrix)
-    distmatrix.close()
+    writer.writerows(simmatrix)
+    simmatrix.close()
 
 
-def distmatrix_import_sc(subparsers):
+def simmatrix_import_sc(subparsers):
     sc = subparsers.add_parser('import',
-                               help='Import distance matrix from tab delimited file',
+                               help='Import similarity matrix from tab delimited file',
                                description='''When input has been split into chunks,
-                                           use `--ignore_upper_triangle` flag for distances between same chunk.
+                                           use `--ignore_upper_triangle` flag for similarities between same chunk.
                                            This prevents storing pair a->b also as b->a.''')
     sc.add_argument('inputfile', type=argparse.FileType('r'),
                     help='Input file, use - for stdin')
     sc.add_argument('fragmentsdb',
                     default='fragments.db',
                     help='Name of fragments db file (default: %(default)s)')
-    sc.add_argument('distmatrixfn', type=str, help='Compact hdf5 distance matrix file, will overwrite file if it exists')
+    sc.add_argument('simmatrixfn', type=str, help='Compact hdf5 similarity matrix file, will overwrite file if it exists')
     sc.add_argument('--format',
                     choices=['tsv', 'fpneigh'],
                     default='fpneigh',
@@ -524,20 +524,20 @@ def distmatrix_import_sc(subparsers):
     sc.add_argument('--ignore_upper_triangle',
                     action='store_true',
                     help='Ignore upper triangle (default: %(default)s)')
-    sc.set_defaults(func=distmatrix_import_run)
+    sc.set_defaults(func=simmatrix_import_run)
 
 
-def distmatrix_import_run(inputfile, fragmentsdb, distmatrixfn, format, nrrows, ignore_upper_triangle=False):
+def simmatrix_import_run(inputfile, fragmentsdb, simmatrixfn, format, nrrows, ignore_upper_triangle=False):
     if format == 'tsv':
-        distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle)
+        simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle)
     elif format == 'fpneigh':
-        distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle)
+        simmatrix_importfpneigh_run(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle)
 
 
-def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle=False):
+def simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
-    distmatrix = DistanceMatrix(distmatrixfn, 'w',
+    simmatrix = SimilarityMatrix(simmatrixfn, 'w',
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
@@ -545,7 +545,7 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_u
     # ignore header
     next(reader)
 
-    # distmatrix wants score as float instead of str
+    # simmatrix wants score as float instead of str
     def csv_iter(rows):
         for row in rows:
             if row[0] == row[1]:
@@ -555,42 +555,42 @@ def distmatrix_import_tsv(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_u
             row[2] = float(row[2])
             yield row
 
-    distmatrix.update(csv_iter(reader), label2id)
-    distmatrix.close()
+    simmatrix.update(csv_iter(reader), label2id)
+    simmatrix.close()
 
 
-def distmatrix_importfpneigh_run(inputfile, fragmentsdb, distmatrixfn, nrrows, ignore_upper_triangle=False):
+def simmatrix_importfpneigh_run(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle=False):
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
-    distmatrix = DistanceMatrix(distmatrixfn, 'w',
+    simmatrix = SimilarityMatrix(simmatrixfn, 'w',
                                 expectedlabelrows=len(label2id),
                                 expectedpairrows=nrrows)
 
-    distmatrix.update(read_fpneighpairs_file(inputfile, ignore_upper_triangle), label2id)
-    distmatrix.close()
+    simmatrix.update(read_fpneighpairs_file(inputfile, ignore_upper_triangle), label2id)
+    simmatrix.close()
 
 
-def distmatrix_filter_sc(subparsers):
-    sc = subparsers.add_parser('filter', help='Filter distance matrix')
+def simmatrix_filter_sc(subparsers):
+    sc = subparsers.add_parser('filter', help='Filter similarity matrix')
     sc.add_argument('input', type=str,
-                    help='Input hdf5 distance matrix file')
+                    help='Input hdf5 similarity matrix file')
     sc.add_argument('output', type=str,
-                    help='Output hdf5 distance matrix file, will overwrite file if it exists')
+                    help='Output hdf5 similarity matrix file, will overwrite file if it exists')
     sc.add_argument('--fragmentsdb',
                     default='fragments.db',
                     help='Name of fragments db file (default: %(default)s)')
-    sc.set_defaults(func=distmatrix_filter)
+    sc.set_defaults(func=simmatrix_filter)
 
 
-def distmatrix_filter(input, output, fragmentsdb):
-    distmatrix_in = DistanceMatrix(input)
+def simmatrix_filter(input, output, fragmentsdb):
+    simmatrix_in = SimilarityMatrix(input)
     frags = FragmentsDb(fragmentsdb)
     print('Counting')
     expectedlabelrows = len(frags)
-    labelsin = len(distmatrix_in.labels)
-    expectedpairrows = int(len(distmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
+    labelsin = len(simmatrix_in.labels)
+    expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
 
-    distmatrix_out = DistanceMatrix(output,
+    simmatrix_out = SimilarityMatrix(output,
                                     'w',
                                     expectedlabelrows=expectedlabelrows,
                                     expectedpairrows=expectedpairrows,
@@ -599,14 +599,14 @@ def distmatrix_filter(input, output, fragmentsdb):
     print('Building frag_id keep list')
     frag_labels2keep = set(frags.id2label().values())
     frag_ids2keep = set()
-    for frag_label, frag_id in six.iteritems(distmatrix_in.labels.label2ids()):
+    for frag_label, frag_id in six.iteritems(simmatrix_in.labels.label2ids()):
         if frag_label in frag_labels2keep:
             frag_ids2keep.add(frag_id)
 
     print('Copying subset of pairs table')
     all_frags2keep = set(frag_ids2keep)
-    hit = distmatrix_out.pairs.table.row
-    for row in distmatrix_in.pairs.table:
+    hit = simmatrix_out.pairs.table.row
+    for row in simmatrix_in.pairs.table:
         if row[0] in frag_ids2keep and row[1] in frag_ids2keep:
             hit['a'] = row[0]
             hit['b'] = row[1]
@@ -630,50 +630,50 @@ def distmatrix_filter(input, output, fragmentsdb):
             all_frags2keep.add(row[0])
 
     print('Adding indices')
-    distmatrix_out.pairs.add_indexes()
+    simmatrix_out.pairs.add_indexes()
 
     print('Copying subset of labels table')
-    hit = distmatrix_out.labels.table.row
-    for row in distmatrix_in.labels.table:
+    hit = simmatrix_out.labels.table.row
+    for row in simmatrix_in.labels.table:
         if row[0] in all_frags2keep:
             hit['frag_id'] = row[0]
             hit['label'] = row[1]
             hit.append()
 
-    distmatrix_in.close()
-    distmatrix_out.close()
+    simmatrix_in.close()
+    simmatrix_out.close()
 
 
-def dismatrix_freeze_sc(subparsers):
-    sc = subparsers.add_parser('freeze', help='Optimize distance matrix for reading')
+def similarity_freeze_sc(subparsers):
+    sc = subparsers.add_parser('freeze', help='Optimize similarity matrix for reading')
     sc.add_argument('in_fn', type=str, help='Input pairs file')
     sc.add_argument('out_fn', type=str, help='Output array file, file is overwritten')
     sc.add_argument('-f', '--frame_size', type=int, default=10**8, help='Size of frame (default: %(default)s)')
     sc.add_argument('-m', '--memory', type=int, default=1, help='Memory cache in Gigabytes (default: %(default)s)')
     sc.add_argument('-l', '--limit', type=int, help='Number of pairs to copy, None for no limit (default: %(default)s)')
     sc.add_argument('-s', '--single_sided', action='store_true', help='Store half matrix (default: %(default)s)')
-    sc.set_defaults(func=dismatrix_freeze)
+    sc.set_defaults(func=similarity_freeze_run)
 
 
-def dismatrix_freeze(in_fn, out_fn, frame_size, memory, limit, single_sided):
-    dm = DistanceMatrix(in_fn, 'r')
+def similarity_freeze_run(in_fn, out_fn, frame_size, memory, limit, single_sided):
+    dm = SimilarityMatrix(in_fn, 'r')
     parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
     parameters.CHUNK_CACHE_NELMTS = 2 ** 14
-    dfm = FrozenDistanceMatrix(out_fn, 'w')
+    dfm = FrozenSimilarityMatrix(out_fn, 'w')
     dfm.from_pairs(dm, frame_size, limit, single_sided)
     dm.close()
     dfm.close()
 
 
 def read_fpneighpairs_file(inputfile, ignore_upper_triangle=False):
-    """Read fpneigh formatted distance matrix file.
+    """Read fpneigh formatted similarity matrix file.
 
     Args:
         inputfile (file): File object to read
         ignore_upper_triangle (bool): Ignore upper triangle of input
 
     Yields:
-        Tuple((Str,Str,Float)): List of (query fragment identifier, hit fragment identifier, distance score)
+        Tuple((Str,Str,Float)): List of (query fragment identifier, hit fragment identifier, similarity score)
 
     """
     current_query = None
@@ -704,8 +704,8 @@ def fpneigh2tsv_run(inputfile, outputfile):
 
 
 def serve_sc(subparsers):
-    sc = subparsers.add_parser('serve', help='Serve distance matrix as webservice')
-    sc.add_argument('matrix', type=str, help='Filename of distance matrix hdf5 file')
+    sc = subparsers.add_parser('serve', help='Serve similarity matrix as webservice')
+    sc.add_argument('matrix', type=str, help='Filename of similarity matrix hdf5 file')
     sc.add_argument('--internal_port',
                     type=int,
                     default=8084,

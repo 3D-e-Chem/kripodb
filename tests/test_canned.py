@@ -22,7 +22,7 @@ from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id
 def test_similarities():
     queries = pd.Series(['3j7u_NDP_frag24'])
 
-    result = similarities(queries, 'data/distances.h5', 0.85)
+    result = similarities(queries, 'data/similarities.h5', 0.85)
 
     expected = [
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
@@ -33,7 +33,7 @@ def test_similarities():
 def test_similarities_limitof1():
     queries = pd.Series(['3j7u_NDP_frag24'])
 
-    result = similarities(queries, 'data/distances.h5', 0.55, 1)
+    result = similarities(queries, 'data/similarities.h5', 0.55, 1)
 
     expected = [
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},

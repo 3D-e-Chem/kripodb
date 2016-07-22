@@ -1,0 +1,11 @@
+name: kripodb_docs
+channels:
+- rdkit
+dependencies:
+- rdkit
+- pytables
+- pandas
+- coverage
+- bsddb
+- pip:
+  - git+https://github.com/3D-e-Chem/kripodb.git
