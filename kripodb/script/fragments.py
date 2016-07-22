@@ -7,7 +7,6 @@ from rdkit.Chem.rdmolfiles import SDMolSupplier
 from ..db import FragmentsDb
 from ..hdf5 import SimilarityMatrix
 from ..pdb import PdbReport
-from .cclustera import cclustera_sphere
 
 
 def make_fragments_parser(subparsers):
@@ -16,12 +15,11 @@ def make_fragments_parser(subparsers):
     Args:
         subparsers (argparse.ArgumentParser): Parser to which to add sub commands to
     """
-    fr_sc = subparsers.add_parser('fragments', help='Fragments').add_subparsers()
-    shelve2fragmentsdb_sc(fr_sc)
-    sdf2fragmentsdb_sc(fr_sc)
-    pdb2fragmentsdb_sc(fr_sc)
-    fragmentsdb_filter_sc(fr_sc)
-    cclustera_sphere_sc(fr_sc)
+    sc = subparsers.add_parser('fragments', help='Fragments').add_subparsers()
+    shelve2fragmentsdb_sc(sc)
+    sdf2fragmentsdb_sc(sc)
+    pdb2fragmentsdb_sc(sc)
+    fragmentsdb_filter_sc(sc)
 
 
 def shelve2fragmentsdb_sc(subparsers):
@@ -151,12 +149,3 @@ def fragmentsdb_filter_pdbs(input, output, pdbs):
     print('Wrote: ' + output)
 
 
-def cclustera_sphere_sc(subparsers):
-    sc = subparsers.add_parser('cclustera', help='Export cclustera sphere')
-    sc.add_argument('inputfile', type=str,
-                    help='Name of fragments db input file')
-    sc.add_argument('outputfile', type=argparse.FileType('w'),
-                    help='Name of fragments cclustera output file, use - for stdout')
-    sc.add_argument('--onlyfrag1', action='store_true',
-                    help='Only *_frag1 (default: %(default)s)')
-    sc.set_defaults(func=cclustera_sphere)

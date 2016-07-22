@@ -19,6 +19,7 @@ import sys
 from .fingerprints import make_fingerprints_parser
 from .fragments import make_fragments_parser
 from .similarities import make_similarities_parser
+from .cclustera import make_cclustera_parsers
 from kripodb.version import __version__
 
 
@@ -37,6 +38,8 @@ def make_parser():
     make_fragments_parser(subparsers)
 
     make_similarities_parser(subparsers)
+
+    make_cclustera_parsers(subparsers)
 
     return parser
 
