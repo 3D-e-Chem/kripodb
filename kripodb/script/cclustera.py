@@ -125,14 +125,14 @@ def enrich_fragments(data, mapping):
                 pdb2uniprot_accs[pdb.lower()] = row[0]
     for frag_id in data:
         (pdb_code, het_code, frag_nr) = frag_id.split('_')
-        cats = set(data[frag_id]['Categories'])
+        cats = [pdb_code, het_code, frag_nr]
         if pdb_code in pdb2uniprot_accs:
             uniprot_acc = pdb2uniprot_accs[pdb_code]
-            cats.add(uniprot_acc)
+            cats.append(uniprot_acc)
             if uniprot_acc in uniprot_acc2gene:
-                cats.add(uniprot_acc2gene[uniprot_acc])
+                cats.append(uniprot_acc2gene[uniprot_acc])
             if uniprot_acc in uniprot_acc2family:
                 for fam in uniprot_acc2family[uniprot_acc]:
-                    cats.add(fam)
+                    cats.append(fam)
 
         data[frag_id]['Categories'] = list(cats)

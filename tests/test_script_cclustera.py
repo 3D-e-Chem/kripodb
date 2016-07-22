@@ -43,13 +43,13 @@ P81186	napA	Prokaryotic molybdopterin-containing oxidoreductase family, NasA/Nap
             "Path": [],
             "Coordinates": [0.2864670506986739, -0.24369131639863245, -0.23773760870587482],
             "Categories": [
-                "P81186",
-                "Prokaryotic molybdopterin-containing oxidoreductase family",
-                "LCP",
                 "2v3v",
-                "NasA/NapA/NarB subfamily",
+                "LCP",
                 "frag1",
-                "gene_napA"
+                "P81186",
+                "gene_napA",
+                "Prokaryotic molybdopterin-containing oxidoreductase family",
+                "NasA/NapA/NarB subfamily",
             ],
             "Properties": []
         }
