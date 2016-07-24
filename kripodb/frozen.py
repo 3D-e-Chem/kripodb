@@ -112,6 +112,25 @@ class FrozenSimilarityMatrix(object):
             sorted_hits = sorted_hits[:limit]
         return sorted_hits
 
+    def __getitem__(self, item):
+        """Get all similarities of fragment.
+
+        Self is excluded.
+
+        Args:
+            item (STR): Label of a fragment
+
+        Returns:
+            List((str, float)): list of (fragment_label, score)
+
+        """
+        precision = float(self.score_precision)
+        precision10 = float(10**(floor(log10(precision))))
+        query_id = self.cache_l2i[item]
+        subjects = self.h5file.root.scores[query_id, ...]
+        hits = [(self.cache_i2l[k], ceil(precision10 * v / precision) / precision10) for k, v in enumerate(subjects) if k != query_id]
+        return hits
+
     def build_label_cache(self):
         self.cache_i2l = {k: v.decode() for k, v in enumerate(self.labels)}
         self.cache_l2i = {v: k for k, v in self.cache_i2l.items()}
@@ -229,3 +248,19 @@ class FrozenSimilarityMatrix(object):
         df = df.round(decimals)
         return df
 
+    def from_array(self, data, labels):
+        """Fill matrix from 2 dimensional array
+
+        Args:
+            data (np.array): 2 dimensional square array with scores
+            labels (list): List of labels for each column and row index
+        """
+        self.labels = self.h5file.create_carray('/', 'labels', obj=labels, filters=self.filters)
+        self.h5file.flush()
+        self.build_label_cache()
+
+        nr_frags = len(labels)
+        self.scores = self.h5file.create_carray('/', 'scores', atom=tables.UInt16Atom(),
+                                                shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
+                                                filters=self.filters)
+        self.scores[0:nr_frags, 0:nr_frags] = (data * self.score_precision).astype('uint16')

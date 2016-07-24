@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 import os
 from nose.tools import eq_, assert_raises
+import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
 from tests.test_pairs import tmpname
@@ -135,3 +136,38 @@ class TestFrozenSimilarityMatrix(object):
         hits = self.matrix.find('c', 0.0)
         expected = []
         eq_(hits, expected)
+
+    def test_from_array(self):
+        labels = ['a', 'b', 'c', 'd']
+        data = [
+            [0.0, 0.9, 0.5, 0.0],
+            [0.9, 0.0, 0.6, 0.0],
+            [0.5, 0.6, 0.0, 0.7],
+            [0.0, 0.0, 0.7, 0.0],
+        ]
+        self.matrix.from_array(np.array(data), labels)
+
+        result = self.matrix.to_pandas()
+        expected = pd.DataFrame(data, index=labels, columns=labels)
+        pdt.assert_almost_equal(result, expected)
+
+    def test_getitem(self):
+        labels = ['a', 'b', 'c', 'd']
+        data = [
+            [0.0, 0.9, 0.5, 0.0],
+            [0.9, 0.0, 0.6, 0.0],
+            [0.5, 0.6, 0.0, 0.7],
+            [0.0, 0.0, 0.7, 0.0],
+        ]
+        self.matrix.from_array(np.array(data), labels)
+
+        result = []
+        for label in labels:
+            result.append(self.matrix[label])
+        expected = [
+            [(u'b', 0.9), (u'c', 0.5), (u'd', 0.0)],
+            [(u'a', 0.9), (u'c', 0.6), (u'd', 0.0)],
+            [(u'a', 0.5), (u'b', 0.6), (u'd', 0.7)],
+            [(u'a', 0.0), (u'b', 0.0), (u'c', 0.7)],
+        ]
+        eq_(result, expected)

@@ -19,6 +19,9 @@ import json
 import math
 from six.moves.urllib.request import urlopen
 
+from progressbar import ProgressBar
+
+from ..frozen import FrozenSimilarityMatrix
 from ..db import FragmentsDb
 
 
@@ -26,6 +29,7 @@ def make_cclustera_parsers(subparsers):
     sc = subparsers.add_parser('cclustera', help='CClustera visualization utils').add_subparsers()
     fragments_sphere_sc(sc)
     cclustera_enrich_sc(sc)
+    dense_dump_sc(sc)
 
 
 def fragments_sphere_sc(subparsers):
@@ -136,3 +140,48 @@ def enrich_fragments(data, mapping):
                     cats.append(fam)
 
         data[frag_id]['Categories'] = list(cats)
+
+
+def dense_dump_sc(sc):
+    """Dump dense matrix with zeros"""
+    sc = sc.add_parser('dump', help='Dump dense matrix with zeros')
+    sc.add_argument('inputfile', type=str,
+                    help='Name of dense similarity matrix')
+    sc.add_argument('outputfile', type=argparse.FileType('w'),
+                    help='Name of output file, use - for stdout')
+    sc.add_argument('--frag1only', action='store_true', help='Only *frag1 (default: %(default)s)')
+    sc.set_defaults(func=dense_dump)
+
+
+def dense_dump(inputfile, outputfile, frag1only):
+    matrix = FrozenSimilarityMatrix(inputfile)
+    writer = csv.writer(outputfile, delimiter='\t', lineterminator='\n')
+    writer.writerow(['frag_id1', 'frag_id2', 'score'])
+    writer.writerows(dense_dump_iter(matrix, frag1only))
+    matrix.close()
+
+
+def dense_dump_iter(matrix, frag1only):
+    """Iterate dense matrix with zeros
+
+    Args:
+        matrix (FrozenSimilarityMatrix): Dense similarity matrix
+        frag1only (bool): True to iterate over \*frag1 only
+
+    Yields:
+        (str, str, float): Fragment label pair and score
+    """
+    completed_frags = set()
+    bar = ProgressBar()
+    labels = [v.decode() for v in matrix.labels]
+    for row_label in bar(labels):
+        if frag1only and not row_label.endswith('frag1'):
+            continue
+        completed_frags.add(row_label)
+        cols = matrix[row_label]
+        for (col_label, score) in cols:
+            if frag1only and not col_label.endswith('frag1'):
+                continue
+            if col_label in completed_frags:
+                continue
+            yield (row_label, col_label, score)

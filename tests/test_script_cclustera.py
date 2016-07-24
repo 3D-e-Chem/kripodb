@@ -13,10 +13,13 @@
 # limitations under the License.
 from __future__ import absolute_import
 
+import numpy as np
+from kripodb.frozen import FrozenSimilarityMatrix
 from six import StringIO
 from nose.tools import eq_
 
-from kripodb.script.cclustera import enrich_fragments
+from kripodb.script.cclustera import enrich_fragments, dense_dump_iter
+from tests.test_pairs import tmpname
 
 
 def test_enrich_fragments():
@@ -55,3 +58,48 @@ P81186	napA	Prokaryotic molybdopterin-containing oxidoreductase family, NasA/Nap
         }
     }
     eq_(data, expected)
+
+
+def test_dense_dump_allfrags():
+    matrix_fn = tmpname()
+    matrix = FrozenSimilarityMatrix(matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+    labels = ['a', 'b', 'c', 'd']
+    data = [
+        [0.0, 0.9, 0.5, 0.0],
+        [0.9, 0.0, 0.6, 0.0],
+        [0.5, 0.6, 0.0, 0.7],
+        [0.0, 0.0, 0.7, 0.0],
+    ]
+    matrix.from_array(np.array(data), labels)
+
+    result = list(dense_dump_iter(matrix, frag1only=False))
+    expected = [
+        (u'a', u'b', 0.9),
+        (u'a', u'c', 0.5),
+        (u'a', u'd', 0.0),
+        (u'b', u'c', 0.6),
+        (u'b', u'd', 0.0),
+        (u'c', u'd', 0.7),
+    ]
+    eq_(result, expected)
+
+    matrix.close()
+
+
+def test_dense_dump_frag1only():
+    matrix_fn = tmpname()
+    matrix = FrozenSimilarityMatrix(matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+    labels = ['a_frag1', 'a_frag2', 'c_frag1', 'c_frag2']
+    data = [
+        [0.0, 0.9, 0.5, 0.0],
+        [0.9, 0.0, 0.6, 0.0],
+        [0.5, 0.6, 0.0, 0.7],
+        [0.0, 0.0, 0.7, 0.0],
+    ]
+    matrix.from_array(np.array(data), labels)
+
+    result = list(dense_dump_iter(matrix, frag1only=True))
+    expected = [(u'a_frag1', u'c_frag1', 0.5)]
+    eq_(result, expected)
+
+    matrix.close()
