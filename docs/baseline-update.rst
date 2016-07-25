@@ -71,10 +71,10 @@ The similarities between fingerprints can be calculated with::
     do
     if [ "$x" = "$y" ]
     then
-    fpneigh -m Mod_Tanimoto -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
     elif [[ $x < $y ]]
     then
-    fpneigh -m Mod_Tanimoto -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
     fi
     done
     done

@@ -63,11 +63,11 @@ The similarities between the new and existing fingerprints and between new finge
 
     # Compute similarities against itself
     nrrows = 10000000
-    fpneigh -m Mod_Tanimoto -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new_new.h5
+    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new_new.h5
 
     # Compute similarities against existing fingerprint chunks
     for f in `ls ../current/*fp.gz` do
-    gunzip -c $x | fpneigh -m Mod_Tanimoto -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new_`basename $x .fp.gz`.h5
+    gunzip -c $x | fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new_`basename $x .fp.gz`.h5
     done
 
     # Compact the fingerprint file (makebits ascii format)
