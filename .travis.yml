@@ -18,9 +18,7 @@ before_install:
   - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit pytables pandas coverage sphinx $CONDA_INSTALL
 install:
   - pip install -r requirements.txt
-script:
-  - nosetests
-  - cd docs && make html && cd ..
+script: nosetests
 after_script:
   - pip install codacy_coverage
   - coverage xml
