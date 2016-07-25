@@ -64,6 +64,9 @@ The following command will updated the PDB metadata to fragments database::
 
 The similarities between fingerprints can be calculated with::
 
+    let nr_chunks=($(ls *.fp.gz|wc -l) * $(ls *.fp.gz|wc -l)/2 - $(ls *.fp.gz|wc -l))
+    sbatch -n $nr_chunks <<
+
     nrrows = 10000000
     for x in $(ls *.fp)
     do
@@ -71,19 +74,22 @@ The similarities between fingerprints can be calculated with::
     do
     if [ "$x" = "$y" ]
     then
-    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    srun -n 1 "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.$(basename $x .fp)__$(basename $y .fp).h5" &
     elif [[ $x < $y ]]
     then
-    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    srun -n 1 "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.$(basename $x .fp)__$(basename $y .fp).h5" &
     fi
     done
     done
+    wait
 
     # Compact the fingerprint file (makebits ascii format)
     for x in $(ls *.fp)
     do
-    gzip $x
+    srun -n 1 gzip $x &
     done
+    wait
+    EOF
 
     # Merge
     kripodb similarities merge similarities.*.h5 similarities.h5

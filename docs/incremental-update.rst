@@ -61,14 +61,22 @@ The following command will updated the PDB metadata to fragments database::
 
 The similarities between the new and existing fingerprints and between new fingerprints themselves can be calculated with::
 
+    current_chunks=$(ls ../current/*fp.gz |wc -l)
+    all_chunks=$(($current_chunks + 1))
+    sbatch -n $all_chunks <<
+    #!/bin/sh
+
     # Compute similarities against itself
-    nrrows = 10000000
-    fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new_new.h5
+    nrrows=10000000
+    srun -n 1 "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new__new.h5" &
 
     # Compute similarities against existing fingerprint chunks
-    for f in `ls ../current/*fp.gz` do
-    gunzip -c $x | fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new_`basename $x .fp.gz`.h5
+    for x in `ls ../current/*fp.gz`
+    do
+    srun -n 1 "gunzip -c $x | fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new__$(basename $x .fp.gz).h5" &
     done
+    wait
+    EOF
 
     # Compact the fingerprint file (makebits ascii format)
     gzip out.fp

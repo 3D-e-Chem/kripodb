@@ -49,3 +49,9 @@ Input directories:
 
 * **$PDBS_ADDED_DIR**, directory containing new PDB files to be processed
 
+Requirements
+------------
+
+* Slurm batch scheduler
+* KripoDB and it's dependencies installed and in path
+* Posix filesystem, NFS of Virtualbox share dp not accept writing of hdf5 or sqlite files
