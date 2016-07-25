@@ -110,11 +110,7 @@ The current and new pharmacophores need to be combined::
 
 The current and new fingerprints need to be combined::
 
-    mv staging/out.fp.sqlite staging/out.fp.sqlite.new
-    kripodb fingerprints merge current/out.fp.sqlite staging/out.fp.sqlite.new staging/out.fp.sqlite
-    rm -r staging/out.fp.sqlite.new
-
-.. todo:: `kripodb fingerprints merge` needs to be implemented.
+    cp -n current/*.fp.gz staging/
 
 The staging can be made current with the following commands::
 
