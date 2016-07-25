@@ -39,7 +39,7 @@ It can be generated from the pharmacophore files using::
 The data generated thus far contains the molblocks of the ligands and atom nrs of each fragment.
 The fragment molblocks can be generated into a fragment sdf file with::
 
-  fragid2sd.py
+  fragid2sd.py > fragments.sd
 
 4. Add new fragment information to fragment sqlite db
 -----------------------------------------------------
@@ -50,21 +50,36 @@ The following commands add the fragment shelve and sdf to the fragments database
     kripodb fragments shelve fragments.shelve fragments.sqlite
     kripodb fragments sdf fragments.sd fragments.sqlite
 
-5. Calculate similarity scores between fingerprints
+5. Populate PDB metadata in fragments database
+----------------------------------------------
+The following command will updated the PDB metadata to fragments database::
+
+    kripodb fragments pdb fragments.sqlite
+
+6. Calculate similarity scores between fingerprints
 ---------------------------------------------------
 
 The similarities between the new and existing fingerprints and between new fingerprints themselves can be calculated with::
 
-    kripodb fingerprints import out.fp out.fp.sqlite
-    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite ../current/out.fp.sqlite out.fp.sqlite similarities.new_existing.h5
-    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite out.fp.sqlite out.fp.sqlite similarities.new_new.h5
+    # Compute similarities against itself
+    nrrows = 10000000
+    fpneigh -m Mod_Tanimoto -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new_new.h5
 
-6. Add new similarity scores to similarity pairs file
------------------------------------------------------
+    # Compute similarities against existing fingerprint chunks
+    for f in `ls ../current/*fp.gz` do
+    gunzip -c $x | fpneigh -m Mod_Tanimoto -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new_`basename $x .fp.gz`.h5
+    done
 
-The following command merges the current pairs file with the new pairs files::
+    # Compact the fingerprint file (makebits ascii format)
+    gzip out.fp
+    mv out.fp.gz out.$(date +%Y%U).fp.gz
 
+    # Add new similarities to existing similarities file
     kripodb similarities merge ../current/similarities.h5 similarities.new_existing.h5 similarities.new_new.h5 similarities.h5
+
+To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
+
+.. todo:: Don't fpneigh run sequentially but submit to batch queue system and run in parallel
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
@@ -105,3 +120,4 @@ The staging can be made current with the following commands::
 
     mv current old
     mv staging current
+

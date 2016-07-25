@@ -42,7 +42,7 @@ It can be generated from the pharmacophore files using::
 The data generated thus far contains the molblocks of the ligands and atom nrs of each fragment.
 The fragment molblocks can be generated into a fragment sdf file with::
 
-  fragid2sd.py
+  fragid2sd.py > fragments.sd
 
 4. Add new fragment information to fragment sqlite db
 -----------------------------------------------------
@@ -53,23 +53,44 @@ The following commands add the fragment shelve and sdf to the fragments database
     kripodb fragments shelve fragments.shelve fragments.sqlite
     kripodb fragments sdf fragments.sd fragments.sqlite
 
-5. Calculate similarity scores between fingerprints
+5. Populate PDB metadata in fragments database
+----------------------------------------------
+The following command will updated the PDB metadata to fragments database::
+
+    kripodb fragments pdb fragments.sqlite
+
+6. Calculate similarity scores between fingerprints
 ---------------------------------------------------
 
 The similarities between fingerprints can be calculated with::
 
-    kripodb fingerprints import out.fp out.fp.db
-    kripodb fingerprints similarities --ignore_upper_triangle --fragmentsdbfn fragments.sqlite out.fp.sqlite out.fp.sqlite similarities.h5
+    nrrows = 10000000
+    for x in $(ls *.fp)
+    do
+    for y in $(ls *.fp)
+    do
+    if [ "$x" = "$y" ]
+    then
+    fpneigh -m Mod_Tanimoto -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    elif [[ $x < $y ]]
+    then
+    fpneigh -m Mod_Tanimoto -d 0.45 -q $x $y | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.$(basename $x .fp)_$(basename $y .fp).h5
+    fi
+    done
+    done
 
-.. todo:: Too slow when run on single cpu.
-    Chunkify input, run in parallel and merge results
+    # Compact the fingerprint file (makebits ascii format)
+    for x in $(ls *.fp)
+    do
+    gzip $x
+    done
 
-6. Add new similarity scores to similarity pairs file
------------------------------------------------------
+    # Merge
+    kripodb similarities merge similarities.*.h5 similarities.h5
 
-The following command merges the current pairs file with the new pairs files::
+To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
 
-    kripodb similarities merge ../staging/similarities.h5 similarities.new_existing.h5 similarities.new_new.h5 similarities.h5
+.. todo:: Don't fpneigh run sequentially but submit to batch queue system and run in parallel
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------

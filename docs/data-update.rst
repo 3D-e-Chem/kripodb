@@ -18,8 +18,8 @@ Overview of steps involved in updating Kripo:
 2. Create sub-pocket pharmacophore fingerprints
 3. Create fragment information
 4. Add new fragment information to fragment sqlite db
-5. Calculate similarity scores between fingerprints
-6. Add new similarity scores to similarity pairs file
+5. Populate PDB metadata in fragments database
+6. Calculate similarity scores between fingerprints
 7. Convert pairs file into dense similarity matrix
 8. Switch staging to current
 
