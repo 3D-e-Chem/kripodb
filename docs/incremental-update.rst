@@ -88,25 +88,23 @@ The similarities between the new and existing fingerprints and between new finge
     mv out.fp.gz out.$(date +%Y%U).fp.gz
 
     # Add new similarities to existing similarities file
-    kripodb similarities merge ../current/similarities.h5 similarities.new__existing.h5 similarities.new__new.h5 similarities.h5
+    kripodb similarities merge ../current/similarities.h5 similarities.new__existing.h5 similarities.new__new.h5 similarities.h5 && \
+    rm similarities.new__existing.h5 similarities.new__new.h5
     EOF
 
 To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
-
-.. todo:: Don't fpneigh run sequentially but submit to batch queue system and run in parallel
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
 
 .. note:: Converting the pairs file into a dense matrix goes quicker with more memory.
 
+    The frame size (-f) should be as big as possible, 100000000 requires 6Gb RAM.
+
 The following commands converts the pairs into a compressed dense matrix::
 
     kripodb similarities freeze -f 400000000 similarities.h5 similarities.frozen.h5
-    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5
-    rm similarities.frozen.h5
-
-The frame size should be as big as possible, 100000000 requires 6Gb RAM.
+    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && rm similarities.frozen.h5
 
 The output of this step is ready used to find similar fragments,
 using either the webservice with the `kripodb serve` command or with the `kripodb similarities similar` command directly.
@@ -131,6 +129,5 @@ The current and new fingerprints need to be combined::
 
 The staging can be made current with the following commands::
 
-    mv current old
-    mv staging current
+    mv current old && mv staging current
 
