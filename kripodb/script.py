@@ -577,9 +577,6 @@ def simmatrix_filter(input, output, fragmentsdb):
             hit.append()
             all_frags2keep.add(row[0])
 
-    print('Adding indices')
-    simmatrix_out.pairs.add_indexes()
-
     print('Copying subset of labels table')
     hit = simmatrix_out.labels.table.row
     for row in simmatrix_in.labels.table:

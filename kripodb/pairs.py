@@ -122,8 +122,8 @@ def dump_pairs_hdf5(similarities_iter,
 
     """
     matrix = SimilarityMatrix(out_file, 'w',
-                            expectedpairrows=expectedrows,
-                            expectedlabelrows=len(label2id))
+                              expectedpairrows=expectedrows,
+                              expectedlabelrows=len(label2id))
 
     matrix.update(similarities_iter, label2id)
 
@@ -266,7 +266,5 @@ def merge(ins, out):
         in_matrix = SimilarityMatrix(in_filename)
         out_matrix.append(in_matrix)
         in_matrix.close()
-
-    out_matrix.pairs.add_indexes()
 
     out_matrix.close()

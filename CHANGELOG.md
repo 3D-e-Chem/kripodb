@@ -5,6 +5,14 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Changed
+
+- merge similarity pairs files in chunks instead of loading whole source file in memory
+
+### Removed
+
+- no longer create indices for similarity pairs file, querying is done on dense matrix
+
 ## [2.0.0] - 2016-07-14
 
 ### Changed
