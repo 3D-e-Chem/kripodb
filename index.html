@@ -1,0 +1,39 @@
+---
+layout: default
+---
+
+<div class="home">
+  <figure>
+    <img src="images/kripo_logo.png" title="KRIPO logo"/>
+  </figure>
+  <p>The KRIPO (Key Representation of Interaction in POckets) method for quantifying the similarities of binding site subpockets is based on fuzzy 3-point pharmacophore fingerprints38. This approach provides a useful method for comparing both whole binding sites and binding site subregions, and is valuable in predicting bioisosteres based only on the 3D properties of the protein. Comparisons can be made across protein families, leading to a higher number of diverse results.
+  </p>
+  <p>KripoDB is the library to interact with Kripo fragment, fingerprint and similarity data files.
+  </p>
+  <ul>
+    {% if site.urls.download %}
+    <li><a class="page-link" href="{{ site.urls.download }}"><span class="octicon octicon-cloud-download"></span><span class="octitext">Download code</span></a></li>
+    {% endif %}
+    {% if site.urls.docs %}
+    <li><a class="page-link" href="{{ site.urls.docs }}" title="Documentation"><span class="octicon octicon-book"></span><span class="octitext">Documentation</span></a></li>
+    {% endif %}
+    {% if site.urls.repo %}
+    <li><a class="page-link" href="{{ site.urls.repo }}" title="Code"><span class="octicon octicon-mark-github"></span><span class="octitext">Source code</span></a></li>
+    {% endif %}
+  </ul>
+
+  <h1><span class="mega-octicon octicon-file-binary"></span><span class="octitext">Data set</span></h1>
+  All fragments form all proteins-ligand complexes in PDB compared with all. A Kripo data set consists of the following:
+  <ul>
+    <li><a class="page-link" href="https://zenodo.org/record/55254/files/Kripo20151223.sqlite">fragments.sqlite</a> - Fragments sqlite database</li>
+    <li><a class="page-link" href="http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/">Similarity webservice</a> - Webservice to query for similar fragments.</li>
+    <li>fingerprints.*.fp.gz - Fragment fingerprints are available on request.</li>
+  </ul>
+
+  <h1><span class="mega-octicon octicon-book"></span><span class="octitext">Reference</span></h1>
+
+  KRIPO – a structure-based pharmacophores approach explains polypharmacological effects;
+Tina Ritschel, Tom JJ Schirris, and Frans GM Russel; J Cheminform. 2014; 6(Suppl 1): O26;
+Published online 2014 Mar 11; <a href="http://dx.doi.org/10.1186/1758-2946-6-S1-O26">http://dx.doi.org/10.1186/1758-2946-6-S1-O26</a>
+
+</div>

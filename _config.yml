@@ -1,0 +1,33 @@
+# Site settings
+title: kripodb
+description: Library to interact with Kripo fragment, fingerprint and similarity data files.
+baseurl: /kripodb
+project_name: 3D-e-Chem
+urls:
+  changelog: https://github.com/3D-e-Chem/kripodb/blob/master/CHANGELOG.md
+  docs: http://kripodb.readthedocs.io/
+  download: https://github.com/3D-e-Chem/kripodb/releases
+  issues: https://github.com/3D-e-Chem/kripodb/issues
+  project: https://3d-e-chem.github.io
+  repo: https://github.com/3D-e-Chem/kripodb
+languages:
+  - Python
+license: Apache License 2.0
+partners:
+  - url: https://www.esciencecenter.nl
+    logo_url: https://www.esciencecenter.nl/img/pressroom/ESCIENCE_logo_C_nl_cyanblack.jpg
+  - url: https://www.vu.nl
+    logo_url: https://www.esciencecenter.nl/img/partners/VUlogo_EN_Wit_HR_RGB_tcm9-201385.png
+  - url: https://www.radboudumc.nl
+    logo_url: https://www.esciencecenter.nl/img/partners/ru-eng-pms1805-a4.jpg
+
+# Optional settings
+# email: <contact email>
+# twitter_username: <twitter_username>#
+
+# Build settings
+markdown: kramdown
+keep_files:
+  - assets
+excludes:
+  - README.md
