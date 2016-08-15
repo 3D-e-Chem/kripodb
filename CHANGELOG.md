@@ -5,6 +5,10 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Added
+
+- Documented command line interface in Sphinx
+
 ### Changed
 
 - merge similarity pairs files in chunks instead of loading whole source file in memory
