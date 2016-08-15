@@ -13,6 +13,7 @@ For installation and usage see https://github.com/3D-e-Chem/kripodb/blob/master/
 
     Data update <data-update.rst>
     API <api.rst>
+    CLI <cli.rst>
 
 Indices and tables
 ==================
