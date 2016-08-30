@@ -51,6 +51,8 @@ def make_parser():
 
     make_similarities_parser(subparsers)
 
+    serve_sc(subparsers)
+
     return parser
 
 
@@ -68,7 +70,6 @@ def make_similarities_parser(subparsers):
     simmatrix_filter_sc(dm_sc)
     similarity_freeze_sc(dm_sc)
     fpneigh2tsv_sc(dm_sc)
-    serve_sc(dm_sc)
 
 
 def make_fragments_parser(subparsers):
@@ -649,8 +650,9 @@ def fpneigh2tsv_run(inputfile, outputfile):
 
 
 def serve_sc(subparsers):
-    sc = subparsers.add_parser('serve', help='Serve similarity matrix as webservice')
+    sc = subparsers.add_parser('serve', help='Serve similarity matrix and fragments db as webservice')
     sc.add_argument('matrix', type=str, help='Filename of similarity matrix hdf5 file')
+    sc.add_argument('db', type=str, help='Filename of fragments sqlite database file')
     sc.add_argument('--internal_port',
                     type=int,
                     default=8084,

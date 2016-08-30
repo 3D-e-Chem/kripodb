@@ -88,9 +88,116 @@
           }
         }
       }
+    },
+    "/fragments" : {
+      "get": {
+        "summary": "Retrieve fragments",
+        "x-swagger-router-controller": "kripodb.webservice.server",
+        "operationId": "get_fragments",
+        "parameters": [
+          {
+            "name": "fragment_ids",
+            "in": "query",
+            "description": "Filter by fragment identifiers. e.g. 3j7u_NDP_frag24",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          {
+            "name": "pdb_codes",
+            "in": "query",
+            "description": "Filter by PDB identifier codes. e.g. 3j7u",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 4,
+              "minLength": 4
+            },
+            "minItems": 0,
+            "maxItems": 450
+          }
+       ],
+       "tags": [
+          "Fragments"
+       ],
+       "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+             "type": "array",
+              "items": {
+                "$ref": "#/definitions/Fragment"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "Fragment": {
+      "type": "object",
+      "properties": {
+        "frag_id": {
+          "type": "string",
+          "description": "Fragment identifier"
+        },
+        "nr_r_groups": {
+          "type": "integer"
+        },
+        "smiles": {
+          "type": "string"
+        },
+        "pdb_code": {
+          "type": "string"
+        },
+        "atom_codes": {
+          "type": "string"
+        },
+        "het_code": {
+          "type": "string"
+        },
+        "hash_code": {
+          "type": "string"
+        },
+        "frag_nr": {
+          "type": "integer"
+        },
+        "rowid": {
+          "type": "integer"
+        },
+        "het_chain": {
+          "type": "string"
+        },
+        "het_seq_nr": {
+          "type": "integer"
+        },
+        "prot_chain": {
+          "type": "string"
+        },
+        "uniprot_acc": {
+          "type": "string"
+        },
+        "uniprot_name": {
+          "type": "string"
+        },
+        "prot_name": {
+          "type": "string"
+        },
+        "ec_number": {
+          "type": "string"
+        },
+        "pdb_title": {
+          "type": "string"
+        },
+        "mol": {
+          "type": "string"
+        }
+      }
+    },
     "Hit": {
       "type": "object",
       "properties": {

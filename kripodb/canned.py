@@ -19,6 +19,7 @@ For using Kripo data files inside KNIME (http://www.knime.org)
 from __future__ import absolute_import
 
 import pandas as pd
+
 from .db import FragmentsDb
 from .pairs import similar, open_similarity_matrix
 from .webservice.client import WebserviceClient
@@ -45,7 +46,7 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
         11
 
         Retrieved from web service instead of local similarity matrix file.
-        Make sure the web service is running, for example by `kripodb serve data/similaritys.h5`.
+        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
 
         >>> hits = similarities(queries, 'http://localhost:8084/kripo', 0.55)
         >>> len(hits)
@@ -75,14 +76,14 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
     return pd.DataFrame(hits)
 
 
-def fragments_by_pdb_codes(pdb_codes, fragments_db_filename, prefix=''):
+def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):
     """Retrieve fragments based on PDB codes.
 
     See http://www.rcsb.org/pdb/ for PDB structures.
 
     Args:
         pdb_codes (List[str]): List of PDB codes
-        fragments_db_filename (str): Filename of fragments db
+        fragments_db_filename_or_url (str): Filename of fragments db or base url of kripodb webservice
         prefix (str): Prefix for output columns
 
     Examples:
@@ -94,26 +95,37 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename, prefix=''):
         >>> len(fragments)
         3
 
+        Retrieved from web service instead of local fragments db file.
+        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
+
+        >>> fragments = fragments_by_pdb_codes(pdb_codes, 'http://localhost:8084/kripo')
+        >>> len(fragments)
+        3
+
     Returns:
         pandas.DataFrame: Data frame with fragment information
     """
-    fragmentsdb = FragmentsDb(fragments_db_filename)
-    fragments = []
-    for pdb_code in pdb_codes:
-        for fragment in fragmentsdb.by_pdb_code(pdb_code):
-            fragments.append(fragment)
+    if fragments_db_filename_or_url.startswith('http'):
+        client = WebserviceClient(fragments_db_filename_or_url)
+        fragments = client.fragments_by_pdb_codes(pdb_codes)
+    else:
+        fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
+        fragments = []
+        for pdb_code in pdb_codes:
+            for fragment in fragmentsdb.by_pdb_code(pdb_code):
+                fragments.append(fragment)
 
     df = pd.DataFrame(fragments)
     df.rename(columns=lambda x: prefix + x, inplace=True)
     return df
 
 
-def fragments_by_id(fragment_ids, fragments_db_filename, prefix=''):
+def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
     """Retrieve fragments based on fragment identifier.
 
     Args:
         fragment_ids (List[str]): List of fragment identifiers
-        fragments_db_filename (str): Filename of fragments db
+        fragments_db_filename_or_url (str): Filename of fragments db or base url of kripodb webservice
         prefix (str): Prefix for output columns
 
     Examples:
@@ -125,11 +137,23 @@ def fragments_by_id(fragment_ids, fragments_db_filename, prefix=''):
         >>> len(fragments)
         1
 
+        Retrieved from web service instead of local fragments db file.
+        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
+
+        >>> fragments = fragments_by_id(fragment_ids,, 'http://localhost:8084/kripo')
+        >>> len(fragments)
+        1
+
     Returns:
         pandas.DataFrame: Data frame with fragment information
     """
-    fragmentsdb = FragmentsDb(fragments_db_filename)
-    fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+    if fragments_db_filename_or_url.startswith('http'):
+        client = WebserviceClient(fragments_db_filename_or_url)
+        fragments = client.fragments_by_id(fragment_ids)
+    else:
+        fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
+        fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+
     df = pd.DataFrame(fragments)
     df.rename(columns=lambda x: prefix + x, inplace=True)
     return df

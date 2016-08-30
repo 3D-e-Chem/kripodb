@@ -8,10 +8,12 @@ Formatted as described on http://keepachangelog.com/.
 ### Added
 
 - Documented command line interface in Sphinx
+- Retrieve fragments from webservice based on fragment id and pdb code
 
 ### Changed
 
 - merge similarity pairs files in chunks instead of loading whole source file in memory
+- canned methods for retrieving fragments can use local file or webservice
 
 ### Removed
 

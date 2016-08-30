@@ -13,18 +13,40 @@
 # limitations under the License.
 """Kripo datafiles wrapped in a webservice"""
 from __future__ import absolute_import
+
+from kripodb.db import FragmentsDb
 from pkg_resources import resource_filename
 import logging
+
+from rdkit.Chem.AllChem import Mol
+from rdkit.Chem.AllChem import MolToMolBlock
 from six.moves.urllib_parse import urlparse
 
 
 import connexion
 from flask import current_app, abort
+from flask.json import JSONEncoder
 
 from ..version import __version__
 from ..pairs import open_similarity_matrix
 
 LOGGER = logging.getLogger(__name__)
+
+
+class KripodbJSONEncoder(JSONEncoder):
+    """JSON encoder for KripoDB object types
+
+    Copied from http://flask.pocoo.org/snippets/119/"""
+    def default(self, obj):
+        try:
+            if isinstance(obj, Mol):
+                return MolToMolBlock(obj).encode()
+            iterable = iter(obj)
+        except TypeError:
+            pass
+        else:
+            return list(iterable)
+        return JSONEncoder.default(self, obj)
 
 
 def get_similar_fragments(fragment_id, cutoff, limit):
@@ -51,6 +73,20 @@ def get_similar_fragments(fragment_id, cutoff, limit):
     return hits
 
 
+def get_fragments(fragment_ids=None, pdb_codes=None):
+    fragments_db_filename = current_app.config['db_fn']
+    with FragmentsDb(fragments_db_filename) as fragmentsdb:
+        fragments = []
+        if fragment_ids:
+            fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+        if pdb_codes:
+            for pdb_code in pdb_codes:
+                for fragment in fragmentsdb.by_pdb_code(pdb_code):
+                    fragments.append(fragment)
+        # TODO if fragment_ids and pdb_codes are both None then return paged list of all fragments
+        return fragments
+
+
 def get_version():
     """
     Returns:
@@ -60,11 +96,12 @@ def get_version():
     return {'version': __version__}
 
 
-def wsgi_app(sim_matrix, external_url='http://localhost:8084/kripo'):
+def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'):
     """Create wsgi app
 
     Args:
         sim_matrix (SimilarityMatrix): Similarity matrix to use in webservice
+        frags_db_fn (FragmentsDb): Fragment database filename
         external_url (str): URL which should be used in Swagger spec
 
     Returns:
@@ -74,20 +111,23 @@ def wsgi_app(sim_matrix, external_url='http://localhost:8084/kripo'):
     url = urlparse(external_url)
     swagger_file = resource_filename(__name__, 'swagger.json')
     app.add_api(swagger_file, base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
+    app.app.json_encoder = KripodbJSONEncoder
     app.app.config['matrix'] = sim_matrix
+    app.app.config['db_fn'] = frags_db_fn
     return app
 
 
-def serve_app(matrix, internal_port=8084, external_url='http://localhost:8084/kripo'):
+def serve_app(matrix, db, internal_port=8084, external_url='http://localhost:8084/kripo'):
     """Serve webservice forever
 
     Args:
         matrix: Filename of similarity matrix hdf5 file
+        db: Filename of fragments database file
         internal_port: TCP port on which to listen
         external_url (str): URL which should be used in Swagger spec
     """
     sim_matrix = open_similarity_matrix(matrix)
-    app = wsgi_app(sim_matrix, external_url)
+    app = wsgi_app(sim_matrix, db, external_url)
     LOGGER.setLevel(logging.INFO)
     LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))
