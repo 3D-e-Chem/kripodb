@@ -31,7 +31,7 @@ class TestKripodbJSONEncoder(object):
     def test_mol(self):
         obj = MolFromSmiles('[*]C1OC(COP(=O)([O-])OP(=O)([O-])OCC2OC(N3C=CCC(C(N)=O)=C3)C(O)C2O)C(O)C1[*]')
         result = self.encoder.default(obj)
-        ok_(result.endswith('END\n'))
+        ok_(result.decode().endswith('END\n'))
 
 
 class TestWebservice(object):

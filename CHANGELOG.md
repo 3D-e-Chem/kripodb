@@ -13,7 +13,7 @@ Formatted as described on http://keepachangelog.com/.
 ### Changed
 
 - merge similarity pairs files in chunks instead of loading whole source file in memory
-- canned methods for retrieving fragments can use local file or webservice
+- canned fragments_by_* methods can use local file or webservice
 
 ### Removed
 
