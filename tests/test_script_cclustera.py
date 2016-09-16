@@ -18,11 +18,11 @@ from kripodb.frozen import FrozenSimilarityMatrix
 from six import StringIO
 from nose.tools import eq_
 
-from kripodb.script.cclustera import enrich_fragments, dense_dump_iter
+from kripodb.script.cclustera import add_uniprot, dense_dump_iter
 from tests.test_pairs import tmpname
 
 
-def test_enrich_fragments():
+def test_add_uniprot():
     data = {
         "2v3v_LCP_frag1": {
             "Path": [],
@@ -39,7 +39,7 @@ def test_enrich_fragments():
 P81186	napA	Prokaryotic molybdopterin-containing oxidoreductase family, NasA/NapA/NarB subfamily	2JIM;2JIO;2JIP;2JIQ;2JIR;2NAP;2V3V;2V45;
 ''')
 
-    enrich_fragments(data, mapping)
+    add_uniprot(data, mapping)
 
     expected = {
         "2v3v_LCP_frag1": {
@@ -50,7 +50,7 @@ P81186	napA	Prokaryotic molybdopterin-containing oxidoreductase family, NasA/Nap
                 "LCP",
                 "frag1",
                 "P81186",
-                "gene_napA",
+                "gene:napA",
                 "Prokaryotic molybdopterin-containing oxidoreductase family",
                 "NasA/NapA/NarB subfamily",
             ],
@@ -76,9 +76,7 @@ def test_dense_dump_allfrags():
     expected = [
         (u'a', u'b', 0.9),
         (u'a', u'c', 0.5),
-        (u'a', u'd', 0.0),
         (u'b', u'c', 0.6),
-        (u'b', u'd', 0.0),
         (u'c', u'd', 0.7),
     ]
     eq_(result, expected)
