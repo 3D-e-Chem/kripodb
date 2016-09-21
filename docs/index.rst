@@ -11,7 +11,7 @@ For installation and usage see https://github.com/3D-e-Chem/kripodb/blob/master/
 .. toctree::
     :maxdepth: 2
 
-    Update pipeline <data-update.rst>
+    Data update <data-update.rst>
     API <api.rst>
 
 Indices and tables

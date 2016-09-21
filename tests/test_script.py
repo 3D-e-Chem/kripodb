@@ -13,6 +13,9 @@
 # limitations under the License.
 from __future__ import absolute_import
 import os
+
+import kripodb.script.fingerprints
+import kripodb.script.similarities
 from six import StringIO
 
 from nose.tools import eq_
@@ -28,7 +31,7 @@ def test_pairs_subcommand_defaults():
 
     args = parser.parse_args(['fingerprints', 'similarities', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
 
-    eq_(args.func, script.pairs_run)
+    eq_(args.func, kripodb.script.fingerprints.pairs_run)
 
     fargs = vars(args)
     del(fargs['func'])
@@ -50,7 +53,7 @@ def test_pairs_subcommand_defaults():
 def test_meanbitdensity():
     out = StringIO()
 
-    script.meanbitdensity_run('data/fingerprints.sqlite', out)
+    kripodb.script.fingerprints.meanbitdensity_run('data/fingerprints.sqlite', out)
 
     eq_(out.getvalue(), '0.0077683\n')
 
@@ -65,11 +68,11 @@ def test_simmatrix_import_run():
     inputfile = StringIO(tsv)
 
     try:
-        script.simmatrix_import_run(inputfile=inputfile,
-                                    format='tsv',
-                                    simmatrixfn=output_fn,
-                                    fragmentsdb='data/fragments.sqlite',
-                                    nrrows=2)
+        kripodb.script.similarities.simmatrix_import_run(inputfile=inputfile,
+                                                         format='tsv',
+                                                         simmatrixfn=output_fn,
+                                                         fragmentsdb='data/fragments.sqlite',
+                                                         nrrows=2)
 
         simmatrix = SimilarityMatrix(output_fn)
         result = [r for r in simmatrix]
@@ -96,12 +99,12 @@ def test_simmatrix_import_run_ignore_upper_triangle():
     inputfile = StringIO(tsv)
 
     try:
-        script.simmatrix_import_run(inputfile=inputfile,
-                                    format='tsv',
-                                    simmatrixfn=output_fn,
-                                    fragmentsdb='data/fragments.sqlite',
-                                    nrrows=2,
-                                    ignore_upper_triangle=True)
+        kripodb.script.similarities.simmatrix_import_run(inputfile=inputfile,
+                                                         format='tsv',
+                                                         simmatrixfn=output_fn,
+                                                         fragmentsdb='data/fragments.sqlite',
+                                                         nrrows=2,
+                                                         ignore_upper_triangle=True)
 
         simmatrix = SimilarityMatrix(output_fn)
         result = [r for r in simmatrix]
@@ -117,7 +120,7 @@ def test_simmatrix_import_run_ignore_upper_triangle():
 
 def test_simmatrix_export_run():
     outputfile = StringIO()
-    script.simmatrix_export_run('data/similarities.h5', outputfile)
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile)
 
     # go back to start of file
     outputfile.seek(0)
@@ -137,7 +140,7 @@ Compounds similar to 1wnt_NAP_frag1:
 1wnt_NAP_frag3   0.8730
 ''')
 
-    result = list(script.read_fpneighpairs_file(text))
+    result = list(kripodb.script.similarities.read_fpneighpairs_file(text))
 
     expected = [('2xry_FAD_frag4', '3cvv_FAD_frag3', 0.56), ('1wnt_NAP_frag1', '1wnt_NAP_frag3', 0.873)]
     eq_(result, expected)
@@ -156,10 +159,10 @@ Compounds similar to 2mlm_2W7_frag2:
     inputfile = StringIO(tsv)
 
     try:
-        script.simmatrix_importfpneigh_run(inputfile=inputfile,
-                                           simmatrixfn=output_fn,
-                                           fragmentsdb='data/fragments.sqlite',
-                                           nrrows=3)
+        kripodb.script.similarities.simmatrix_importfpneigh_run(inputfile=inputfile,
+                                                                simmatrixfn=output_fn,
+                                                                fragmentsdb='data/fragments.sqlite',
+                                                                nrrows=3)
 
         simmatrix = SimilarityMatrix(output_fn)
         rows = [r for r in simmatrix]
@@ -184,11 +187,11 @@ Compounds similar to 2mlm_2W7_frag2:
     inputfile = StringIO(tsv)
 
     try:
-        script.simmatrix_importfpneigh_run(inputfile=inputfile,
-                                           simmatrixfn=output_fn,
-                                           fragmentsdb='data/fragments.sqlite',
-                                           nrrows=3,
-                                           ignore_upper_triangle=True)
+        kripodb.script.similarities.simmatrix_importfpneigh_run(inputfile=inputfile,
+                                                                simmatrixfn=output_fn,
+                                                                fragmentsdb='data/fragments.sqlite',
+                                                                nrrows=3,
+                                                                ignore_upper_triangle=True)
 
         simmatrix = SimilarityMatrix(output_fn)
         rows = [r for r in simmatrix]
@@ -211,7 +214,7 @@ Compounds similar to 2mlm_2W7_frag2:
 
     outputfile = StringIO()
 
-    script.fpneigh2tsv_run(inputfile, outputfile)
+    kripodb.script.similarities.fpneigh2tsv_run(inputfile, outputfile)
 
     expected = '''frag_id1\tfrag_id2\tscore
 2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5877

@@ -5,6 +5,11 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Added
+
+- Published documentation on http://kripodb.readthedocs.io
+- Documented update pipeline
+
 ## [2.0.0] - 2016-07-14
 
 ### Changed
