@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import argparse
 import csv
 import json
+import logging
 import math
 
 from rdkit.Chem.rdmolfiles import MolToMolBlock
@@ -96,16 +97,19 @@ def cclustera_enrich_sc(sc):
     sc.add_argument('uniprot_annot', type=argparse.FileType('r'), help=uniprot_annot_help)
     sc.add_argument('fragmentsdb', type=str,
                     help='Name of fragments db input file')
+    sc.add_argument('--include_molblock', action='store_true', help='Include molblock in output')
     sc.set_defaults(func=cclustera_enrich)
 
 
-def cclustera_enrich(inputfile, outputfile, uniprot_annot, fragmentsdb):
+def cclustera_enrich(inputfile, outputfile, uniprot_annot, fragmentsdb, include_molblock):
+    logging.warn('Loading input')
     data = json.load(inputfile)
 
     add_uniprot(data, uniprot_annot)
 
-    add_molecule(data, FragmentsDb(fragmentsdb))
+    add_molecule(data, FragmentsDb(fragmentsdb), include_molblock)
 
+    logging.warn('Dumping output')
     json.dump(data, outputfile)
 
 
@@ -122,6 +126,7 @@ def add_uniprot(data, mapping):
     pdb2uniprot_accs = {}
     uniprot_acc2gene = {}
     uniprot_acc2family = {}
+    logging.warn('Loading uniprot')
     reader = csv.reader(mapping, delimiter='\t')
     next(reader)
     for row in reader:
@@ -133,6 +138,8 @@ def add_uniprot(data, mapping):
             for pdb in row[3].split(';'):
                 # Kripo uses lowercase pdb code, while rest of world uses uppercase
                 pdb2uniprot_accs[pdb.lower()] = row[0]
+
+    logging.warn('Assigning uniprot')
     for frag_id in data:
         (pdb_code, het_code, frag_nr) = frag_id.split('_')
         cats = [pdb_code, het_code, frag_nr]
@@ -148,14 +155,22 @@ def add_uniprot(data, mapping):
         data[frag_id]['Categories'] = list(cats)
 
 
-def add_molecule(data, fragmentsdb):
+def add_molecule(data, fragmentsdb, include_molblock):
     id2smile = {}
     id2mol = {}
-    sql = 'SELECT frag_id, smiles, mol FROM molecules'
+    logging.warn('Loading molecules')
+    sql = 'SELECT frag_id, smiles FROM molecules'
+    if include_molblock:
+        sql = 'SELECT frag_id, smiles, mol FROM molecules'
     for row in fragmentsdb.cursor.execute(sql):
         id2smile[row[0]] = row[1]
-        id2mol[row[0]] = MolToMolBlock(row[2])
+        if include_molblock:
+            try:
+                id2mol[row[0]] = MolToMolBlock(row[2])
+            except:
+                pass
 
+    logging.warn('Assigning molecules')
     for frag_id in data:
         if frag_id in id2smile:
             data[frag_id]['Categories'].append('smile:' + id2smile[frag_id])
