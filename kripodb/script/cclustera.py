@@ -17,6 +17,8 @@ import argparse
 import csv
 import json
 import math
+
+from rdkit.Chem.rdmolfiles import MolToMolBlock
 from six.moves.urllib.request import urlopen
 
 from progressbar import ProgressBar
@@ -88,22 +90,26 @@ def cclustera_enrich_sc(sc):
                     help='Name of input file, user - for stdin')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Name of output file, use - for stdout')
+    uniprot_annot_help = '''Uniprot download accession 2 gene symbol, family mapping.
+    Fetch "http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)"
+    '''
+    sc.add_argument('uniprot_annot', type=argparse.FileType('r'), help=uniprot_annot_help)
+    sc.add_argument('fragmentsdb', type=str,
+                    help='Name of fragments db input file')
     sc.set_defaults(func=cclustera_enrich)
 
 
-def cclustera_enrich(inputfile, outputfile):
-    # From uniprot download accession 2 gene symbol, family mapping
-    # uniprot_url = 'http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)'
-    # mapping = urlopen(uniprot_url)
-    mapping = open('unprot_gene_family_pdb.csv', 'r')
+def cclustera_enrich(inputfile, outputfile, uniprot_annot, fragmentsdb):
     data = json.load(inputfile)
 
-    enrich_fragments(data, mapping)
+    add_uniprot(data, uniprot_annot)
+
+    add_molecule(data, FragmentsDb(fragmentsdb))
 
     json.dump(data, outputfile)
 
 
-def enrich_fragments(data, mapping):
+def add_uniprot(data, mapping):
     """Adds Uniprot mappings to categories field of each fragment.
 
     Args:
@@ -120,7 +126,7 @@ def enrich_fragments(data, mapping):
     next(reader)
     for row in reader:
         if row[1]:
-            uniprot_acc2gene[row[0]] = 'gene_' + row[1]
+            uniprot_acc2gene[row[0]] = 'gene:' + row[1]
         if row[2]:
             uniprot_acc2family[row[0]] = row[2].split(', ')
         if row[3]:
@@ -140,6 +146,21 @@ def enrich_fragments(data, mapping):
                     cats.append(fam)
 
         data[frag_id]['Categories'] = list(cats)
+
+
+def add_molecule(data, fragmentsdb):
+    id2smile = {}
+    id2mol = {}
+    sql = 'SELECT frag_id, smiles, mol FROM molecules'
+    for row in fragmentsdb.cursor.execute(sql):
+        id2smile[row[0]] = row[1]
+        id2mol[row[0]] = MolToMolBlock(row[2])
+
+    for frag_id in data:
+        if frag_id in id2smile:
+            data[frag_id]['Categories'].append('smile:' + id2smile[frag_id])
+        if frag_id in id2mol:
+            data[frag_id]['FragmentMOL'] = id2mol[frag_id]
 
 
 def dense_dump_sc(sc):
@@ -183,5 +204,7 @@ def dense_dump_iter(matrix, frag1only):
             if frag1only and not col_label.endswith('frag1'):
                 continue
             if col_label in completed_frags:
+                continue
+            if not score:
                 continue
             yield (row_label, col_label, score)
