@@ -65,7 +65,7 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header):
         outputfile (file): Tab delimited output file
 
     """
-    simmatrix = open_similarity_matrix(simmatrixfn)
+    simmatrix = pairs.open_similarity_matrix(simmatrixfn)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     if not no_header:
         writer.writerow(['frag_id1', 'frag_id2', 'score'])
