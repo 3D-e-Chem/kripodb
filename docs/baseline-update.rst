@@ -98,7 +98,8 @@ The similarities between fingerprints can be calculated with::
     # Merge
     jid_merge_matrices=$(sbatch -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
     #!/bin/sh
-    kripodb similarities merge similarities.*.h5 similarities.h5
+    kripodb similarities merge similarities.*.h5 similarities.h5 && \
+    rm similarities.*.h5
     EOF
     )
 
@@ -115,8 +116,8 @@ The following commands converts the pairs into a compressed dense matrix::
 
     jid_compress_matrix=$(sbatch -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
     kripodb similarities freeze similarities.h5 similarities.frozen.h5
-    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5
-    rm similarities.h5 similarities.frozen.h5
+    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && \
+    rm similarities.frozen.h5
     EOF
     )
 

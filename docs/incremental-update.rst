@@ -81,7 +81,7 @@ The similarities between the new and existing fingerprints and between new finge
 
     jid_merge_matrices=$(sbatch -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
     #!/bin/sh
-    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5
+    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5 && \
     rm similarities.new__*[0-9].h5
 
     # Compact the fingerprint file (makebits ascii format)
