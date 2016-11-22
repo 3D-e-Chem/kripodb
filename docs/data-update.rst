@@ -8,6 +8,7 @@ The Kripo data can be updated in 2 ways:
 
     Baseline update <baseline-update.rst>
     Incremental update <incremental-update.rst>
+    DiVe visualization <dive-visualization.rst>
 
 Steps
 -----

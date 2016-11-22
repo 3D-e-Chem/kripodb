@@ -53,20 +53,22 @@ def simmatrix_export_sc(subparsers):
     sc.add_argument('simmatrixfn', type=str, help='Compact hdf5 similarity matrix filename')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
+    sc.add_argument('--no_header', action='store_false', help='Output no header (default: %(default)s)')
     sc.set_defaults(func=simmatrix_export_run)
 
 
-def simmatrix_export_run(simmatrixfn, outputfile):
+def simmatrix_export_run(simmatrixfn, outputfile, no_header):
     """Export similarity matrix to tab delimited file
 
     Args:
-        simmatrixfn (str): Compact hdf5 similarity matrix filename
+        simmatrixfn (str): (Compact) hdf5 similarity matrix filename
         outputfile (file): Tab delimited output file
 
     """
-    simmatrix = SimilarityMatrix(simmatrixfn)
+    simmatrix = open_similarity_matrix(simmatrixfn)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
-    writer.writerow(['frag_id1', 'frag_id2', 'score'])
+    if not no_header:
+        writer.writerow(['frag_id1', 'frag_id2', 'score'])
     writer.writerows(simmatrix)
     simmatrix.close()
 

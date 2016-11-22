@@ -120,13 +120,25 @@ def test_simmatrix_import_run_ignore_upper_triangle():
 
 def test_simmatrix_export_run():
     outputfile = StringIO()
-    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile)
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False)
 
     # go back to start of file
     outputfile.seek(0)
     output = outputfile.getvalue()
     expected = 'frag_id1\tfrag_id2\tscore\n' \
                '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' \
+               '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4634\n'
+    assert output.startswith(expected)
+
+
+def test_simmatrix_export_run_noheader():
+    outputfile = StringIO()
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, True)
+
+    # go back to start of file
+    outputfile.seek(0)
+    output = outputfile.getvalue()
+    expected = '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' \
                '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4634\n'
     assert output.startswith(expected)
 
