@@ -54,7 +54,7 @@ Then embed similarity matrix in 2D with::
 Command to generate properties files::
 
     wget -O uniprot.txt 'http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)'
-    kripodb dive --uniprot unprot.txt fragments.sqlite
+    kripodb dive metaprops --uniprot unprot.txt fragments.sqlite
 
 Will generate in current working directory the following files:
 

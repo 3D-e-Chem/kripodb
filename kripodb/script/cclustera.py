@@ -33,6 +33,7 @@ def make_cclustera_parsers(subparsers):
     fragments_sphere_sc(sc)
     cclustera_enrich_sc(sc)
     dense_dump_sc(sc)
+    metaprops_sc(sc)
 
 
 def fragments_sphere_sc(subparsers):
@@ -83,6 +84,44 @@ def cclustera_sphere(inputfile, outputfile, onlyfrag1):
         nodes[frag[0]] = node_info
 
     json.dump(nodes, outputfile)
+
+
+def metaprops_sc(sc):
+    sc = sc.add_parser('metaprops', help='Writes Metadata and props for DiVE visualization')
+    sc.add_argument('fragmentsdb', type=str,
+                    help='Name of fragments db input file')
+    uniprot_annot_help = '''Uniprot download accession 2 gene symbol, family mapping.
+    Fetch "http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)"
+    '''
+    sc.add_argument('uniprot_annot', type=argparse.FileType('r'), help=uniprot_annot_help)
+    sc.add_argument('--meta',
+                    type=argparse.FileType('w'),
+                    help='Name of metadata file',
+                    default='kripo.meta.txt')
+    sc.add_argument('--propnames',
+                    type=argparse.FileType('w'),
+                    help='Name of prop names file',
+                    default='kripo.propnames.txt')
+    sc.add_argument('--props',
+                    type=argparse.FileType('w'),
+                    help='Name of props file',
+                    default='kripo.props.txt')
+    sc.set_defaults(func=metaprops)
+
+
+def metaprops(fragmentsdb, uniprot_annot, meta, propnames, props):
+    db = FragmentsDb(fragmentsdb)
+    dump_propnames(propnames)
+    dump_categories(db)
+
+
+def dump_propnames(propnamesfn):
+    propnames = ['PdbCode', 'PdbTitle',
+                 'LigandCode', 'LigandName',
+                 'FragmentId', 'FragmentSmile', 'FragmentMass',
+                 'UniprotAccession', 'ProteinName',
+                 'Gene', 'Family']
+    json.dump(propnames, propnamesfn)
 
 
 def cclustera_enrich_sc(sc):
