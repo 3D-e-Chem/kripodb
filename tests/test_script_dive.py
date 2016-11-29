@@ -18,7 +18,7 @@ from kripodb.frozen import FrozenSimilarityMatrix
 from six import StringIO
 from nose.tools import eq_
 
-from kripodb.script.cclustera import add_uniprot, dense_dump_iter
+from kripodb.script.dive import add_uniprot, dense_dump_iter
 from tests.test_pairs import tmpname
 
 

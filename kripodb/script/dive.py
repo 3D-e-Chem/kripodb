@@ -29,26 +29,26 @@ from ..db import FragmentsDb
 from ..pdb import PdbReport
 
 
-def make_cclustera_parsers(subparsers):
-    sc = subparsers.add_parser('cclustera', help='CClustera visualization utils').add_subparsers()
+def make_dive_parsers(subparsers):
+    sc = subparsers.add_parser('dive', help='DiVE visualization utils').add_subparsers()
     fragments_sphere_sc(sc)
-    cclustera_enrich_sc(sc)
+    dive_enrich_sc(sc)
     dense_dump_sc(sc)
     dive_export_sc(sc)
 
 
 def fragments_sphere_sc(subparsers):
-    sc = subparsers.add_parser('fragments', help='Export fragments as cclustera sphere')
+    sc = subparsers.add_parser('fragments', help='Export fragments as dive sphere')
     sc.add_argument('inputfile', type=str,
                     help='Name of fragments db input file')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
-                    help='Name of fragments cclustera output file, use - for stdout')
+                    help='Name of fragments dive output file, use - for stdout')
     sc.add_argument('--onlyfrag1', action='store_true',
                     help='Only *_frag1 (default: %(default)s)')
-    sc.set_defaults(func=cclustera_sphere)
+    sc.set_defaults(func=dive_sphere)
 
 
-def cclustera_sphere(inputfile, outputfile, onlyfrag1):
+def dive_sphere(inputfile, outputfile, onlyfrag1):
     frags_db = FragmentsDb(inputfile)
     nodes = {}
 
@@ -250,8 +250,8 @@ def dump_props(props, propsfn):
         propsfn.write("\n")
 
 
-def cclustera_enrich_sc(sc):
-    sc = sc.add_parser('enrich', help='Enrich cclustera data file')
+def dive_enrich_sc(sc):
+    sc = sc.add_parser('enrich', help='Enrich dive data file')
     sc.add_argument('inputfile', type=argparse.FileType('r'),
                     help='Name of input file, user - for stdin')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
@@ -263,10 +263,10 @@ def cclustera_enrich_sc(sc):
     sc.add_argument('fragmentsdb', type=str,
                     help='Name of fragments db input file')
     sc.add_argument('--include_molblock', action='store_true', help='Include molblock in output')
-    sc.set_defaults(func=cclustera_enrich)
+    sc.set_defaults(func=dive_enrich)
 
 
-def cclustera_enrich(inputfile, outputfile, uniprot_annot, fragmentsdb, include_molblock):
+def dive_enrich(inputfile, outputfile, uniprot_annot, fragmentsdb, include_molblock):
     logging.warn('Loading input')
     data = json.load(inputfile)
 
@@ -282,7 +282,7 @@ def add_uniprot(data, mapping):
     """Adds Uniprot mappings to categories field of each fragment.
 
     Args:
-        data (dict): Fragments in CClustera format
+        data (dict): Fragments in DiVE format
         mapping (File): Tab separated file with Uniprot mappings
 
     Returns:
