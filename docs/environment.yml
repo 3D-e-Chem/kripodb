@@ -9,3 +9,4 @@ dependencies:
 - bsddb
 - pip:
   - git+https://github.com/3D-e-Chem/kripodb.git
+  - sphinx-argparse

@@ -39,7 +39,7 @@ It can be generated from the pharmacophore files using::
 The data generated thus far contains the molblocks of the ligands and atom nrs of each fragment.
 The fragment molblocks can be generated into a fragment sdf file with::
 
-  fragid2sd.py
+  fragid2sd.py > fragments.sd
 
 4. Add new fragment information to fragment sqlite db
 -----------------------------------------------------
@@ -50,34 +50,69 @@ The following commands add the fragment shelve and sdf to the fragments database
     kripodb fragments shelve fragments.shelve fragments.sqlite
     kripodb fragments sdf fragments.sd fragments.sqlite
 
-5. Calculate similarity scores between fingerprints
+5. Populate PDB metadata in fragments database
+----------------------------------------------
+The following command will updated the PDB metadata to fragments database::
+
+    kripodb fragments pdb fragments.sqlite
+
+6. Calculate similarity scores between fingerprints
 ---------------------------------------------------
 
 The similarities between the new and existing fingerprints and between new fingerprints themselves can be calculated with::
 
-    kripodb fingerprints import out.fp out.fp.sqlite
-    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite ../current/out.fp.sqlite out.fp.sqlite similarities.new_existing.h5
-    kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite out.fp.sqlite out.fp.sqlite similarities.new_new.h5
+    current_chunks=$(ls ../current/*fp.gz |wc -l)
+    all_chunks=$(($current_chunks + 1))
+    jid_fpneigh=$(sbatch -n $all_chunks -J fpneigh << EOF
+    #!/bin/sh
 
-6. Add new similarity scores to similarity pairs file
------------------------------------------------------
+    # Compute similarities against itself
+    nrrows=10000000
+    srun -J new__new -n 1 /bin/sh -c "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new__new.h5" &
 
-The following command merges the current pairs file with the new pairs files::
+    # Compute similarities against existing fingerprint chunks
+    for x in `ls ../current/*fp.gz`
+    do
+    srun -J new__$x -n 1 /bin/sh -c "gunzip -c $x | fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new__$(basename $x .fp.gz).h5" &
+    done
+    wait
+    EOF
+    )
 
-    kripodb similarities merge ../current/similarities.h5 similarities.new_existing.h5 similarities.new_new.h5 similarities.h5
+    jid_merge_matrices=$(sbatch -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
+    #!/bin/sh
+    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5 && \
+    rm similarities.new__*[0-9].h5
+
+    # Compact the fingerprint file (makebits ascii format)
+    gzip out.fp
+    mv out.fp.gz out.$(date +%Y%U).fp.gz
+
+    # Add new similarities to existing similarities file
+    kripodb similarities merge ../current/similarities.h5 similarities.new__existing.h5 similarities.new__new.h5 similarities.h5 && \
+    rm similarities.new__existing.h5 similarities.new__new.h5
+    EOF
+    )
+
+To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
 
 .. note:: Converting the pairs file into a dense matrix goes quicker with more memory.
 
+    The frame size (-f) should be as big as possible, 100000000 requires 6Gb RAM.
+
 The following commands converts the pairs into a compressed dense matrix::
 
-    kripodb similarities freeze similarities.h5 similarities.frozen.h5
-    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5
-    rm similarities.h5 similarities.frozen.h5
+    jid_compress_matrix=$(sbatch -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
+    kripodb similarities freeze -f 400000000 similarities.h5 similarities.frozen.h5
+    ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && rm similarities.frozen.h5
+    EOF
+    )
 
-The output of this step is ready to be served as a webservice using the `kripodb serve` command.
+The output of this step is ready used to find similar fragments,
+using either the webservice with the `kripodb serve` command or with the `kripodb similarities similar` command directly.
 
 8. Switch staging to current
 ----------------------------
@@ -95,13 +130,9 @@ The current and new pharmacophores need to be combined::
 
 The current and new fingerprints need to be combined::
 
-    mv staging/out.fp.sqlite staging/out.fp.sqlite.new
-    kripodb fingerprints merge current/out.fp.sqlite staging/out.fp.sqlite.new staging/out.fp.sqlite
-    rm -r staging/out.fp.sqlite.new
-
-.. todo:: `kripodb fingerprints merge` needs to be implemented.
+    cp -n current/*.fp.gz staging/
 
 The staging can be made current with the following commands::
 
-    mv current old
-    mv staging current
+    mv current old && mv staging current
+

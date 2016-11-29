@@ -13,6 +13,7 @@
 # limitations under the License.
 """Similarity matrix using hdf5 as storage backend."""
 from __future__ import absolute_import
+
 from math import log10, ceil, floor
 
 import tables
@@ -90,7 +91,6 @@ class SimilarityMatrix(object):
 
         """
         self.pairs.update(similarities_iter, label2id)
-        self.pairs.add_indexes()
         self.labels.update(label2id)
 
     def find(self, query, cutoff, limit=None):
@@ -119,14 +119,18 @@ class AbstractSimpleTable(object):
 
     Args:
         table (tables.Table): HDF5 table
+        append_chunk_size (int): Size of chunk to append in one go.
+            Defaults to 1e8, which when table description is 10bytes will require 2Gb during append.
 
     Attributes
         table (tables.Table): HDF5 table
+        append_chunk_size (int): Number of rows to read from other table during append.
 
     """
 
-    def __init__(self, table):
+    def __init__(self, table, append_chunk_size=int(1e8)):
         self.table = table
+        self.append_chunk_size = append_chunk_size
 
     def append(self, other):
         """Append rows of other table to self
@@ -135,7 +139,10 @@ class AbstractSimpleTable(object):
             other: Table of same type as self
 
         """
-        self.table.append(other.table.read())
+        limit = len(other.table)
+        for start in range(0, limit, self.append_chunk_size):
+            stop = self.append_chunk_size + start
+            self.table.append(other.table.read(start=start, stop=stop))
 
     def __len__(self):
         """
@@ -184,7 +191,7 @@ class PairsTable(AbstractSimpleTable):
                                         'Similarity pairs',
                                         expectedrows=expectedrows)
 
-        self.table = table
+        super(PairsTable, self).__init__(table)
         self.score_precision = 2 ** 16 - 1
 
     @property
@@ -197,15 +204,6 @@ class PairsTable(AbstractSimpleTable):
     @full_matrix.setter
     def full_matrix(self, value):
         self.table.attrs['full_matrix'] = value
-
-    def add_indexes(self):
-        """Add indexes on identifier columns
-
-        Best done after calling update().
-        """
-        self.table.cols.a.create_index(filters=self.filters)
-        if not self.full_matrix:
-            self.table.cols.b.create_index(filters=self.filters)
 
     def update(self, similarities_iter, label2id):
         """Store pairs of fragment identifier with their similarity score
@@ -312,7 +310,7 @@ class LabelsLookup(AbstractSimpleTable):
             table.cols.frag_id.create_index(filters=self.filters)
             table.cols.label.create_index(filters=self.filters)
 
-        self.table = table
+        super(LabelsLookup, self).__init__(table)
 
     def by_id(self, frag_id):
         """Look up label of fragment by id

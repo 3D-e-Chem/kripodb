@@ -9,6 +9,15 @@ Formatted as described on http://keepachangelog.com/.
 
 - Published documentation on http://kripodb.readthedocs.io
 - Documented update pipeline
+- Documented command line interface in Sphinx
+
+### Changed
+
+- merge similarity pairs files in chunks instead of loading whole source file in memory
+
+### Removed
+
+- no longer create indices for similarity pairs file, querying is done on dense matrix
 
 ## [2.0.0] - 2016-07-14
 

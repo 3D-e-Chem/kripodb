@@ -63,6 +63,7 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header):
     Args:
         simmatrixfn (str): (Compact) hdf5 similarity matrix filename
         outputfile (file): Tab delimited output file
+        no_header (bool): Output no header
 
     """
     simmatrix = pairs.open_similarity_matrix(simmatrixfn)
@@ -201,9 +202,6 @@ def simmatrix_filter(input, output, fragmentsdb):
             hit['score'] = row[2]
             hit.append()
             all_frags2keep.add(row[0])
-
-    print('Adding indices')
-    simmatrix_out.pairs.add_indexes()
 
     print('Copying subset of labels table')
     hit = simmatrix_out.labels.table.row

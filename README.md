@@ -104,13 +104,12 @@ The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/
 ## Protein Data Bank
 
 All fragments form all proteins-ligand complexes in PDB compared with all.
-Data set contains PDB entries that where available at 23 December 2015.
 
-* kripo.sqlite - Fragments sqlite database
-* Similarity matrix is too big to ship with VM so use http://3d-e-chem.vu-compmedchem.nl/kripodb webservice url to query.
-* kripo_fingerprint_2015_*.fp.gz - Fragment fingerprints, see [here](#create-similarity-matrix-from-text-files) for instructions how to convert to a similarity matrix.
+* Fragments sqlite database - Download from http://3d-e-chem.vu-compmedchem.nl/kripodb/fragments.sqlite
+* Similarity matrix - Can be queried on webservice at http://3d-e-chem.vu-compmedchem.nl/kripodb. For build instructions see http://kripodb.readthedocs.io/en/latest/data-update.html
+* Fragment fingerprints - See http://kripodb.readthedocs.io/en/latest/data-update.html for instructions how to convert to a similarity matrix
 
-The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
+A data set with PDB entries till 23 December 2015 has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
 
 # Knime
 
@@ -153,7 +152,7 @@ The Kripo data files can be queried using a web service.
 
 Start webservice with:
 ```
-kripodb serve --port 8084 data/similarities.h5
+kripodb similarities serve --port 8084 data/similarities.h5
 ```
 It will print the urls for the swagger spec and UI.
 
