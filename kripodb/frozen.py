@@ -264,3 +264,18 @@ class FrozenSimilarityMatrix(object):
                                                 shape=(nr_frags, nr_frags), chunkshape=(1, nr_frags),
                                                 filters=self.filters)
         self.scores[0:nr_frags, 0:nr_frags] = (data * self.score_precision).astype('uint16')
+
+    def to_pairs(self, pairs, frame_size):
+        six.print_('copy labels', flush=True)
+        self.build_label_cache()
+        pairs.labels.update(self.cache_l2i)
+
+        six.print_('copy matrix to pairs', flush=True)
+        limit = self.scores.shape[0]
+        bar = ProgressBar()
+        for query_id in bar(six.moves.range(0, limit)):
+            subjects = self.scores[query_id, ...]
+            filled_subjects_ids = subjects.nonzero()[0]
+            filled_subjects = [(query_id, i, subjects[i]) for i in filled_subjects_ids if query_id < i]
+            if filled_subjects:
+                pairs.pairs.table.append(filled_subjects)
