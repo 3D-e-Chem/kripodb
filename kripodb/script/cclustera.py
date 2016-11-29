@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
 import csv
@@ -20,12 +20,13 @@ import logging
 import math
 
 from rdkit.Chem.rdmolfiles import MolToMolBlock
-from six.moves.urllib.request import urlopen
+from rdkit.Chem.Descriptors import HeavyAtomMolWt
 
 from progressbar import ProgressBar
 
 from ..frozen import FrozenSimilarityMatrix
 from ..db import FragmentsDb
+from ..pdb import PdbReport
 
 
 def make_cclustera_parsers(subparsers):
@@ -33,7 +34,7 @@ def make_cclustera_parsers(subparsers):
     fragments_sphere_sc(sc)
     cclustera_enrich_sc(sc)
     dense_dump_sc(sc)
-    metaprops_sc(sc)
+    dive_export_sc(sc)
 
 
 def fragments_sphere_sc(subparsers):
@@ -86,18 +87,14 @@ def cclustera_sphere(inputfile, outputfile, onlyfrag1):
     json.dump(nodes, outputfile)
 
 
-def metaprops_sc(sc):
-    sc = sc.add_parser('metaprops', help='Writes Metadata and props for DiVE visualization')
+def dive_export_sc(sc):
+    sc = sc.add_parser('export', help='Writes props for DiVE visualization')
     sc.add_argument('fragmentsdb', type=str,
                     help='Name of fragments db input file')
     uniprot_annot_help = '''Uniprot download accession 2 gene symbol, family mapping.
     Fetch "http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)"
     '''
     sc.add_argument('uniprot_annot', type=argparse.FileType('r'), help=uniprot_annot_help)
-    sc.add_argument('--meta',
-                    type=argparse.FileType('w'),
-                    help='Name of metadata file',
-                    default='kripo.meta.txt')
     sc.add_argument('--propnames',
                     type=argparse.FileType('w'),
                     help='Name of prop names file',
@@ -106,22 +103,151 @@ def metaprops_sc(sc):
                     type=argparse.FileType('w'),
                     help='Name of props file',
                     default='kripo.props.txt')
-    sc.set_defaults(func=metaprops)
+    sc.set_defaults(func=dive_export)
 
 
-def metaprops(fragmentsdb, uniprot_annot, meta, propnames, props):
+def dive_export(fragmentsdb, uniprot_annot, propnames, props):
     db = FragmentsDb(fragmentsdb)
     dump_propnames(propnames)
-    dump_categories(db)
+
+    data = {}
+    dive_get_fragments(db, data)
+    dive_merge_uniprot(uniprot_annot, data)
+    dive_merge_pdb(data)
+
+    dump_props(data, props)
+
+
+def dive_get_fragments(db, data):
+    # TODO add organism column to pdb data table
+    sql = '''SELECT
+            frag_id,
+            pdb_code as pdb,
+            het_code as het,
+            frag_nr as fragment,
+            pdb_title as title,
+            uniprot_acc as uniprot,
+            uniprot_name as protein,
+            smiles,
+            mol
+          FROM
+            fragments
+            JOIN pdbs USING (pdb_code)
+            LEFT JOIN molecules USING (frag_id)'''
+    for row in db.cursor.execute(sql):
+        cols = row.keys()
+        frag_id = row[0]
+        data[frag_id] = {}
+        mol = row[-1]
+        if mol:
+            data[frag_id]['weight'] = HeavyAtomMolWt(mol)
+            # TODO add other Lipinski parameters aswell http://www.rdkit.org/Python_Docs/rdkit.Chem.Lipinski-module.html
+        for col in cols[1:-1]:
+            data[frag_id][col] = row[col]
+
+
+def dive_merge_uniprot(uniprot_annot_fn, data):
+    pdb2uniprot_accs = {}
+    uniprot_acc2gene = {}
+    uniprot_acc2family = {}
+    logging.warn('Loading uniprot')
+    reader = csv.reader(uniprot_annot_fn, delimiter='\t')
+    next(reader)
+    for row in reader:
+        if row[1]:
+            uniprot_acc2gene[row[0]] = 'gene:' + row[1]
+        if row[2]:
+            uniprot_acc2family[row[0]] = row[2].split(', ')
+        if row[3]:
+            for pdb in row[3].split(';'):
+                # Kripo uses lowercase pdb code, while rest of world uses uppercase
+                pdb2uniprot_accs[pdb.lower()] = row[0]
+
+    for frag_id in data:
+        record = data[frag_id]
+        pdb_code = record['pdb']
+        if pdb_code in pdb2uniprot_accs:
+            uniprot_acc = pdb2uniprot_accs[pdb_code]
+            if uniprot_acc != record['uniprot']:
+                record['uniprot'] = uniprot_acc
+            if uniprot_acc in uniprot_acc2gene:
+                record['gene'] = uniprot_acc2gene[uniprot_acc]
+            if uniprot_acc in uniprot_acc2family:
+                record['families'] = uniprot_acc2family[uniprot_acc]
+
+
+def dive_merge_pdb(data):
+    logging.warn('Loading pdb from internet')
+    pdb_report = PdbReport(fields=['source'])
+    pdb2organism = {pdb['structureId'].lower(): pdb['source'] for pdb in pdb_report.fetch() if pdb['source']}
+    for frag_id in data:
+        record = data[frag_id]
+        pdb_code = record['pdb']
+        if pdb_code in pdb2organism:
+            organism = pdb2organism[pdb_code]
+            record['organism'] = organism
 
 
 def dump_propnames(propnamesfn):
-    propnames = ['PdbCode', 'PdbTitle',
-                 'LigandCode', 'LigandName',
-                 'FragmentId', 'FragmentSmile', 'FragmentMass',
-                 'UniprotAccession', 'ProteinName',
-                 'Gene', 'Family']
+    propnames = [
+                 'pdb',
+                 'het',
+                 'fragment',
+                 'title',
+                 'smiles',
+                 'weight',
+                 'uniprot',
+                 'protein',
+                 'organism',
+                 'gene',
+                 'family0',
+                 'family1',
+                 'family2',
+                 'family3',
+                 'family4',
+                 ]
     json.dump(propnames, propnamesfn)
+
+
+def dump_props(props, propsfn):
+    for frag_id, v in props.iteritems():
+        propsfn.write(frag_id)
+        propsfn.write(' ')
+        fields = [
+            'pdb:' + v['pdb'],
+            'het:' + v['het'],
+            'fragment:' + str(v['fragment']),
+            '"title:' + v['title'] + '"',
+        ]
+        if v['smiles']:
+            fields.append('smiles:' + v['smiles'])
+        else:
+            fields.append('')
+        if 'weight' in v:
+            fields.append('{0:.2f}'.format(v['weight']))
+        else:
+            fields.append('')
+        if v['uniprot']:
+            fields.append('uniprot:' + v['uniprot'].split('#')[0])
+        else:
+            fields.append('')
+        if v['protein']:
+            fields.append('"protein:' + v['protein'] + '"')
+        else:
+            fields.append('')
+        if 'organism' in v:
+            fields.append('"organism:' + v['organism'] + '"')
+        else:
+            fields.append('')
+        if 'gene' in v:
+            fields.append('gene:' + v['gene'])
+        else:
+            fields.append('')
+        if 'families' in v:
+            for idx, fam in enumerate(v['families']):
+                fields.append('"family' + str(idx) + ':' + fam + '"')
+        propsfn.write(' '.join(fields))
+        propsfn.write("\n")
 
 
 def cclustera_enrich_sc(sc):
