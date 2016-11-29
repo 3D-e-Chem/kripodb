@@ -13,5 +13,5 @@ kripodb.script
 .. automodule:: kripodb.script.similarities
     :members:
 
-.. automodule:: kripodb.script.cclustera
+.. automodule:: kripodb.script.dive
     :members:
