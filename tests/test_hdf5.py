@@ -13,10 +13,14 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
+import os
+
 from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
 from kripodb.hdf5 import SimilarityMatrix
+from tests.test_pairs import tmpname
 
 
 class TestSimilarityMatrix(object):
@@ -55,3 +59,54 @@ class TestSimilarityMatrix(object):
         assert_almost_equal(result[2], expected[2], 5)
         eq_(result[:2], expected[:2])
 
+
+class SimilarityMatrixInMemory(object):
+    def __init__(self):
+        self.matrix_fn = tmpname()
+        self.matrix = SimilarityMatrix(self.matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+
+    def __enter__(self):
+        return self.matrix
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.matrix.close()
+        if os.path.isfile(self.matrix_fn):
+            os.remove(self.matrix_fn)
+
+
+class TestPairsTable(object):
+    def test_count(self):
+        with SimilarityMatrixInMemory() as matrix:
+            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+            similarities = [
+                ('a', 'b', 0.9),
+                ('a', 'c', 0.6),
+                ('b', 'c', 0.6),
+                ('d', 'c', 0.7)
+            ]
+            matrix.update(similarities, labels)
+
+            counts = list(matrix.count(100000))
+
+            expected = [(0.6,  2),
+                        (0.7,  1),
+                        (0.9,  1)]
+            assert_array_almost_equal(counts, expected, 6)
+
+    def test_count_multiframe(self):
+        with SimilarityMatrixInMemory() as matrix:
+            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+            similarities = [
+                ('a', 'b', 0.9),
+                ('a', 'c', 0.6),
+                ('b', 'c', 0.6),
+                ('d', 'c', 0.7)
+            ]
+            matrix.update(similarities, labels)
+
+            counts = list(matrix.count(2))
+
+            expected = [(0.6,  2),
+                        (0.7,  1),
+                        (0.9,  1)]
+            assert_array_almost_equal(counts, expected, 6)

@@ -26,6 +26,7 @@ def make_similarities_parser(subparsers):
     similarity_thaw_sc(sc)
     fpneigh2tsv_sc(sc)
     serve_sc(sc)
+    histogram_sc(sc)
 
 
 def similar_sc(subparsers):
@@ -309,3 +310,21 @@ def serve_sc(subparsers):
                     help='URL which should be used in Swagger spec (default: %(default)s)')
 
     sc.set_defaults(func=serve_app)
+
+
+def histogram_sc(subparsers):
+    sc = subparsers.add_parser('histogram', help='Distribution of similarity scores')
+    sc.add_argument('inputfile', type=str, help='Filename of similarity matrix hdf5 file')
+    sc.add_argument('outputfile', type=argparse.FileType('w'),
+                    help='Tab delimited output file, use - for stdout')
+    sc.add_argument('-f', '--frame_size', type=int, default=10**8, help='Size of frame (default: %(default)s)')
+    sc.set_defaults(func=histogram)
+
+
+def histogram(inputfile, outputfile, frame_size):
+    matrix = SimilarityMatrix(inputfile)
+    counts = matrix.count(frame_size)
+    writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
+    writer.writerow(['score', 'count'])
+    writer.writerows(counts)
+    matrix.close()
