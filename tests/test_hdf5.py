@@ -14,13 +14,11 @@
 
 from __future__ import absolute_import
 
-import os
-
 from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
 from kripodb.hdf5 import SimilarityMatrix
-from tests.test_pairs import tmpname
+from .utils import SimilarityMatrixInMemory
 
 
 class TestSimilarityMatrix(object):
@@ -58,20 +56,6 @@ class TestSimilarityMatrix(object):
         expected = ('3wyl_3KB_frag20', '3wyl_3KB_frag21', 0.999496452277409)
         assert_almost_equal(result[2], expected[2], 5)
         eq_(result[:2], expected[:2])
-
-
-class SimilarityMatrixInMemory(object):
-    def __init__(self):
-        self.matrix_fn = tmpname()
-        self.matrix = SimilarityMatrix(self.matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
-
-    def __enter__(self):
-        return self.matrix
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.matrix.close()
-        if os.path.isfile(self.matrix_fn):
-            os.remove(self.matrix_fn)
 
 
 class TestPairsTable(object):

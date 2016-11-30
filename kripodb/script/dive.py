@@ -38,7 +38,7 @@ def make_dive_parsers(subparsers):
 
 
 def fragments_sphere_sc(subparsers):
-    sc = subparsers.add_parser('fragments', help='Export fragments as dive sphere')
+    sc = subparsers.add_parser('fragments', help='Export fragments as DiVE formatted sphere')
     sc.add_argument('inputfile', type=str,
                     help='Name of fragments db input file')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
@@ -49,6 +49,14 @@ def fragments_sphere_sc(subparsers):
 
 
 def dive_sphere(inputfile, outputfile, onlyfrag1):
+    """Export fragments as DiVE formatted sphere
+
+    Args:
+        inputfile (str): fragments db input file
+        outputfile (file): fragments dive output file
+        onlyfrag1 (bool):O nly *_frag1
+
+    """
     frags_db = FragmentsDb(inputfile)
     nodes = {}
 
@@ -155,7 +163,7 @@ def dive_merge_uniprot(uniprot_annot_fn, data):
     next(reader)
     for row in reader:
         if row[1]:
-            uniprot_acc2gene[row[0]] = 'gene:' + row[1]
+            uniprot_acc2gene[row[0]] = row[1]
         if row[2]:
             uniprot_acc2family[row[0]] = row[2].split(', ')
         if row[3]:

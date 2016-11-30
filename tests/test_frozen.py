@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-import os
+
 from nose.tools import eq_, assert_raises
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 import pandas as pd
 import pandas.util.testing as pdt
-from tests.test_pairs import tmpname
-from kripodb.frozen import FrozenSimilarityMatrix
-from kripodb.hdf5 import SimilarityMatrix
+
+from .utils import FrozenSimilarityMatrixInMemory, SimilarityMatrixInMemory
 
 
 class TestFrozenSimilarityMatrix(object):
-    pair_matrix_fn = None
+    pair_matrix_inmem = None
     pair_matrix = None
-    matrix_fn = None
+    matrix_inmem = None
     matrix = None
 
     def setUp(self):
-        self.pair_matrix_fn = tmpname()
-        self.pair_matrix = SimilarityMatrix(self.pair_matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+        self.pair_matrix_inmem = SimilarityMatrixInMemory()
+        self.pair_matrix = self.pair_matrix_inmem.matrix
         labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
         similarities = [
             ('a', 'b', 0.9),
@@ -39,16 +39,12 @@ class TestFrozenSimilarityMatrix(object):
             ('d', 'c', 0.7)
         ]
         self.pair_matrix.update(similarities, labels)
-        self.matrix_fn = tmpname()
-        self.matrix = FrozenSimilarityMatrix(self.matrix_fn, 'a', driver='H5FD_CORE', driver_core_backing_store=0)
+        self.matrix_inmem = FrozenSimilarityMatrixInMemory()
+        self.matrix = self.matrix_inmem.matrix
 
     def tearDown(self):
-        self.pair_matrix.close()
-        if os.path.isfile(self.pair_matrix_fn):
-            os.remove(self.pair_matrix_fn)
-        self.matrix.close()
-        if os.path.isfile(self.matrix_fn):
-            os.remove(self.matrix_fn)
+        self.pair_matrix_inmem.close()
+        self.matrix_inmem.close()
 
     def test_from_pairs_defaults(self):
         self.matrix.from_pairs(self.pair_matrix, 10)
@@ -171,3 +167,16 @@ class TestFrozenSimilarityMatrix(object):
             [(u'a', 0.0), (u'b', 0.0), (u'c', 0.7)],
         ]
         eq_(result, expected)
+
+    def test_to_pairs(self):
+        self.matrix.from_pairs(self.pair_matrix, 10)
+        with SimilarityMatrixInMemory() as thawed_matrix:
+
+            self.matrix.to_pairs(thawed_matrix)
+
+            # compare scores
+            assert_array_almost_equal(
+                [d[2] for d in thawed_matrix],
+                [d[2] for d in self.pair_matrix],
+                5
+            )

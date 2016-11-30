@@ -15,7 +15,6 @@
 from __future__ import absolute_import
 from collections import Mapping
 import os
-import tempfile
 
 import tables
 from six import StringIO
@@ -25,13 +24,7 @@ from nose.tools import eq_, assert_raises
 import kripodb.hdf5
 import kripodb.pairs as pairs
 from kripodb.hdf5 import SimilarityMatrix
-
-
-def tmpname():
-    tmpf = tempfile.NamedTemporaryFile()
-    out_file = tmpf.name
-    tmpf.close()
-    return out_file
+from .utils import tmpname
 
 
 class MockedIntbitsetDict(Mapping):
