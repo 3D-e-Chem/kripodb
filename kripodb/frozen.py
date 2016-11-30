@@ -265,7 +265,13 @@ class FrozenSimilarityMatrix(object):
                                                 filters=self.filters)
         self.scores[0:nr_frags, 0:nr_frags] = (data * self.score_precision).astype('uint16')
 
-    def to_pairs(self, pairs, frame_size):
+    def to_pairs(self, pairs):
+        """Copies labels and scores from self to pairs matrix.
+
+        Args:
+            pairs (SimilarityMatrix):
+
+        """
         six.print_('copy labels', flush=True)
         self.build_label_cache()
         pairs.labels.update(self.cache_l2i)

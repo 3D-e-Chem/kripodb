@@ -241,22 +241,19 @@ def similarity_thaw_sc(subparsers):
     sc = subparsers.add_parser('thaw', help='Optimize similarity matrix for writing')
     sc.add_argument('in_fn', type=str, help='Input packed frozen matrix file')
     sc.add_argument('out_fn', type=str, help='Output pairs file, file is overwritten')
-    sc.add_argument('-f', '--frame_size', type=int, default=10**8, help='Size of frame (default: %(default)s)')
-    sc.add_argument('-m', '--memory', type=int, default=1, help='Memory cache in Gigabytes (default: %(default)s)')
-    sc.add_argument('--nrrows',
-                    type=int,
-                    default=2**16,
-                    help='Number of rows in inputfile (default: %(default)s)')
+    sc.add_argument('--nonzero_fraction',
+                    type=float,
+                    default=0.012,
+                    help='Fraction of pairs which have score above threshold (default: %(default)s)')
     sc.set_defaults(func=similarity_thaw_run)
 
 
-def similarity_thaw_run(in_fn, out_fn, frame_size, memory, nrrows):
-    parameters.CHUNK_CACHE_SIZE = memory * 1024 ** 3
-    parameters.CHUNK_CACHE_NELMTS = 2 ** 14
+def similarity_thaw_run(in_fn, out_fn, nonzero_fraction):
     fsm = FrozenSimilarityMatrix(in_fn, 'r')
-    nrlabels = fsm.labels.shape[0]
-    sm = SimilarityMatrix(out_fn, 'w', expectedpairrows=nrrows, expectedlabelrows=nrlabels)
-    fsm.to_pairs(sm, frame_size)
+    nr_scores = int(fsm.scores.shape[0] * fsm.scores.shape[1] * nonzero_fraction)
+    nr_labels = fsm.labels.shape[0]
+    sm = SimilarityMatrix(out_fn, 'w', expectedpairrows=nr_scores, expectedlabelrows=nr_labels)
+    fsm.to_pairs(sm)
     sm.close()
     fsm.close()
 
