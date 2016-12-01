@@ -255,6 +255,7 @@ class FrozenSimilarityMatrix(object):
             data (np.array): 2 dimensional square array with scores
             labels (list): List of labels for each column and row index
         """
+        labels = [np.string_(d) for d in labels]
         self.labels = self.h5file.create_carray('/', 'labels', obj=labels, filters=self.filters)
         self.h5file.flush()
         self.build_label_cache()

@@ -19,10 +19,10 @@ import json
 import logging
 import math
 
+from progressbar import ProgressBar
 from rdkit.Chem.rdmolfiles import MolToMolBlock
 from rdkit.Chem.Descriptors import HeavyAtomMolWt
-
-from progressbar import ProgressBar
+import six
 
 from ..frozen import FrozenSimilarityMatrix
 from ..db import FragmentsDb
@@ -218,7 +218,7 @@ def dump_propnames(propnamesfn):
 
 
 def dump_props(props, propsfn):
-    for frag_id, v in props.iteritems():
+    for frag_id, v in six.iteritems(props):
         propsfn.write(frag_id)
         propsfn.write(' ')
         fields = [
