@@ -17,6 +17,7 @@ Formatted as described on http://keepachangelog.com/.
 - merge similarity pairs files in chunks instead of loading whole source file in memory
 - canned fragments_by_* methods can use local file or webservice
 - error when duplicate fragment insert is performed
+- Renamed `kripodb similarities serve` to `kripodb serve`, as it now also serves the fragments
 
 ### Removed
 

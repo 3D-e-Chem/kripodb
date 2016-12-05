@@ -20,7 +20,8 @@ from .fingerprints import make_fingerprints_parser
 from .fragments import make_fragments_parser
 from .similarities import make_similarities_parser
 from .dive import make_dive_parsers
-from kripodb.version import __version__
+from ..webservice.server import serve_app
+from ..version import __version__
 
 
 def make_parser():
@@ -41,7 +42,25 @@ def make_parser():
 
     make_dive_parsers(subparsers)
 
+    serve_sc(subparsers)
+
     return parser
+
+
+def serve_sc(subparsers):
+    sc = subparsers.add_parser('serve', help='Serve similarity matrix and fragments db as webservice')
+    sc.add_argument('matrix', type=str, help='Filename of similarity matrix hdf5 file')
+    sc.add_argument('db', type=str, help='Filename of fragments sqlite database file')
+    sc.add_argument('--internal_port',
+                    type=int,
+                    default=8084,
+                    help='TCP port on which to listen (default: %(default)s)')
+    sc.add_argument('--external_url',
+                    type=str,
+                    default='http://localhost:8084/kripo',
+                    help='URL which should be used in Swagger spec (default: %(default)s)')
+
+    sc.set_defaults(func=serve_app)
 
 
 def main(argv=sys.argv[1:]):
