@@ -63,7 +63,7 @@ The similarities between the new and existing fingerprints and between new finge
 
     current_chunks=$(ls ../current/*fp.gz |wc -l)
     all_chunks=$(($current_chunks + 1))
-    sbatch -n $all_chunks <<
+    jid_fpneigh=$(sbatch -n $all_chunks -J fpneigh << EOF
     #!/bin/sh
 
     # Compute similarities against itself
@@ -77,10 +77,11 @@ The similarities between the new and existing fingerprints and between new finge
     done
     wait
     EOF
+    )
 
-    sbatch -n 1 <<
+    jid_merge_matrices=$(sbatch -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
     #!/bin/sh
-    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5
+    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5 && \
     rm similarities.new__*[0-9].h5
 
     # Compact the fingerprint file (makebits ascii format)
@@ -91,6 +92,7 @@ The similarities between the new and existing fingerprints and between new finge
     kripodb similarities merge ../current/similarities.h5 similarities.new__existing.h5 similarities.new__new.h5 similarities.h5 && \
     rm similarities.new__existing.h5 similarities.new__new.h5
     EOF
+    )
 
 To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
 
@@ -103,8 +105,11 @@ To prevent duplicates similarities of a chunk against itself should ignore the u
 
 The following commands converts the pairs into a compressed dense matrix::
 
+    jid_compress_matrix=$(sbatch -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
     kripodb similarities freeze -f 400000000 similarities.h5 similarities.frozen.h5
     ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && rm similarities.frozen.h5
+    EOF
+    )
 
 The output of this step is ready used to find similar fragments,
 using either the webservice with the `kripodb serve` command or with the `kripodb similarities similar` command directly.

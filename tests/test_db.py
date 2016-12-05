@@ -13,14 +13,15 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from intbitset import intbitset
+import sqlite3
 
+from intbitset import intbitset
 from nose.tools import eq_, raises, assert_raises
 from mock import call, Mock
 from rdkit.Chem import MolFromSmiles, MolToSmiles
+import six
 
 import kripodb.db as db
-import six
 
 
 def test_adapt_intbitset():
@@ -167,6 +168,10 @@ class TestFragmentsDBFilled(object):
 
     def test_len(self):
         eq_(len(self.fdb), 1)
+
+    def test_duplicate(self):
+        with assert_raises(sqlite3.IntegrityError):
+            self.fdb.add_fragments_from_shelve(self.myshelve)
 
 
 class TestHetSeqNr(object):

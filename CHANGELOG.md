@@ -7,6 +7,8 @@ Formatted as described on http://keepachangelog.com/.
 
 ### Added
 
+- Published documentation on http://kripodb.readthedocs.io
+- Documented update pipeline
 - Documented command line interface in Sphinx
 - Retrieve fragments from webservice based on fragment id and pdb code
 
@@ -14,6 +16,7 @@ Formatted as described on http://keepachangelog.com/.
 
 - merge similarity pairs files in chunks instead of loading whole source file in memory
 - canned fragments_by_* methods can use local file or webservice
+- error when duplicate fragment insert is performed
 
 ### Removed
 

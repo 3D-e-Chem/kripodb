@@ -16,6 +16,8 @@ from __future__ import absolute_import
 
 from math import log10, ceil, floor
 
+import numpy as np
+from progressbar import ProgressBar
 import tables
 import six
 
@@ -112,6 +114,17 @@ class SimilarityMatrix(object):
             frag_id = self.labels.by_label(query)
             for hit_frag_id, score in self.pairs.find(frag_id, cutoff, limit):
                 yield self.labels.by_id(hit_frag_id), score
+
+    def count(self, frame_size):
+        """Count occurrences of each score
+
+        Args:
+            frame_size (int): Size of matrix loaded each time. Larger requires more memory and smaller is slower.
+
+        Returns:
+            Tuple[(str, int)]: Score and number of occurrences
+        """
+        return self.pairs.count(frame_size)
 
 
 class AbstractSimpleTable(object):
@@ -277,6 +290,34 @@ class PairsTable(AbstractSimpleTable):
         for pair in super(PairsTable, self).__iter__():
             score = ceil(precision10 * pair['score'] / precision) / precision10
             yield {'a': pair['a'], 'b': pair['b'], 'score': score}
+
+    def count(self, frame_size):
+        """Count occurrences of each score
+
+        Args:
+            frame_size (int): Size of matrix loaded each time. Larger requires more memory and smaller is slower.
+
+        Returns:
+            Tuple[(str, int)]: Score and number of occurrences
+        """
+        # Count occurrences of each score by reading pairs table in frames
+        nr_rows = len(self.table)
+        nr_bins = self.score_precision + 1
+        counts = np.zeros(shape=nr_bins, dtype=np.int64)
+        bar = ProgressBar()
+        for start in bar(six.moves.range(0, nr_rows, frame_size)):
+            stop = frame_size + start
+            frame = self.table.read(start=start, stop=stop)
+            frame_counts = np.bincount(frame['score'], minlength=nr_bins)
+            counts += frame_counts
+
+        # Convert int score into fraction
+        precision = float(self.score_precision)
+        precision10 = float(10 ** (ceil(log10(precision))))
+        for raw_score in counts.nonzero()[0]:
+            score = ceil(precision10 * raw_score / precision) / precision10
+            count = counts[raw_score]
+            yield (score, count)
 
 
 class Id2Label(tables.IsDescription):

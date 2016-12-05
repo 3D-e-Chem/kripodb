@@ -12,6 +12,7 @@ For installation and usage see https://github.com/3D-e-Chem/kripodb/blob/master/
     :maxdepth: 2
 
     Data update <data-update.rst>
+    DiVe visualization <dive-visualization.rst>
     API <api.rst>
     CLI <cli.rst>
 
