@@ -275,7 +275,7 @@ class FragmentsDb(SqliteDb):
         self.connection.commit()
 
     def add_fragment_from_shelve(self, frag_id, fragment):
-        sql = '''INSERT OR REPLACE INTO fragments (
+        sql = '''INSERT INTO fragments (
             frag_id,
             pdb_code,
             prot_chain,
@@ -313,8 +313,9 @@ class FragmentsDb(SqliteDb):
         lig_id = fragment['ligID'].split('-')
         het_seq_nr = int(re.sub('[A-Z]$', '', lig_id[3]))
 
+        frag_id = frag_id.replace('-', '_')
         row = {
-            'frag_id': frag_id.replace('-', '_'),
+            'frag_id': frag_id,
             'pdb_code': splitted_frag_id[0],
             'prot_chain': lig_id[1],
             'het_code': splitted_frag_id[1],
@@ -326,7 +327,11 @@ class FragmentsDb(SqliteDb):
             'nr_r_groups': int(fragment['numRgroups']),
         }
 
-        self.cursor.execute(sql, row)
+        try:
+            self.cursor.execute(sql, row)
+        except sqlite3.IntegrityError as e:
+            logging.warning('Duplicate ID: {}, skipping'.format(frag_id))
+            raise e
 
     def add_pdb(self, pdb):
         sql = '''INSERT OR REPLACE INTO pdbs (

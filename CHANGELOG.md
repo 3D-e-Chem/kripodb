@@ -14,6 +14,7 @@ Formatted as described on http://keepachangelog.com/.
 ### Changed
 
 - merge similarity pairs files in chunks instead of loading whole source file in memory
+- error when duplicate fragment insert is performed
 
 ### Removed
 
