@@ -20,6 +20,7 @@ import logging
 
 from rdkit.Chem.AllChem import Mol
 from rdkit.Chem.AllChem import MolToMolBlock
+from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
 
@@ -87,6 +88,23 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
         return fragments
 
 
+def mol2svg(mol, width, height):
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+    drawer.DrawMolecule(mol)
+    drawer.FinishDrawing()
+    svg = drawer.GetDrawingText()
+    return svg
+
+
+def get_fragment_svg(fragment_id, width, height):
+    fragments_db_filename = current_app.config['db_fn']
+    with FragmentsDb(fragments_db_filename) as fragmentsdb:
+        fragment = fragmentsdb[fragment_id]
+        LOGGER.warning([fragment_id, width, height])
+        mol = fragment['mol']
+        return mol2svg(mol, width, height)
+
+
 def get_version():
     """
     Returns:
@@ -133,6 +151,6 @@ def serve_app(matrix, db, internal_port=8084, external_url='http://localhost:808
     LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))
     LOGGER.info(' * Swagger ui at {}/ui'.format(external_url))
     try:
-        app.run(port=internal_port)
+        app.run(port=internal_port, debug=True)
     finally:
         sim_matrix.close()

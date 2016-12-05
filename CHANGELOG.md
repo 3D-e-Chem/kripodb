@@ -7,6 +7,7 @@ Formatted as described on http://keepachangelog.com/.
 
 ### Added
 
+- Webservice endpoint to render 2D fragment in SVG
 - Published documentation on http://kripodb.readthedocs.io
 - Documented update pipeline
 - Documented command line interface in Sphinx

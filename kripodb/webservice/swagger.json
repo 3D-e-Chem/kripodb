@@ -135,6 +135,59 @@
           }
         }
       }
+    },
+    "/fragments/{fragment_id}.svg": {
+      "get": {
+        "summary": "2D drawing of fragment in SVG format",
+        "x-swagger-router-controller": "kripodb.webservice.server",
+        "operationId": "get_fragment_svg",
+        "parameters": [
+          {
+            "name": "fragment_id",
+            "in": "path",
+            "description": "Query fragment identifier. e.g. 3j7u_NDP_frag24",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "width",
+            "in": "query",
+            "required": false,
+            "default": 400,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          {
+            "name": "height",
+            "in": "query",
+            "required": false,
+            "default": 200,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        ],
+        "tags": [
+          "Fragments"
+        ],
+        "produces": [
+          "image/svg+xml"
+        ],
+        "responses": {
+          "200": {
+            "description": "SVG image"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
