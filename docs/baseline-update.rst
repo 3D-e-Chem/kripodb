@@ -64,10 +64,22 @@ The following command will updated the PDB metadata to fragments database::
 
 The similarities between fingerprints can be calculated with::
 
-    let nr_chunks=($(ls *.fp.gz|wc -l) * $(ls *.fp.gz|wc -l)/2 - $(ls *.fp.gz|wc -l))
-    jid_fpneigh=$(sbatch -n $nr_chunks -J fpneigh << EOF
+    # Unzip fingerprint files so they can be used by fpneigh
+    jid_unzip=$(sbatch --parsable --parsable -n $(ls *.fp.gz|wc -l) -J unzip << EOF
     #!/bin/sh
-    nrrows = 10000000
+    for z in $(ls *fp.gz)
+    do
+    srun -Jgunzip$(basename $z .fp.gz) -n 1 /bin/sh -c "gunzip -c $z > $(basename $z .gz)" &
+    done
+    wait
+    EOF
+    )
+
+    # Compute similarities and write as h5 files
+    let nr_chunks=($(ls *.fp.gz|wc -l) * $(ls *.fp.gz|wc -l)/2 - $(ls *.fp.gz|wc -l))
+    jid_fpneigh=$(sbatch --parsable -n $nr_chunks -J fpneigh << EOF
+    #!/bin/sh
+    nrrows=10000000
     for x in $(ls *.fp)
     do
     for y in $(ls *.fp)
@@ -96,7 +108,7 @@ The similarities between fingerprints can be calculated with::
     EOF
 
     # Merge
-    jid_merge_matrices=$(sbatch -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
+    jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
     #!/bin/sh
     kripodb similarities merge similarities.*.h5 similarities.h5 && \
     rm similarities.*.h5
@@ -114,7 +126,7 @@ To prevent duplicates similarities of a chunk against itself should ignore the u
 
 The following commands converts the pairs into a compressed dense matrix::
 
-    jid_compress_matrix=$(sbatch -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
+    jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
     kripodb similarities freeze similarities.h5 similarities.frozen.h5
     ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && \
     rm similarities.frozen.h5
