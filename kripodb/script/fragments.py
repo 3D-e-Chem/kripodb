@@ -24,6 +24,7 @@ def make_fragments_parser(subparsers):
 
 def shelve2fragmentsdb_sc(subparsers):
     sc = subparsers.add_parser('shelve', help='Add fragments from shelve to sqlite')
+    sc.add_argument('--skipdups', action='store_true', help='Skip duplicates, instead of dieing one first duplicate')
     sc.add_argument('shelvefn', type=str)
     sc.add_argument('fragmentsdb',
                     default='fragments.db',
@@ -31,10 +32,10 @@ def shelve2fragmentsdb_sc(subparsers):
     sc.set_defaults(func=shelve2fragmentsdb_run)
 
 
-def shelve2fragmentsdb_run(shelvefn, fragmentsdb):
+def shelve2fragmentsdb_run(shelvefn, fragmentsdb, skipdups):
     myshelve = shelve.open(shelvefn, 'r')
     frags = FragmentsDb(fragmentsdb)
-    frags.add_fragments_from_shelve(myshelve)
+    frags.add_fragments_from_shelve(myshelve, skipdups)
 
 
 def sdf2fragmentsdb_sc(subparsers):
