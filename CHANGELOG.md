@@ -5,6 +5,8 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [2.1.0] - 2017-01-17
+
 ### Added
 
 - Webservice endpoint to render 2D fragment in SVG
