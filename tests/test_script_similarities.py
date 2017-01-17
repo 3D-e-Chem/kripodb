@@ -15,7 +15,6 @@ from __future__ import absolute_import
 import os
 
 from six import StringIO
-from nose.tools import eq_
 from numpy.testing import assert_array_almost_equal
 
 from kripodb.hdf5 import SimilarityMatrix
