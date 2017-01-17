@@ -49,9 +49,33 @@ class WebserviceClient(object):
         return response.json()
 
     def fragments_by_pdb_codes(self, pdb_codes, chunk_size=450):
+        """Retrieve fragments by their PDB code
+
+        Args:
+            pdb_codes (List[str]): List of PDB codes
+            chunk_size (int): Number of PDB codes to retrieve in a single http request
+
+        Returns:
+            List(Dict()): List of fragment information
+
+        Raises:
+            requests.HTTPError: When one of the PDB codes could not be found.
+        """
         return self._fetch_chunked_fragments('pdb_codes', pdb_codes, chunk_size)
 
     def fragments_by_id(self, fragment_ids, chunk_size=100):
+        """Retrieve fragments by their identifier
+
+        Args:
+            fragment_ids (List[str]): List of fragment identifiers
+            chunk_size (int): Number of PDB codes to retrieve in a single http request
+
+        Returns:
+            List(Dict()): List of fragment information
+
+        Raises:
+            requests.HTTPError: When one of the identifiers could not be found.
+        """
         return self._fetch_chunked_fragments('fragment_ids', fragment_ids, chunk_size)
 
     def _fetch_chunked_fragments(self, idtype, ids, chunk_size):
@@ -62,7 +86,7 @@ class WebserviceClient(object):
         return fragments
 
     def _fetch_fragments(self, idtype, ids):
-        url = self.base_url + '/fragments/{idtype}={ids}'.format(idtype=idtype, ids=','.join(ids))
+        url = self.base_url + '/fragments?{idtype}={ids}'.format(idtype=idtype, ids=','.join(ids))
         response = requests.get(url)
         response.raise_for_status()
         fragments = response.json()

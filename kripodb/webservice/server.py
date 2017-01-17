@@ -7,7 +7,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# simributed under the License is simributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -75,6 +75,15 @@ def get_similar_fragments(fragment_id, cutoff, limit):
 
 
 def get_fragments(fragment_ids=None, pdb_codes=None):
+    """Retrieve fragments based on their identifier or PDB code.
+
+    Args:
+        fragment_ids (List[str]): List of fragment identifiers
+        pdb_codes (List[str]): List of PDB codes
+
+    Returns:
+        List(Dict()): List of fragment information
+    """
     fragments_db_filename = current_app.config['db_fn']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         fragments = []
