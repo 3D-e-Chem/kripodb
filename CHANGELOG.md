@@ -11,7 +11,7 @@ Formatted as described on http://keepachangelog.com/.
 - Published documentation on http://kripodb.readthedocs.io
 - Documented update pipeline
 - Documented command line interface in Sphinx
-- Retrieve fragments from webservice based on fragment id and pdb code
+- Retrieve fragments from webservice based on fragment id and pdb code (#35)
 
 ### Changed
 
@@ -19,6 +19,7 @@ Formatted as described on http://keepachangelog.com/.
 - canned fragments_by_* methods can use local file or webservice
 - error when duplicate fragment insert is performed
 - Renamed `kripodb similarities serve` to `kripodb serve`, as it now also serves the fragments
+- Switched from nosetest to py.test (#36)
 
 ### Removed
 

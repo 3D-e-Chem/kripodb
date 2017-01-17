@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 from six import StringIO
 from intbitset import intbitset
-from nose.tools import assert_raises, eq_
+import pytest
 
 from kripodb import makebits as makebits
 
@@ -27,7 +27,7 @@ def test_read_header():
     result = makebits.read_header(line)
 
     expected = ('MAKEBITS', '1.0', 574331, 'BigGrid')
-    eq_(result, expected)
+    assert result == expected
 
 
 def test_read_bitset():
@@ -36,16 +36,16 @@ def test_read_bitset():
     (fid, bitset) = makebits.read_bitset(line, 100)
 
     expected = intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])
-    eq_(fid, '3frb_TOP_frag24')
-    eq_(bitset, expected)
+    assert fid == '3frb_TOP_frag24'
+    assert bitset == expected
 
 
 def test_read_bitset_toolong():
     line = '3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 5'
-    with assert_raises(Exception) as e:
+    with pytest.raises(Exception) as e:
         makebits.read_bitset(line, 100)
     expected = ('On bit checksum incorrect for 3frb_TOP_frag24',)
-    eq_(e.exception.args, expected)
+    assert e.value.args == expected
 
 
 def test_read_file():
@@ -57,8 +57,8 @@ def test_read_file():
     (bitsets, fp_size) = makebits.read_file(infile)
 
     expected = {'3frb_TOP_frag24': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])}
-    eq_(fp_size, 574331)
-    eq_(bitsets, expected)
+    assert fp_size == 574331
+    assert bitsets == expected
 
 
 def test_iter_file():
@@ -70,11 +70,11 @@ def test_iter_file():
     iterator = makebits.iter_file(infile)
 
     expected_header = ('MAKEBITS', '1.0', 574331, 'BigGrid')
-    eq_(next(iterator), expected_header)
+    assert next(iterator) == expected_header
     expected = ('3frb_TOP_frag24', intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]))
-    eq_(next(iterator), expected)
+    assert next(iterator) == expected
     is_exhausted = 'Iterator exhausted'
-    eq_(next(iterator, is_exhausted), is_exhausted)
+    assert next(iterator, is_exhausted) == is_exhausted
 
 
 def test_write_file():
@@ -88,5 +88,5 @@ def test_write_file():
     expected = '''MAKEBITS 1.0 574331 BigGrid
 3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9
 '''
-    eq_(result, expected)
+    assert result == expected
 

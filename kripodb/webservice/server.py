@@ -73,7 +73,7 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         for hit_id, score in raw_hits:
             hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
     except LookupError as e:
-        abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
+        abort(404, 'Fragment with identifier \'{0}\' not found'.format(fragment_id))
     return hits
 
 
@@ -94,17 +94,18 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         fragments = []
         if fragment_ids:
-            try:
-                fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
-            except LookupError as e:
-                abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
+            for frag_id in fragment_ids:
+                try:
+                    fragments.append(fragmentsdb[frag_id])
+                except LookupError:
+                    abort(404, 'Fragment with identifier \'{0}\' not found'.format(frag_id))
         if pdb_codes:
             for pdb_code in pdb_codes:
                 try:
                     for fragment in fragmentsdb.by_pdb_code(pdb_code):
                         fragments.append(fragment)
-                except LookupError as e:
-                    abort(404, 'Fragments with PDB code \'{0}\' not found'.format(e.message))
+                except LookupError:
+                    abort(404, 'Fragments with PDB code \'{0}\' not found'.format(pdb_code))
         # TODO if fragment_ids and pdb_codes are both None then return paged list of all fragments
         return fragments
 
@@ -125,8 +126,8 @@ def get_fragment_svg(fragment_id, width, height):
             LOGGER.warning([fragment_id, width, height])
             mol = fragment['mol']
             return mol2svg(mol, width, height)
-        except LookupError as e:
-            abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
+        except LookupError:
+            abort(404, 'Fragment with identifier \'{0}\' not found'.format(fragment_id))
 
 
 def get_version():

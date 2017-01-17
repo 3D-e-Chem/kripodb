@@ -14,40 +14,39 @@
 
 from __future__ import absolute_import
 
-from nose.tools import eq_
+import pytest
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
 from kripodb.hdf5 import SimilarityMatrix
 from .utils import SimilarityMatrixInMemory
 
 
+@pytest.fixture
+def matrix():
+    sim_matrix = SimilarityMatrix('data/similarities.h5')
+    yield sim_matrix
+    sim_matrix.close();
+
+
 class TestSimilarityMatrix(object):
-    matrix = None
-
-    def setUp(self):
-        self.matrix = SimilarityMatrix('data/similarities.h5')
-
-    def tearDown(self):
-        self.matrix.close()
-
-    def test_find_1(self):
-        result = list(self.matrix.find('2n6i_4FU_frag1', 0.98))
+    def test_find_1(self, matrix):
+        result = list(matrix.find('2n6i_4FU_frag1', 0.98))
 
         expected = [('2n6i_4FU_frag2', 1.0), ('2n6i_4FU_frag6', 1.0)]
         assert_array_almost_equal([r[1] for r in result], [r[1] for r in expected], 3)
-        eq_([r[0] for r in result], [r[0] for r in result])
+        assert [r[0] for r in result] == [r[0] for r in result]
 
-    def test_iter_first2(self):
-        myiter = iter(self.matrix)
+    def test_iter_first2(self, matrix):
+        myiter = iter(matrix)
 
         result = [next(myiter), next(myiter)]
 
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
         assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
-        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
+        assert [(r[0], r[1],) for r in result] == [(r[0], r[1],) for r in result]
 
-    def test_iter_last(self):
-        myiter = iter(self.matrix)
+    def test_iter_last(self, matrix):
+        myiter = iter(matrix)
 
         result = None
         for row in myiter:
@@ -55,7 +54,7 @@ class TestSimilarityMatrix(object):
 
         expected = ('3wyl_3KB_frag20', '3wyl_3KB_frag21', 0.999496452277409)
         assert_almost_equal(result[2], expected[2], 5)
-        eq_(result[:2], expected[:2])
+        assert result[:2] == expected[:2]
 
 
 class TestPairsTable(object):

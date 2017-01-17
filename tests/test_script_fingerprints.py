@@ -13,7 +13,6 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-from nose.tools import eq_
 from six import StringIO
 
 import kripodb.script as script
@@ -25,7 +24,7 @@ def test_pairs_subcommand_defaults():
 
     args = parser.parse_args(['fingerprints', 'similarities', '--fragmentsdbfn', 'fragdb', 'fp1', 'fp2', 'outfn'])
 
-    eq_(args.func, kripodb.script.fingerprints.pairs_run)
+    assert args.func == kripodb.script.fingerprints.pairs_run
 
     fargs = vars(args)
     del(fargs['func'])
@@ -41,7 +40,7 @@ def test_pairs_subcommand_defaults():
         'fingerprintsfn1': 'fp1',
         'ignore_upper_triangle': False,
     }
-    eq_(fargs, expected)
+    assert fargs == expected
 
 
 def test_meanbitdensity():
@@ -49,6 +48,6 @@ def test_meanbitdensity():
 
     kripodb.script.fingerprints.meanbitdensity_run('data/fingerprints.sqlite', out)
 
-    eq_(out.getvalue(), '0.0077683\n')
+    assert out.getvalue() == '0.0077683\n'
 
 

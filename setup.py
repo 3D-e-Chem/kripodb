@@ -11,6 +11,7 @@ setup(
     author='Stefan Verhoeven',
     author_email='s.verhoeven@esciencecenter.nl',
     install_requires=['intbitset', 'tables', 'pandas', 'connexion', 'requests', 'scipy', 'progressbar2'],
+    setup_requires=['pytest-runner'],
     package_data={
       'kripodb.webservice': ['swagger.json'],
     },

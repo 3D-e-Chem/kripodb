@@ -44,7 +44,7 @@ def test_simmatrix_import_run():
         simmatrix.close()
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
         assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
-        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
+        assert [(r[0], r[1],) for r in result] == [(r[0], r[1],) for r in result]
     finally:
         if os.path.exists(output_fn):
             os.remove(output_fn)
@@ -77,7 +77,7 @@ def test_simmatrix_import_run_ignore_upper_triangle():
         print(result)
         expected = [('2mlm_2W7_frag1', '2mlm_2W7_frag2xx', 0.5877), ('2mlm_2W7_frag2', '3wvm_STE_frag1', 0.4633)]
         assert_array_almost_equal([r[2] for r in result], [r[2] for r in expected], 3)
-        eq_([(r[0], r[1],) for r in result], [(r[0], r[1],) for r in result])
+        assert [(r[0], r[1],) for r in result] == [(r[0], r[1],) for r in result]
     finally:
         if os.path.exists(output_fn):
             os.remove(output_fn)
@@ -120,7 +120,7 @@ Compounds similar to 1wnt_NAP_frag1:
     result = list(kripodb.script.similarities.read_fpneighpairs_file(text))
 
     expected = [('2xry_FAD_frag4', '3cvv_FAD_frag3', 0.56), ('1wnt_NAP_frag1', '1wnt_NAP_frag3', 0.873)]
-    eq_(result, expected)
+    assert result == expected
 
 
 def test_simmatrix_importfpneigh_run():
@@ -145,7 +145,7 @@ Compounds similar to 2mlm_2W7_frag2:
         rows = [r for r in simmatrix]
         simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
-        eq_(rows, expected)
+        assert rows == expected
     finally:
         os.remove(output_fn)
 
@@ -174,7 +174,7 @@ Compounds similar to 2mlm_2W7_frag2:
         rows = [r for r in simmatrix]
         simmatrix.close()
         expected = [(u'2mlm_2W7_frag1', u'2mlm_2W7_frag2', 0.5877), (u'2mlm_2W7_frag2', u'3wvm_STE_frag1', 0.4633)]
-        eq_(rows, expected)
+        assert rows == expected
     finally:
         os.remove(output_fn)
 
@@ -197,4 +197,4 @@ Compounds similar to 2mlm_2W7_frag2:
 2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5877
 2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4633
 '''
-    eq_(outputfile.getvalue(), expected)
+    assert outputfile.getvalue() == expected
