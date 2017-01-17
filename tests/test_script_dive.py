@@ -16,7 +16,7 @@ from __future__ import absolute_import
 import json
 import numpy as np
 from six import StringIO
-from nose.tools import eq_, assert_raises
+import pytest
 
 import kripodb.script.dive as dive
 from .utils import FrozenSimilarityMatrixInMemory
@@ -61,7 +61,7 @@ def test_add_uniprot():
             "Properties": []
         }
     }
-    eq_(data, expected)
+    assert data == expected
 
 
 def test_dense_dump_allfrags():
@@ -82,7 +82,7 @@ def test_dense_dump_allfrags():
             (u'b', u'c', 0.6),
             (u'c', u'd', 0.7),
         ]
-        eq_(result, expected)
+        assert result == expected
 
 
 def test_dense_dump_frag1only():
@@ -98,7 +98,7 @@ def test_dense_dump_frag1only():
 
         result = list(dive.dense_dump_iter(matrix, frag1only=True))
         expected = [(u'a_frag1', u'c_frag1', 0.5)]
-        eq_(result, expected)
+        assert result == expected
 
 
 def test_dive_sphere():
@@ -111,8 +111,8 @@ def test_dive_sphere():
     # Dont test layout, only test a single item has correct props
     sphere = json.loads(outputfile.getvalue())
     example = sphere['3wtj_TH4_frag1']
-    eq_(example['Categories'], ['3wtj', 'TH4'])
-    eq_(len(example['Coordinates']), 3)
+    assert example['Categories'], ['3wtj' == 'TH4']
+    assert len(example['Coordinates']) == 3
 
 
 def test_dive_sphere_frag1():
@@ -125,10 +125,10 @@ def test_dive_sphere_frag1():
     sphere = json.loads(outputfile.getvalue())
     # Dont test layout, only test a single item has correct props
     example = sphere['3wtj_TH4_frag1']
-    eq_(example['Categories'], ['3wtj', 'TH4'])
-    eq_(len(example['Coordinates']), 3)
+    assert example['Categories'], ['3wtj' == 'TH4']
+    assert len(example['Coordinates']) == 3
 
-    with assert_raises(KeyError):
+    with pytest.raises(KeyError):
         sphere['3wtj_TH4_frag2']
 
 
@@ -139,7 +139,7 @@ def test_dive_merge_uniprot_nodata():
     dive.dive_merge_uniprot(mapping, data)
 
     expected = {}
-    eq_(data, expected)
+    assert data == expected
 
 
 def test_dive_merge_uniprot():
@@ -164,7 +164,7 @@ def test_dive_merge_uniprot():
             ]
         }
     }
-    eq_(data, expected)
+    assert data == expected
 
 
 def test_dump_props():
@@ -191,4 +191,4 @@ def test_dump_props():
     dive.dump_props(props, props_file)
 
     expected = '2v3v_LCP_frag1 pdb:2v3v het:LCP fragment:1 "title:A NEW CATALYTIC MECHANISM OF PERIPLASMIC NITRATE REDUCTASE FROM DESULFOVIBRIO DESULFURICANS ATCC 27774 FROM CRYSTALLOGRAPHIC AND EPR DATA AND BASED ON DETAILED ANALYSIS OF THE SIXTH LIGAND" smiles:Nc1nc2N[C@@H]3O[C@H](CO[P@@](O)(=O)O[P@@](O)(=O)OC[C@H]4O[C@H]([C@H](O)[C@@H]4O)n4cnc5c4nc(N)[nH]c5=O)C(S)=C(S)[C@@H]3Nc2c(=O)[nH]1 740.56 uniprot:P81186 "protein:Periplasmic nitrate reductase" "organism:Desulfovibrio desulfuricans" gene:napA "family0:Prokaryotic molybdopterin-containing oxidoreductase family" "family1:NasA/NapA/NarB subfamily"\n'
-    eq_(props_file.getvalue(), expected)
+    assert props_file.getvalue() == expected

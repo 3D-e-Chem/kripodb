@@ -7,7 +7,6 @@ from .. import pairs
 from ..db import FragmentsDb
 from ..frozen import FrozenSimilarityMatrix
 from ..hdf5 import SimilarityMatrix
-from ..webservice.server import serve_app
 
 
 def make_similarities_parser(subparsers):
@@ -25,7 +24,6 @@ def make_similarities_parser(subparsers):
     similarity_freeze_sc(sc)
     similarity_thaw_sc(sc)
     fpneigh2tsv_sc(sc)
-    serve_sc(sc)
     histogram_sc(sc)
 
 
@@ -295,21 +293,6 @@ def fpneigh2tsv_run(inputfile, outputfile):
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     writer.writerow(['frag_id1', 'frag_id2', 'score'])
     writer.writerows(reader)
-
-
-def serve_sc(subparsers):
-    sc = subparsers.add_parser('serve', help='Serve similarity matrix as webservice')
-    sc.add_argument('matrix', type=str, help='Filename of similarity matrix hdf5 file')
-    sc.add_argument('--internal_port',
-                    type=int,
-                    default=8084,
-                    help='TCP port on which to listen (default: %(default)s)')
-    sc.add_argument('--external_url',
-                    type=str,
-                    default='http://localhost:8084/kripo',
-                    help='URL which should be used in Swagger spec (default: %(default)s)')
-
-    sc.set_defaults(func=serve_app)
 
 
 def histogram_sc(subparsers):

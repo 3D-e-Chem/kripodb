@@ -1,8 +1,8 @@
 # install Kripodb itself
 -e .
 # requirements for development of kripodb
-nose
-coverage
+pytest
+pytest-cov
 setuptools>=18.8.1
 six>=1.7
 mock

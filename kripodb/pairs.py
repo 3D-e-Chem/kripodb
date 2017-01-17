@@ -72,9 +72,9 @@ def dump_pairs(bitsets1,
     logging.warning('Generating pairs')
 
     similarities_iter = similarities(bitsets1, bitsets2,
-                               number_of_bits, corr_st, corr_sto,
-                               cutoff,
-                               ignore_upper_triangle)
+                                     number_of_bits, corr_st, corr_sto,
+                                     cutoff,
+                                     ignore_upper_triangle)
 
     if out_format == 'tsv':
         dump_pairs_tsv(similarities_iter, out)

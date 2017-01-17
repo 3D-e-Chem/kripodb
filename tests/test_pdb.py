@@ -15,7 +15,6 @@ from __future__ import absolute_import
 from six import StringIO
 
 from mock import patch
-from nose.tools import eq_
 
 from kripodb.pdb import PdbReport
 
@@ -31,7 +30,7 @@ class TestPdbReport(object):
                    'pdbids=*&' \
                    'customReportColumns=structureTitle,compound,ecNo,uniprotAcc,uniprotRecommendedName&' \
                    'format=csv&service=wsfile'
-        eq_(url, expected)
+        assert url == expected
 
     def test_url_custom(self):
         pdbids = ['1kvm', '2mbs']
@@ -44,7 +43,7 @@ class TestPdbReport(object):
                    'pdbids=1kvm,2mbs&' \
                    'customReportColumns=resolution&' \
                    'format=csv&service=wsfile'
-        eq_(url, expected)
+        assert url == expected
 
     @patch('kripodb.pdb.urlopen')
     def test_fetch(self, mocked_urlopen):
@@ -76,7 +75,7 @@ class TestPdbReport(object):
             'compound': 'IGG1-KAPPA 2E8 FAB (HEAVY CHAIN)',
             'uniprotRecommendedName': None
         }]
-        eq_(pdbs, expected)
+        assert pdbs == expected
 
 
 

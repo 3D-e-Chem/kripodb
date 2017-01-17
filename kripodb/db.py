@@ -381,7 +381,7 @@ class FragmentsDb(SqliteDb):
         row = self.cursor.fetchone()
 
         if row is None:
-            raise KeyError("'{}' not found".format(key))
+            raise KeyError(key)
 
         return _row2fragment(row)
 
@@ -394,11 +394,17 @@ class FragmentsDb(SqliteDb):
         Returns:
             List[Fragment]
 
+        Raises:
+            LookupError: When pdb_code could not be found
+
         """
         fragments = []
         sql = self.select_sql + 'WHERE pdb_code=? ORDER BY frag_id'
         for row in self.cursor.execute(sql, (pdb_code,)):
             fragments.append(_row2fragment(row))
+
+        if len(fragments) == 0:
+            raise LookupError(pdb_code)
 
         return fragments
 
