@@ -13,18 +13,21 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from rdkit.Chem.AllChem import MolFromSmiles, Mol
 import requests_mock
+from werkzeug.exceptions import NotFound
 
 from kripodb.webservice import server
-from kripodb.hdf5 import SimilarityMatrix
+from kripodb.pairs import open_similarity_matrix
 from kripodb.version import __version__
 from kripodb.webservice.client import WebserviceClient
 from kripodb.webservice.server import KripodbJSONEncoder
 
 
 class TestKripodbJSONEncoder(object):
+    encoder = None
+
     def setUp(self):
         self.encoder = KripodbJSONEncoder()
 
@@ -35,8 +38,12 @@ class TestKripodbJSONEncoder(object):
 
 
 class TestWebservice(object):
+    matrix = None
+    frags_db_fn = None
+    app = None
+
     def setUp(self):
-        self.matrix = SimilarityMatrix('data/similarities.h5')
+        self.matrix = open_similarity_matrix('data/similarities.frozen.h5')
         self.frags_db_fn = 'data/fragments.sqlite'
         self.app = server.wsgi_app(self.matrix, self.frags_db_fn)
 
@@ -53,6 +60,15 @@ class TestWebservice(object):
                 {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
             ]
             eq_(result, expected)
+
+    def test_get_similar_fragments_notfound(self):
+        fragment_id = 'foo-bar'
+        cutoff = 0.85
+
+        with assert_raises(NotFound) as cm:
+            with self.app.app.test_request_context():
+                server.get_similar_fragments(fragment_id, cutoff, 1000)
+                ok_('foo-bar' in cm.exception.message)
 
     def test_get_fragments__fragid(self):
         fragment_id = '3j7u_NDP_frag24'
@@ -73,12 +89,26 @@ class TestWebservice(object):
             ]
             eq_(result, expected)
 
+    def test_get_fragments__fragid_notfound(self):
+        fragment_id = 'foo-bar'
+        with assert_raises(NotFound) as cm:
+            with self.app.app.test_request_context():
+                server.get_fragments(fragment_ids=[fragment_id])
+                ok_('foo-bar' in cm.exception.message)
+
     def test_get_fragments__pdbcode(self):
         pdb_code = '3j7u'
 
         with self.app.app.test_request_context():
             result = server.get_fragments(pdb_codes=[pdb_code])
             eq_(len(result), 32)
+
+    def test_get_fragments__pdbcode_notfound(self):
+        pdb_code = 'foo-bar'
+        with assert_raises(NotFound) as cm:
+            with self.app.app.test_request_context():
+                server.get_fragments(pdb_codes=[pdb_code])
+                ok_('foo-bar' in cm.exception.message)
 
     def test_get_version(self):
         result = server.get_version()
@@ -99,8 +129,18 @@ class TestWebservice(object):
             ok_('400' in result)
             ok_('150' in result)
 
+    def test_get_fragment_svg_notfound(self):
+        fragment_id = 'foo-bar'
+        with assert_raises(NotFound) as cm:
+            with self.app.app.test_request_context():
+                server.get_fragment_svg(fragment_id, 400, 150)
+                ok_('foo-bar' in cm.exception.message)
+
 
 class TestWebServiceClient(object):
+    base_url = 'http://localhost:8084/kripo'
+    client = None
+
     def setUp(self):
         self.base_url = 'http://localhost:8084/kripo'
         self.client = WebserviceClient(self.base_url)

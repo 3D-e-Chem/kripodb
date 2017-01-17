@@ -70,12 +70,10 @@ class TestFragmentsDBEmpty(object):
         key = 'id1'
         self.fdb[key]
 
+    @raises(LookupError)
     def test_by_pdb_code(self):
         pdb_code = '1kvm'
-
-        fragments = self.fdb.by_pdb_code(pdb_code)
-
-        eq_(fragments, [])
+        self.fdb.by_pdb_code(pdb_code)
 
     def test_add_fragments_from_shelve_weirdid(self):
         result = self.fdb.add_fragment_from_shelve('1muu-GDX', {})

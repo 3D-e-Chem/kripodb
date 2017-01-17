@@ -23,7 +23,6 @@ from rdkit.Chem.AllChem import MolToMolBlock
 from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
-
 import connexion
 from flask import current_app, abort
 from flask.json import JSONEncoder
@@ -60,6 +59,10 @@ def get_similar_fragments(fragment_id, cutoff, limit):
 
     Returns:
         List(Dict()): Query fragment identifier, hit fragment identifier and similarity score
+
+    Raises:
+        werkzeug.exceptions.NotFound: When the fragments_id could not be found
+
     """
     similarity_matrix = current_app.config['matrix']
     query_id = fragment_id
@@ -69,8 +72,8 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         # add query column
         for hit_id, score in raw_hits:
             hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
-    except KeyError:
-        abort(404)
+    except LookupError as e:
+        abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
     return hits
 
 
@@ -83,16 +86,25 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
 
     Returns:
         List(Dict()): List of fragment information
+
+    Raises:
+        werkzeug.exceptions.NotFound: When one of the fragments_ids or pdb_code could not be found
     """
     fragments_db_filename = current_app.config['db_fn']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         fragments = []
         if fragment_ids:
-            fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+            try:
+                fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+            except LookupError as e:
+                abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
         if pdb_codes:
             for pdb_code in pdb_codes:
-                for fragment in fragmentsdb.by_pdb_code(pdb_code):
-                    fragments.append(fragment)
+                try:
+                    for fragment in fragmentsdb.by_pdb_code(pdb_code):
+                        fragments.append(fragment)
+                except LookupError as e:
+                    abort(404, 'Fragments with PDB code \'{0}\' not found'.format(e.message))
         # TODO if fragment_ids and pdb_codes are both None then return paged list of all fragments
         return fragments
 
@@ -108,10 +120,13 @@ def mol2svg(mol, width, height):
 def get_fragment_svg(fragment_id, width, height):
     fragments_db_filename = current_app.config['db_fn']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
-        fragment = fragmentsdb[fragment_id]
-        LOGGER.warning([fragment_id, width, height])
-        mol = fragment['mol']
-        return mol2svg(mol, width, height)
+        try:
+            fragment = fragmentsdb[fragment_id]
+            LOGGER.warning([fragment_id, width, height])
+            mol = fragment['mol']
+            return mol2svg(mol, width, height)
+        except LookupError as e:
+            abort(404, 'Fragment with identifier \'{0}\' not found'.format(e.message))
 
 
 def get_version():
@@ -160,6 +175,6 @@ def serve_app(matrix, db, internal_port=8084, external_url='http://localhost:808
     LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))
     LOGGER.info(' * Swagger ui at {}/ui'.format(external_url))
     try:
-        app.run(port=internal_port, debug=True)
+        app.run(port=internal_port)
     finally:
         sim_matrix.close()
