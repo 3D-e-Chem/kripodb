@@ -97,7 +97,7 @@ class FrozenSimilarityMatrix(object):
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Returns:
-            Tuple[(str, float)]: Hit fragment idenfier and similarity score
+            list[tuple[str,float]]: Hit fragment identifier and similarity score
         """
         precision = float(self.score_precision)
         precision10 = float(10**(floor(log10(precision))))
@@ -121,7 +121,7 @@ class FrozenSimilarityMatrix(object):
             item (STR): Label of a fragment
 
         Returns:
-            List((str, float)): list of (fragment_label, score)
+            list[tuple[str, float]]: list of (fragment_label, score)
 
         """
         precision = float(self.score_precision)

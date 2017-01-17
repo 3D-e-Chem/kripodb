@@ -196,7 +196,7 @@ def open_similarity_matrix(fn):
         fn (str): Filename of similarity matrix
 
     Returns:
-        SimilarityMatrix|FrozenSimilarityMatrix: A read-only similarity matrix object
+        SimilarityMatrix | FrozenSimilarityMatrix: A read-only similarity matrix object
 
     """
     # peek in file to detect format

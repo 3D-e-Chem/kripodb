@@ -45,7 +45,7 @@ def corrections(mean_onbit_density):
         mean_onbit_density (float): Mean on bit density
 
     Returns:
-        S\ :sub:`T` correction, S\ :sub:`T0` correction
+        float: S\ :sub:`T` correction, S\ :sub:`T0` correction
     """
     p0 = mean_onbit_density
     corr_st = (2 - p0) / 3

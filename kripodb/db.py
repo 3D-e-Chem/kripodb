@@ -215,7 +215,7 @@ class FragmentsDb(SqliteDb):
         """Adds molecules to to molecules table.
 
         Args:
-            mols (List[rdkit.Chem.Mol]): List of molecules
+            mols (list[rdkit.Chem.Mol]): List of molecules
         """
         with FastInserter(self.cursor):
             for mol in mols:
@@ -257,8 +257,6 @@ class FragmentsDb(SqliteDb):
 
         Args:
             mol (rdkit.Chem.AllChem.Mol): the rdkit molecule
-
-        Returns:
 
         """
         sql = '''INSERT OR REPLACE INTO molecules (frag_id, smiles, mol) VALUES (?, ?, ?)'''
@@ -392,7 +390,7 @@ class FragmentsDb(SqliteDb):
             pdb_code (str): PDB code
 
         Returns:
-            List[Fragment]
+            List[Fragment]: List of fragments
 
         Raises:
             LookupError: When pdb_code could not be found

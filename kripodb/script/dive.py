@@ -54,7 +54,7 @@ def dive_sphere(inputfile, outputfile, onlyfrag1):
     Args:
         inputfile (str): fragments db input file
         outputfile (file): fragments dive output file
-        onlyfrag1 (bool):O nly *_frag1
+        onlyfrag1 (bool): Only \*_frag1
 
     """
     frags_db = FragmentsDb(inputfile)

@@ -40,7 +40,7 @@ class WebserviceClient(object):
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Returns:
-            List(Dict()): Query fragment identifier, hit fragment identifier and similarity score
+            list[dict]: Query fragment identifier, hit fragment identifier and similarity score
         """
         url = self.base_url + '/fragments/{fragment_id}/similar'.format(fragment_id=fragment_id)
         params = {'cutoff': cutoff, 'limit': limit}
@@ -56,7 +56,7 @@ class WebserviceClient(object):
             chunk_size (int): Number of PDB codes to retrieve in a single http request
 
         Returns:
-            List(Dict()): List of fragment information
+            list[dict]: List of fragment information
 
         Raises:
             requests.HTTPError: When one of the PDB codes could not be found.
@@ -71,7 +71,7 @@ class WebserviceClient(object):
             chunk_size (int): Number of PDB codes to retrieve in a single http request
 
         Returns:
-            List(Dict()): List of fragment information
+            list[dict]: List of fragment information
 
         Raises:
             requests.HTTPError: When one of the identifiers could not be found.

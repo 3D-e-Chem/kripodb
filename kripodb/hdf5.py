@@ -88,8 +88,8 @@ class SimilarityMatrix(object):
         """Store pairs of fragment identifier with their similarity score and label 2 id lookup
 
         Args:
-            similarities_iter (Iterator): Iterator which yields (label1, label2, similarity_score)
-            label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
+            similarities_iter (iterator): Iterator which yields (label1, label2, similarity_score)
+            label2id (dict): Dictionary with fragment label as key and fragment identifier as value.
 
         """
         self.pairs.update(similarities_iter, label2id)
@@ -104,7 +104,7 @@ class SimilarityMatrix(object):
             limit (int): Maximum number of hits. Default is None for no limit.
 
         Yields:
-            Tuple[(str, float)]: Hit fragment idenfier and similarity score
+            (str, float): Hit fragment idenfier and similarity score
         """
         if self.cache_l2i:
             frag_id = self.cache_l2i[query]
@@ -122,7 +122,7 @@ class SimilarityMatrix(object):
             frame_size (int): Size of matrix loaded each time. Larger requires more memory and smaller is slower.
 
         Returns:
-            Tuple[(str, int)]: Score and number of occurrences
+            (str, int): Score and number of occurrences
         """
         return self.pairs.count(frame_size)
 
@@ -393,7 +393,7 @@ class LabelsLookup(AbstractSimpleTable):
         """Return whole table as a dictionary
 
         Returns:
-            Dict: Dictionary with label as key and frag_id as value.
+            dict: Dictionary with label as key and frag_id as value.
 
         """
         return {r['label'].decode(): r['frag_id'] for r in self.table}
@@ -402,7 +402,7 @@ class LabelsLookup(AbstractSimpleTable):
         """Update labels lookup by adding labels in label2id.
 
         Args:
-            label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
+            label2id (dict): Dictionary with fragment label as key and fragment identifier as value.
 
         """
         for label, frag_id in six.iteritems(label2id):
@@ -432,10 +432,10 @@ class LabelsLookup(AbstractSimpleTable):
         When label does exist the id of the label in self is kept.
 
         Args:
-            label2id (Dict): Dictionary with fragment label as key and fragment identifier as value.
+            label2id (dict]): Dictionary with fragment label as key and fragment identifier as value.
 
         Returns:
-            Dict: Dictionary of label/id which where in label2id, but missing in self
+            dict: Dictionary of label/id which where in label2id, but missing in self
         """
         id_offset = max([r['frag_id'] for r in self.table]) + 1
 

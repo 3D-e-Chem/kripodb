@@ -58,7 +58,7 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         limit (int): Maximum number of hits. Default is None for no limit.
 
     Returns:
-        List(Dict()): Query fragment identifier, hit fragment identifier and similarity score
+        list[dict]: List of dict with query fragment identifier, hit fragment identifier and similarity score
 
     Raises:
         werkzeug.exceptions.NotFound: When the fragments_id could not be found
@@ -72,7 +72,7 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         # add query column
         for hit_id, score in raw_hits:
             hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
-    except LookupError as e:
+    except LookupError:
         abort(404, 'Fragment with identifier \'{0}\' not found'.format(fragment_id))
     return hits
 
@@ -85,7 +85,7 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
         pdb_codes (List[str]): List of PDB codes
 
     Returns:
-        List(Dict()): List of fragment information
+        list[dict]: List of fragment information
 
     Raises:
         werkzeug.exceptions.NotFound: When one of the fragments_ids or pdb_code could not be found
@@ -119,6 +119,16 @@ def mol2svg(mol, width, height):
 
 
 def get_fragment_svg(fragment_id, width, height):
+    """2D drawing of fragment in SVG format
+
+    Args:
+        fragment_id (str): Fragment identifier
+        width (int): Width of SVG in pixels
+        height (int): Height of SVG in pixels
+
+    Returns:
+        str: SVG document
+    """
     fragments_db_filename = current_app.config['db_fn']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         try:
@@ -133,7 +143,7 @@ def get_fragment_svg(fragment_id, width, height):
 def get_version():
     """
     Returns:
-        Dict: Version of web service
+        dict[version]: Version of web service
     """
     # TODO check if matrix is usable
     return {'version': __version__}
