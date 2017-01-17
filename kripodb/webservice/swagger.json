@@ -11,7 +11,8 @@
   ],
   "basePath": "/kripo",
   "produces": [
-    "application/json"
+    "application/json",
+    "application/problem+json"
   ],
   "paths": {
     "/fragments/{fragment_id}/similar": {
@@ -85,6 +86,12 @@
             "schema": {
               "$ref": "#/definitions/Version"
             }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       }
@@ -131,6 +138,12 @@
               "items": {
                 "$ref": "#/definitions/Fragment"
               }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
             }
           }
         }
@@ -271,15 +284,19 @@
     },
     "Error": {
       "type": "object",
+      "description": "Problem Details for HTTP APIs, see https://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00",
       "properties": {
-        "code": {
+        "type": {
+          "type": "string"
+        },
+        "status": {
           "type": "integer",
           "format": "int32"
         },
-        "message": {
+        "title": {
           "type": "string"
         },
-        "fields": {
+        "detail": {
           "type": "string"
         }
       }
