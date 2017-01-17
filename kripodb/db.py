@@ -236,18 +236,19 @@ class FragmentsDb(SqliteDb):
                 if pdb['structureId'].lower() + pdb['chainId'] in pdbs_in_fragments:
                     self.add_pdb(pdb)
 
-    def add_fragments_from_shelve(self, myshelve):
+    def add_fragments_from_shelve(self, myshelve, skipdups=False):
         """Adds fragments from shelve to fragments table.
 
         Also creates index on pdb_code column.
 
         Args:
             myshelve (Dict[Fragment]): Dictionary with fragment identifier as key and fragment as value.
+            skipdups (bool): Skip duplicates, instead of dieing one first duplicate
 
         """
         with FastInserter(self.cursor):
             for k, v in six.iteritems(myshelve):
-                self.add_fragment_from_shelve(k, v)
+                self.add_fragment_from_shelve(k, v, skipdups)
 
         self.cursor.execute('CREATE INDEX IF NOT EXISTS fragments_pdb_code_i ON fragments (pdb_code)')
 
@@ -274,7 +275,7 @@ class FragmentsDb(SqliteDb):
 
         self.connection.commit()
 
-    def add_fragment_from_shelve(self, frag_id, fragment):
+    def add_fragment_from_shelve(self, frag_id, fragment, skipdups=False):
         sql = '''INSERT INTO fragments (
             frag_id,
             pdb_code,
@@ -331,7 +332,8 @@ class FragmentsDb(SqliteDb):
             self.cursor.execute(sql, row)
         except sqlite3.IntegrityError as e:
             logging.warning('Duplicate ID: {}, skipping'.format(frag_id))
-            raise e
+            if not skipdups:
+                raise e
 
     def add_pdb(self, pdb):
         sql = '''INSERT OR REPLACE INTO pdbs (
