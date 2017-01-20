@@ -24,13 +24,14 @@ KRIPO stands for Key Representation of Interaction in POckets, see [reference](h
 
 Requirements:
 
-* rdkit, http://rdkit.org, to read SDF files and generate smile strings from molecules
-* libhdf5 headers, to read/write similarity matrix in hdf5 format
+* RDKit, http://www.rdkit.org/docs/Install.html, to read SDF files and generate smile strings from molecules
+* pip, version 8.0.0 or greater, for wheel support
+* git, to clone kripodb repository during installation
 
 ```
 pip install -U setuptools
 pip install numpy
-python setup.py install
+pip install git+https://github.com/3D-e-Chem/kripodb.git
 ```
 
 # Usage
