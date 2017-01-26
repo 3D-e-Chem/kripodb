@@ -17,5 +17,5 @@ test_script:
 - cmd: pytest  --ignore .\tests\test_frozen.py --ignore .\tests\test_script_dive.py --junitxml=junit-results.xml
 on_finish:
 - ps: >-
-    $wc = New-Object 'System.Net.WebClient'
-    $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-results.xml))
+    $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
+    (New-Object 'System.Net.WebClient').UploadFile($url, (Resolve-Path .\junit-results.xml))
