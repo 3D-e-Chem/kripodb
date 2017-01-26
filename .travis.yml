@@ -10,6 +10,7 @@ matrix:
         - INSTALLER=Miniconda3-latest-Linux-x86_64.sh
         - CONDA_INSTALL=""
     - os: osx
+      language: objective-c
       env:
         - INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
         - CONDA_INSTALL=""
