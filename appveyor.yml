@@ -1,4 +1,4 @@
-version: {build}
+version: '{build}'
 environment:
   matrix:
     - PYTHON_VERSION: 2.7
