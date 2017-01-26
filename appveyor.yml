@@ -14,7 +14,7 @@ install:
 build_script:
 - cmd: pip install -r requirements.txt
 test_script:
-- cmd: pytest --junitxml=junit-results.xml
+- cmd: pytest  --ignore .\tests\test_frozen.py --ignore .\tests\test_script_dive.py --junitxml=junit-results.xml
 on_finish:
 - ps: >-
     $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
