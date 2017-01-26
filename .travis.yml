@@ -1,6 +1,6 @@
 language: python
 matrix:
-  include: 
+  include:
     - python: 2.7
       env:
         - INSTALLER=Miniconda-latest-Linux-x86_64.sh
@@ -8,6 +8,10 @@ matrix:
     - python: 3.5
       env:
         - INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+        - CONDA_INSTALL=""
+    - os: osx
+      env:
+        - INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
         - CONDA_INSTALL=""
 before_install:
   - if [ ! -e $HOME/conda/bin/activate ]; then

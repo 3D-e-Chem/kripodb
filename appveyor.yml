@@ -1,0 +1,25 @@
+version: {build}
+environment:
+  matrix:
+    - PYTHON_VERSION: 2.7
+      MINICONDA: C:\Miniconda
+      CONDA_INSTALL: bsddb
+    - PYTHON_VERSION: 3.4
+      MINICONDA: C:\Miniconda3
+      CONDA_INSTALL: ""
+init:
+- "ECHO %PYTHON_VERSION% %MINICONDA%"
+install:
+- "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+- "conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf %CONDA_INSTALL%"
+# TODO cache conda and pip installs
+build_script:
+- cmd: pip install -r requirements.txt
+test_script:
+- cmd: pytest --junitxml=junit-results.xml
+on_finish:
+- ps: >-
+    $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
+    $file = (Resolve-Path .\junit-results.xml)
+    $wc = New-Object 'System.Net.WebClient'
+    $wc.UploadFile($url, $file)
