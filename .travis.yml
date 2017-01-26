@@ -10,6 +10,10 @@ matrix:
         - INSTALLER=Miniconda3-latest-Linux-x86_64.sh
         - CONDA_INSTALL=""
     - os: osx
+      # python language is not supported on osx
+      # due to https://github.com/travis-ci/travis-ci/issues/4729
+      # because miniconda is used,
+      # pretend to be another language which does not error
       language: objective-c
       env:
         - INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
