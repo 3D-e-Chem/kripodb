@@ -2,16 +2,14 @@ version: '{build}'
 environment:
   matrix:
     - PYTHON_VERSION: 2.7
-      MINICONDA: C:\Miniconda
-      CONDA_INSTALL: bsddb
+      MINICONDA: C:\Miniconda-x64
     - PYTHON_VERSION: 3.4
-      MINICONDA: C:\Miniconda3
-      CONDA_INSTALL: ""
+      MINICONDA: C:\Miniconda3-x64
 init:
 - "ECHO %PYTHON_VERSION% %MINICONDA%"
 install:
 - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-- "conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf %CONDA_INSTALL%"
+- conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf
 # TODO cache conda and pip installs
 build_script:
 - cmd: pip install -r requirements.txt
