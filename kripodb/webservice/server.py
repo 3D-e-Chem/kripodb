@@ -14,7 +14,6 @@
 """Kripo datafiles wrapped in a webservice"""
 from __future__ import absolute_import
 
-from kripodb.db import FragmentsDb
 from pkg_resources import resource_filename
 import logging
 
@@ -24,11 +23,12 @@ from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
 import connexion
-from flask import current_app, abort
+from flask import current_app
 from flask.json import JSONEncoder
 
-from ..version import __version__
+from ..db import FragmentsDb
 from ..pairs import open_similarity_matrix
+from ..version import __version__
 
 LOGGER = logging.getLogger(__name__)
 
@@ -73,8 +73,15 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         for hit_id, score in raw_hits:
             hits.append({'query_frag_id': query_id, 'hit_frag_id': hit_id, 'score': score})
     except LookupError:
-        abort(404, 'Fragment with identifier \'{0}\' not found'.format(fragment_id))
+        return fragment_not_found(fragment_id)
     return hits
+
+
+def fragment_not_found(fragment_id):
+    title = 'Not Found'
+    description = 'Fragment with identifier \'{0}\' not found'.format(fragment_id)
+    ext = {'identifier': fragment_id}
+    return connexion.problem(404, title, description, ext=ext)
 
 
 def get_fragments(fragment_ids=None, pdb_codes=None):
@@ -93,20 +100,34 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
     fragments_db_filename = current_app.config['db_fn']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         fragments = []
+        missing_ids = []
         if fragment_ids:
             for frag_id in fragment_ids:
                 try:
                     fragments.append(fragmentsdb[frag_id])
                 except LookupError:
-                    abort(404, 'Fragment with identifier \'{0}\' not found'.format(frag_id))
+                    missing_ids.append(frag_id)
+
         if pdb_codes:
             for pdb_code in pdb_codes:
                 try:
                     for fragment in fragmentsdb.by_pdb_code(pdb_code):
                         fragments.append(fragment)
                 except LookupError:
-                    abort(404, 'Fragments with PDB code \'{0}\' not found'.format(pdb_code))
+                    missing_ids.append(pdb_code)
         # TODO if fragment_ids and pdb_codes are both None then return paged list of all fragments
+        if missing_ids:
+            title = 'Not found'
+            label = 'identifiers'
+            if pdb_codes:
+                label = 'PDB codes'
+            description = 'Fragments with {1} \'{0}\' not found'.format(','.join(missing_ids), label)
+            # connexion.problem is using json.dumps instead of flask custom json encoder, so performing convert myself
+            # TODO remove mol2string conversion when https://github.com/zalando/connexion/issues/266 is fixed
+            for fragment in fragments:
+                fragment['mol'] = MolToMolBlock(fragment['mol']).encode()
+            ext = {'absent_identifiers': missing_ids, 'fragments': fragments}
+            return connexion.problem(404, title, description, ext=ext)
         return fragments
 
 
@@ -137,7 +158,7 @@ def get_fragment_svg(fragment_id, width, height):
             mol = fragment['mol']
             return mol2svg(mol, width, height)
         except LookupError:
-            abort(404, 'Fragment with identifier \'{0}\' not found'.format(fragment_id))
+            return fragment_not_found(fragment_id)
 
 
 def get_version():
@@ -162,11 +183,13 @@ def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'
     """
     app = connexion.App(__name__)
     url = urlparse(external_url)
-    swagger_file = resource_filename(__name__, 'swagger.json')
-    app.add_api(swagger_file, base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
+    swagger_file = resource_filename(__name__, 'swagger.yaml')
     app.app.json_encoder = KripodbJSONEncoder
     app.app.config['matrix'] = sim_matrix
     app.app.config['db_fn'] = frags_db_fn
+    # Keep validate_responses turned off, because of conflict with connexion.problem
+    # see https://github.com/zalando/connexion/issues/266
+    app.add_api(swagger_file, base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
     return app
 
 

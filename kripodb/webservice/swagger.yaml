@@ -1,0 +1,275 @@
+info:
+  version: 1.0.0
+  description: 'API to interact with Kripo fragment, fingerprint and similarity data files.'
+  title: Kripo API
+paths:
+  '/fragments/{fragment_id}/similar':
+    get:
+      x-swagger-router-controller: kripodb.webservice.server
+      responses:
+        '200':
+          description: An array of products
+          schema:
+            items:
+              $ref: '#/definitions/Hit'
+            type: array
+        '404':
+          description: Query fragment identifier was not found
+          schema:
+            $ref: '#/definitions/FragmentNotFound'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+      parameters:
+        - required: true
+          type: string
+          description: Query fragment identifier. e.g. 3j7u_NDP_frag24
+          in: path
+          name: fragment_id
+        - description: Similarity score cutoff.
+          format: double
+          default: 0.45
+          required: false
+          maximum: 1
+          minimum: 0.45
+          in: query
+          type: number
+          name: cutoff
+        - description: Maximum number of hits.
+          format: int32
+          default: 1000
+          required: false
+          maximum: 1000
+          minimum: 0
+          in: query
+          type: integer
+          name: limit
+      tags:
+        - Fragments
+      operationId: get_similar_fragments
+      summary: Similar fragments
+      description: >
+        Retrieve fragments similar to query based on Kripo fingerprint. Hits are
+        ordered by decreasing similarity score (this score ranges from 0,
+        completely dissimilar, to 1, identical).
+  /fragments:
+    get:
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/Fragment'
+            type: array
+        '404':
+          description: Some filter identifiers where not found
+          schema:
+            $ref: '#/definitions/FragmentsNotFound'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+      parameters:
+        - description: Filter by fragment identifiers. e.g. 3j7u_NDP_frag24
+          maxItems: 100
+          in: query
+          minItems: 0
+          items:
+            type: string
+          type: array
+          name: fragment_ids
+        - description: Filter by PDB identifier codes. e.g. 3j7u
+          maxItems: 450
+          in: query
+          minItems: 0
+          items:
+            minLength: 4
+            type: string
+            maxLength: 4
+          type: array
+          name: pdb_codes
+      tags:
+        - Fragments
+      operationId: get_fragments
+      x-swagger-router-controller: kripodb.webservice.server
+      summary: Retrieve fragments
+  '/fragments/{fragment_id}.svg':
+    get:
+      x-swagger-router-controller: kripodb.webservice.server
+      responses:
+        '200':
+          description: SVG image
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+      parameters:
+        - required: true
+          type: string
+          description: Query fragment identifier. e.g. 3j7u_NDP_frag24
+          in: path
+          name: fragment_id
+        - name: width
+          format: int32
+          default: 400
+          required: false
+          maximum: 10000
+          minimum: 0
+          in: query
+          type: integer
+        - name: height
+          format: int32
+          default: 200
+          required: false
+          maximum: 10000
+          minimum: 0
+          in: query
+          type: integer
+      tags:
+        - Fragments
+      operationId: get_fragment_svg
+      produces:
+        - image/svg+xml
+      summary: 2D drawing of fragment in SVG format
+  /version:
+    get:
+      x-swagger-router-controller: kripodb.webservice.server
+      summary: Version of webservice
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Version'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Version
+      operationId: get_version
+schemes:
+  - http
+produces:
+  - application/json
+  - application/problem+json
+basePath: /kripodb
+host: 3d-e-chem.vu-compmedchem.nl
+definitions:
+  Fragment:
+    type: object
+    properties:
+      smiles:
+        type: string
+      pdb_title:
+        type: string
+      het_seq_nr:
+        type: integer
+      het_code:
+        type: string
+      frag_id:
+        type: string
+        description: Fragment identifier
+      rowid:
+        type: integer
+      mol:
+        type: string
+      uniprot_name:
+        type: string
+      nr_r_groups:
+        type: integer
+      pdb_code:
+        type: string
+      atom_codes:
+        type: string
+      prot_chain:
+        type: string
+      uniprot_acc:
+        type: string
+      ec_number:
+        type: string
+      prot_name:
+        type: string
+      frag_nr:
+        type: integer
+      het_chain:
+        type: string
+      hash_code:
+        type: string
+    required:
+    - frag_id
+  Version:
+    type: object
+    description: Version response
+    properties:
+      version:
+        type: string
+        description: The semantic version
+    required:
+    - version
+  Hit:
+    type: object
+    properties:
+      query_frag_id:
+        type: string
+        description: Query fragment identifier
+      hit_frag_id:
+        type: string
+        description: Hit fragment identifier
+      score:
+        type: number
+        description: Similarity score
+        format: double
+    required:
+    - query_frag_id
+    - hit_frag_id
+    - score
+  Error:
+    type: object
+    description: >-
+      Problem Details for HTTP APIs, see
+      https://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00
+    properties:
+      status:
+        type: integer
+        format: int32
+      type:
+        type: string
+      detail:
+        type: string
+      title:
+        type: string
+    required:
+    - status
+    - type
+    - title
+    - detail
+  FragmentNotFound:
+    allOf:
+    - "$ref": "#/definitions/Error"
+    - type: object
+      properties:
+        identifier:
+          description: Identifier that could not be found
+          type: string
+      required:
+      - identifier
+  FragmentsNotFound:
+    allOf:
+    - "$ref": "#/definitions/Error"
+    - type: object
+      properties:
+        absent_identifiers:
+          description: List of identifiers that could not be found
+          type: array
+          items:
+            type: string
+        fragments:
+          description: Fragments that where found
+          type: array
+          items:
+            $ref: '#/definitions/Fragment'
+      required:
+      - absent_identifiers
+      - fragments
+swagger: '2.0'

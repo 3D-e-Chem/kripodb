@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 
 import pytest
+from flask import make_response
 from rdkit.Chem.AllChem import MolFromSmiles, Mol
 import requests_mock
 from werkzeug.exceptions import NotFound
@@ -132,10 +133,9 @@ class TestWebservice(object):
 
     def test_get_fragment_svg_notfound(self, app):
         fragment_id = 'foo-bar'
-        with pytest.raises(NotFound) as cm:
-            with app.app.test_request_context():
-                server.get_fragment_svg(fragment_id, 400, 150)
-        assert 'foo-bar' in cm.value.description
+        with app.app.test_request_context():
+            r = server.get_fragment_svg(fragment_id, 400, 150)
+        assert r.status == []
 
 
 @pytest.fixture
@@ -218,3 +218,6 @@ class TestWebServiceClient(object):
             response = client.fragments_by_id(fragment_ids=['3j7u_NDP_frag24', '3j7u_NDP_frag23'])
 
             assert response == expected
+
+    def test_fragments_by_id_withsomenotfound(self, base_url, client):
+        raise NotImplemented()
