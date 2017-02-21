@@ -198,3 +198,23 @@ class TestWebServiceClient(object):
             del response[1]['mol']
             expected = [{'pdb_code': '3j7u'}, {'pdb_code': '3wxm'}]
             assert response == expected
+
+    def test_fragments_by_id_withmolisnone(self, base_url, client):
+        with requests_mock.mock() as m:
+            expected = [
+                {'smiles': None,
+                 'pdb_code': '3j7u',
+                 'pdb_title': 'Catalase structure determined by electron crystallography of thin 3D crystals',
+                 'atom_codes': 'PA,O1A,O2A,O5B,C5B,C4B,O4B,C3B,O3B,C2B,C1B,O3,PN,O1N,O2N,O5D,C5D,C4D,O4D,C3D,O3D,C2D,O2D,C1D,N1N,C2N,C3N,C7N,O7N,N7N,C4N,C5N,C6N',
+                 'uniprot_acc': 'P00432',
+                 'mol': None,
+                 'prot_chain': 'A', 'het_seq_nr': 602, 'het_code': 'NDP', 'prot_name': 'Catalase',
+                 'ec_number': '1.11.1.6', 'frag_nr': 24, 'frag_id': '3j7u_NDP_frag24', 'rowid': 7059,
+                 'uniprot_name': 'Catalase', 'nr_r_groups': 2, 'het_chain': 'A', 'hash_code': '6ef5a609fb192dba'}
+            ]
+            url = base_url + '/fragments?fragment_ids=3j7u_NDP_frag24,3j7u_NDP_frag23'
+            m.get(url, json=expected)
+
+            response = client.fragments_by_id(fragment_ids=['3j7u_NDP_frag24', '3j7u_NDP_frag23'])
+
+            assert response == expected

@@ -92,5 +92,6 @@ class WebserviceClient(object):
         fragments = response.json()
         # Convert molblock string to RDKit Mol object
         for fragment in fragments:
-            fragment['mol'] = MolFromMolBlock(fragment['mol'])
+            if fragment['mol'] is not None:
+                fragment['mol'] = MolFromMolBlock(fragment['mol'])
         return fragments
