@@ -14,18 +14,14 @@
 
 from __future__ import absolute_import
 
-import os
-import socket
-
 import pytest
-import requests
-import signal
+
+import requests_mock
 from pandas.util.testing import assert_frame_equal
 import pandas as pd
 
 from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id
 from kripodb.webservice.client import IncompleteFragments
-from kripodb.webservice.server import serve_app
 
 
 def test_similarities():
@@ -102,40 +98,59 @@ def test_fragments_by_pdb_codes_with_prefix():
 
 
 @pytest.fixture
-def open_port():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("", 0))
-    s.listen(1)
-    port = s.getsockname()[1]
-    s.close()
-    return port
+def base_url():
+    return 'http://localhost:8084/kripo'
 
 
-@pytest.fixture
-def server_url(open_port):
-    pid = os.fork()
-    if pid == 0:
-        serve_app(matrix='data/similarities.h5', db='data/fragments.sqlite', internal_port=open_port)
-    else:
-        while True:
-            try:
-                requests.get('http://localhost:{0}'.format(open_port))
-                break
-            except requests.ConnectionError:
-                continue
-    yield 'http://localhost:{0}'.format(open_port)
-    os.kill(pid, signal.SIGTERM)
+def test_fragments_by_pdb_codes__usingwebservice_withbadid(base_url):
+    with requests_mock.mock() as m:
+        url = base_url + '/fragments?pdb_codes=0000'
+        body = {
+                'detail': "Fragment with identifier '0000' not found",
+                'absent_identifiers': ['0000'],
+                'fragments': [],
+                'status': 404,
+                'title': 'Not Found',
+                'type': 'about:blank'
+            }
+        m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
+
+        with pytest.raises(IncompleteFragments) as e:
+            pdb_codes = pd.Series(['0000'])
+            fragments_by_pdb_codes(pdb_codes, base_url)
+
+        assert e.value.fragments.empty
+        assert e.value.absent_identifiers == ['0000']
 
 
-@pytest.mark.skip(reason='Server is still booting when this test is run, so it fails for the wrong reason')
-def test_fragments_by_pdb_codes__usingwebservice_withbadids(server_url):
-    pdb_codes = pd.Series(['0000'])
+def test_fragments_by_pdb_codes__usingwebservice_withsomebadid(base_url):
+    with requests_mock.mock() as m:
+        url = base_url + '/fragments?pdb_codes=2n2k,0000'
+        # TODO use value mol
+        fragments = [{
+            'nr_r_groups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+            'atom_codes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hash_code': 'd491952cd7c9dc30',
+            'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'het_chain': 'A', 'het_seq_nr': 101,
+            'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+            'ec_number': None, 'mol': None,
+            'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+        }]
+        body = {
+                'detail': "Fragment with identifier '0000' not found",
+                'absent_identifiers': ['0000'],
+                'fragments': fragments,
+                'status': 404,
+                'title': 'Not Found',
+                'type': 'about:blank'
+            }
+        m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
 
-    with pytest.raises(IncompleteFragments) as e:
-        fragments_by_pdb_codes(pdb_codes, server_url)
+        with pytest.raises(IncompleteFragments) as e:
+            pdb_codes = pd.Series(['2n2k', '0000'])
+            fragments_by_pdb_codes(pdb_codes, base_url)
 
-    assert e.value.fragments == pd.DataFrame()
-    assert e.value.absent_identifiers == ['0000']
+        assert pd.DataFrame(fragments).equals(e.value.fragments)
+        assert e.value.absent_identifiers == ['0000']
 
 
 def test_fragments_by_id():
@@ -173,3 +188,54 @@ def test_fragments_by_id_with_prefix():
         'prefix_pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
     }]
     assert_frame_equal(result, pd.DataFrame(expected))
+
+
+def test_fragments_by_id__usingwebservice_withbadid(base_url):
+    with requests_mock.mock() as m:
+        url = base_url + '/fragments?fragment_ids=foo-bar'
+        body = {
+                'detail': "Fragment with identifier 'foo-bar' not found",
+                'absent_identifiers': ['foo-bar'],
+                'fragments': [],
+                'status': 404,
+                'title': 'Not Found',
+                'type': 'about:blank'
+            }
+        m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
+
+        with pytest.raises(IncompleteFragments) as e:
+            frag_ids = pd.Series(['foo-bar'])
+            fragments_by_id(frag_ids, base_url)
+
+        assert e.value.fragments.empty
+        assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_fragments_by_id__usingwebservice_withsomebadid(base_url):
+    with requests_mock.mock() as m:
+        url = base_url + '/fragments?fragment_ids=2n2k_MTN_frag1,foo-bar'
+        # TODO use value mol
+        fragments = [{
+            'nr_r_groups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+            'atom_codes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hash_code': 'd491952cd7c9dc30',
+            'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'het_chain': 'A', 'het_seq_nr': 101,
+            'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+            'ec_number': None, 'mol': None,
+            'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+        }]
+        body = {
+                'detail': "Fragment with identifier 'foo-bar' not found",
+                'absent_identifiers': ['foo-bar'],
+                'fragments': fragments,
+                'status': 404,
+                'title': 'Not Found',
+                'type': 'about:blank'
+            }
+        m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
+
+        with pytest.raises(IncompleteFragments) as e:
+            frag_ids = pd.Series(['2n2k_MTN_frag1', 'foo-bar'])
+            fragments_by_id(frag_ids, base_url)
+
+        assert pd.DataFrame(fragments).equals(e.value.fragments)
+        assert e.value.absent_identifiers == ['foo-bar']

@@ -22,7 +22,7 @@ import pandas as pd
 
 from .db import FragmentsDb
 from .pairs import similar, open_similarity_matrix
-from .webservice.client import WebserviceClient
+from .webservice.client import WebserviceClient, IncompleteFragments
 
 
 def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000):
@@ -107,7 +107,12 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):
     """
     if fragments_db_filename_or_url.startswith('http'):
         client = WebserviceClient(fragments_db_filename_or_url)
-        fragments = client.fragments_by_pdb_codes(pdb_codes)
+        try:
+            fragments = client.fragments_by_pdb_codes(pdb_codes)
+        except IncompleteFragments as e:
+            df = pd.DataFrame(e.fragments)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompleteFragments(e.absent_identifiers, df)
     else:
         fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
         fragments = []
@@ -149,7 +154,12 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
     """
     if fragments_db_filename_or_url.startswith('http'):
         client = WebserviceClient(fragments_db_filename_or_url)
-        fragments = client.fragments_by_id(fragment_ids)
+        try:
+            fragments = client.fragments_by_id(fragment_ids)
+        except IncompleteFragments as e:
+            df = pd.DataFrame(e.fragments)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompleteFragments(e.absent_identifiers, df)
     else:
         fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
         fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]

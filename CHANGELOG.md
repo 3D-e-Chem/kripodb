@@ -8,6 +8,7 @@ Formatted as described on http://keepachangelog.com/.
 ### Fixes
 
 - Fetch fragment with no molblock throws error (#41)
+- Not found response of web service should be JSON (#42)
 
 ## [2.1.0] - 2017-01-17
 
