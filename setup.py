@@ -13,7 +13,7 @@ setup(
     install_requires=['intbitset', 'tables', 'pandas', 'connexion', 'requests', 'scipy', 'progressbar2', 'six'],
     setup_requires=['pytest-runner'],
     package_data={
-      'kripodb.webservice': ['swagger.json'],
+      'kripodb.webservice': ['swagger.yaml'],
     },
     include_package_data=True,
     zip_safe=False,

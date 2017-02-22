@@ -13,10 +13,19 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
+import os
+import socket
+
+import pytest
+import requests
+import signal
 from pandas.util.testing import assert_frame_equal
 import pandas as pd
 
 from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id
+from kripodb.webservice.client import IncompleteFragments
+from kripodb.webservice.server import serve_app
 
 
 def test_similarities():
@@ -90,6 +99,43 @@ def test_fragments_by_pdb_codes_with_prefix():
         'prefix_pdb_title': 'Crystal structure of trypanosoma brucei gambiense glycerol kinase in complex with glycerol 3-phosphate',
     }]
     assert_frame_equal(result, pd.DataFrame(expected))
+
+
+@pytest.fixture
+def open_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    s.listen(1)
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
+@pytest.fixture
+def server_url(open_port):
+    pid = os.fork()
+    if pid == 0:
+        serve_app(matrix='data/similarities.h5', db='data/fragments.sqlite', internal_port=open_port)
+    else:
+        while True:
+            try:
+                requests.get('http://localhost:{0}'.format(open_port))
+                break
+            except requests.ConnectionError:
+                continue
+    yield 'http://localhost:{0}'.format(open_port)
+    os.kill(pid, signal.SIGTERM)
+
+
+@pytest.mark.skip(reason='Server is still booting when this test is run, so it fails for the wrong reason')
+def test_fragments_by_pdb_codes__usingwebservice_withbadids(server_url):
+    pdb_codes = pd.Series(['0000'])
+
+    with pytest.raises(IncompleteFragments) as e:
+        fragments_by_pdb_codes(pdb_codes, server_url)
+
+    assert e.value.fragments == pd.DataFrame()
+    assert e.value.absent_identifiers == ['0000']
 
 
 def test_fragments_by_id():

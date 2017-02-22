@@ -154,7 +154,6 @@ def get_fragment_svg(fragment_id, width, height):
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         try:
             fragment = fragmentsdb[fragment_id]
-            LOGGER.warning([fragment_id, width, height])
             mol = fragment['mol']
             return mol2svg(mol, width, height)
         except LookupError:
