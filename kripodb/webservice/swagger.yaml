@@ -1,7 +1,15 @@
+swagger: '2.0'
 info:
-  version: 1.0.0
+  version: {{ version }}
   description: 'API to interact with Kripo fragment, fingerprint and similarity data files.'
   title: Kripo API
+schemes:
+  - {{ scheme }}
+host: {{ hostport }}
+basePath: /kripodb
+produces:
+  - application/json
+  - application/problem+json
 paths:
   '/fragments/{fragment_id}/similar':
     get:
@@ -148,13 +156,6 @@ paths:
       tags:
         - Version
       operationId: get_version
-schemes:
-  - http
-produces:
-  - application/json
-  - application/problem+json
-basePath: /kripodb
-host: 3d-e-chem.vu-compmedchem.nl
 definitions:
   Fragment:
     type: object
@@ -272,4 +273,3 @@ definitions:
       required:
       - absent_identifiers
       - fragments
-swagger: '2.0'

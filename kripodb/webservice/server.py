@@ -186,9 +186,10 @@ def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'
     app.app.json_encoder = KripodbJSONEncoder
     app.app.config['matrix'] = sim_matrix
     app.app.config['db_fn'] = frags_db_fn
+    arguments = {'hostport': url.netloc, 'scheme': url.scheme, 'version': __version__}
     # Keep validate_responses turned off, because of conflict with connexion.problem
     # see https://github.com/zalando/connexion/issues/266
-    app.add_api(swagger_file, base_path=url.path, arguments={'hostport': url.netloc, 'scheme': url.scheme})
+    app.add_api(swagger_file, base_path=url.path, arguments=arguments)
     return app
 
 
