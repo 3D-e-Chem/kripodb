@@ -117,10 +117,10 @@ class WebserviceClient(object):
             response.raise_for_status()
             fragments = response.json()
         except HTTPError as e:
-            body = e.response.json()
-            print body
-            fragments = body['fragments']
-            absent_identifiers = body['absent_identifiers']
+            if e.response.status_code == 404:
+                body = e.response.json()
+                fragments = body['fragments']
+                absent_identifiers = body['absent_identifiers']
         # Convert molblock string to RDKit Mol object
         for fragment in fragments:
             if fragment['mol'] is not None:

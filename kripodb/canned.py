@@ -19,10 +19,25 @@ For using Kripo data files inside KNIME (http://www.knime.org)
 from __future__ import absolute_import
 
 import pandas as pd
+from requests import HTTPError
 
 from .db import FragmentsDb
 from .pairs import similar, open_similarity_matrix
 from .webservice.client import WebserviceClient, IncompleteFragments
+
+
+class IncompleteHits(Exception):
+    def __init__(self, absent_identifiers, hits):
+        """List of hits and list of identifiers for which no information could be found
+
+        Args:
+            absent_identifiers (List[str]): List of identifiers for which no information could be found
+            hits (pandas.DataFrame): Data frame with query_fragment_id, hit_frag_id and score columns
+        """
+        message = 'Some identifiers could not be found'
+        super(IncompleteHits, self).__init__(message)
+        self.absent_identifiers = absent_identifiers
+        self.hits = hits
 
 
 def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000):
@@ -54,24 +69,38 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
 
     Returns:
         pandas.DataFrame: Data frame with query_fragment_id, hit_frag_id and score columns
+
+    Raises:
+        IncompleteHits: When one or more of the identifiers could not be found.
     """
     hits = []
+    absent_identifiers = []
     if similarity_matrix_filename_or_url.startswith('http'):
         client = WebserviceClient(similarity_matrix_filename_or_url)
         for query in queries:
-            qhits = client.similar_fragments(query, cutoff, limit)
-            hits.extend(qhits)
+            try:
+                qhits = client.similar_fragments(query, cutoff, limit)
+                hits.extend(qhits)
+            except HTTPError as e:
+                if e.response.status_code == 404:
+                    absent_identifiers.append(query)
     else:
         similarity_matrix = open_similarity_matrix(similarity_matrix_filename_or_url)
         for query in queries:
-            for query_id, hit_id, score in similar(query, similarity_matrix, cutoff, limit):
-                hit = {'query_frag_id': query_id,
-                       'hit_frag_id': hit_id,
-                       'score': score,
-                       }
-                hits.append(hit)
+            try:
+                for query_id, hit_id, score in similar(query, similarity_matrix, cutoff, limit):
+                    hit = {'query_frag_id': query_id,
+                           'hit_frag_id': hit_id,
+                           'score': score,
+                           }
+                    hits.append(hit)
+            except KeyError:
+                absent_identifiers.append(query)
 
         similarity_matrix.close()
+
+    if absent_identifiers:
+        raise IncompleteHits(absent_identifiers, pd.DataFrame(hits))
 
     return pd.DataFrame(hits)
 

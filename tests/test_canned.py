@@ -20,7 +20,7 @@ import requests_mock
 from pandas.util.testing import assert_frame_equal
 import pandas as pd
 
-from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id
+from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id, IncompleteHits
 from kripodb.webservice.client import IncompleteFragments
 
 
@@ -44,6 +44,61 @@ def test_similarities_limitof1():
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
     ]
     assert_frame_equal(result, pd.DataFrame(expected))
+
+
+def test_similarities__filebased_badid():
+    queries = pd.Series(['foo-bar'])
+
+    with pytest.raises(IncompleteHits) as e:
+        similarities(queries, 'data/similarities.h5', 0.55, 1)
+
+    assert_frame_equal(e.value.hits, pd.DataFrame())
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_similarities__filebased_partbadid():
+    queries = pd.Series(['3j7u_NDP_frag24', 'foo-bar'])
+
+    with pytest.raises(IncompleteHits) as e:
+        similarities(queries, 'data/similarities.h5', 0.55, 1)
+
+    expected = [
+        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
+    ]
+    assert_frame_equal(e.value.hits, pd.DataFrame(expected))
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_similarities__webbased_badid(base_url):
+    queries = pd.Series(['foo-bar'])
+
+    with requests_mock.mock() as m:
+        url = base_url + '/fragments/' + 'foo-bar' + '/similar?cutoff=0.55'
+        m.get(url, status_code=404)
+
+        with pytest.raises(IncompleteHits) as e:
+            similarities(queries, base_url, 0.55)
+
+    assert_frame_equal(e.value.hits, pd.DataFrame())
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_similarities__webbased_partbadid(base_url):
+    queries = pd.Series(['3j7u_NDP_frag24', 'foo-bar'])
+    body = [
+        {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
+    ]
+
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/' + 'foo-bar' + '/similar?cutoff=0.55', status_code=404)
+        url = base_url + '/fragments/' + '3j7u_NDP_frag24' + '/similar?cutoff=0.55'
+        m.get(url, json=body)
+
+        with pytest.raises(IncompleteHits) as e:
+            similarities(queries, base_url, 0.55)
+
+    assert_frame_equal(e.value.hits, pd.DataFrame(body))
+    assert e.value.absent_identifiers == ['foo-bar']
 
 
 def test_fragments_by_pdb_codes():

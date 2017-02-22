@@ -5,6 +5,10 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Changed
+
+- Canned methods can now raise exception with ids which could not be found and data for ids which could
+
 ### Fixes
 
 - Fetch fragment with no molblock throws error (#41)
