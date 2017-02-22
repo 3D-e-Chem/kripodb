@@ -104,6 +104,9 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):
 
     Returns:
         pandas.DataFrame: Data frame with fragment information
+
+    Raises:
+        IncompleteFragments: When one or more of the identifiers could not be found.
     """
     if fragments_db_filename_or_url.startswith('http'):
         client = WebserviceClient(fragments_db_filename_or_url)
@@ -116,9 +119,17 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):
     else:
         fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
         fragments = []
+        absent_identifiers = []
         for pdb_code in pdb_codes:
-            for fragment in fragmentsdb.by_pdb_code(pdb_code):
-                fragments.append(fragment)
+            try:
+                for fragment in fragmentsdb.by_pdb_code(pdb_code):
+                    fragments.append(fragment)
+            except LookupError as e:
+                absent_identifiers.append(pdb_code)
+        if absent_identifiers:
+            df = pd.DataFrame(fragments)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompleteFragments(absent_identifiers, df)
 
     df = pd.DataFrame(fragments)
     df.rename(columns=lambda x: prefix + x, inplace=True)
@@ -151,6 +162,9 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
 
     Returns:
         pandas.DataFrame: Data frame with fragment information
+
+    Raises:
+        IncompleteFragments: When one or more of the identifiers could not be found.
     """
     if fragments_db_filename_or_url.startswith('http'):
         client = WebserviceClient(fragments_db_filename_or_url)
@@ -162,7 +176,17 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
             raise IncompleteFragments(e.absent_identifiers, df)
     else:
         fragmentsdb = FragmentsDb(fragments_db_filename_or_url)
-        fragments = [fragmentsdb[frag_id] for frag_id in fragment_ids]
+        fragments = []
+        absent_identifiers = []
+        for frag_id in fragment_ids:
+            try:
+                fragments.append(fragmentsdb[frag_id])
+            except KeyError:
+                absent_identifiers.append(frag_id)
+        if absent_identifiers:
+            df = pd.DataFrame(fragments)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompleteFragments(absent_identifiers, df)
 
     df = pd.DataFrame(fragments)
     df.rename(columns=lambda x: prefix + x, inplace=True)

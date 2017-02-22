@@ -97,6 +97,51 @@ def test_fragments_by_pdb_codes_with_prefix():
     assert_frame_equal(result, pd.DataFrame(expected))
 
 
+def test_fragments_by_pdb_codes__withbadid():
+    pdb_codes = pd.Series(['0000'])
+
+    with pytest.raises(IncompleteFragments) as e:
+        fragments_by_pdb_codes(pdb_codes, 'data/fragments.sqlite')
+
+    assert_frame_equal(e.value.fragments, pd.DataFrame())
+    assert e.value.absent_identifiers == ['0000']
+
+
+def test_fragments_by_pdb_codes__withsomebadid():
+    pdb_codes = pd.Series(['2n2k', '0000'])
+    with pytest.raises(IncompleteFragments) as e:
+        fragments_by_pdb_codes(pdb_codes, 'data/fragments.sqlite')
+
+    # ignoring molecules
+    e.value.fragments.drop('mol', axis=1, inplace=True, errors='ignore')
+
+    expected = [{
+        'nr_r_groups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+        'atom_codes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hash_code': 'd491952cd7c9dc30',
+        'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'het_chain': 'A', 'het_seq_nr': 101,
+        'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+        'ec_number': None,
+        'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }, {
+        'nr_r_groups': 1, 'smiles': '[*]C[S-]', 'pdb_code': '2n2k', 'atom_codes': 'C4,S1', 'het_code': 'MTN',
+        'hash_code': '8b8dc32f7e8a9db3', 'frag_nr': 2, 'frag_id': '2n2k_MTN_frag2', 'rowid': 175950, 'het_chain': 'A',
+        'het_seq_nr': 101,
+        'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+        'ec_number': None,
+        'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }, {
+        'nr_r_groups': 1, 'smiles': '[*]C1=CC(C)(C)[NH+](O)C1(C)C', 'pdb_code': '2n2k',
+        'atom_codes': 'O1,N1,C1,C2,C3,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hash_code': '17c58abf7bdf33ba',
+        'frag_nr': 3, 'frag_id': '2n2k_MTN_frag3', 'rowid': 175971, 'het_chain': 'A', 'het_seq_nr': 101,
+        'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+        'ec_number': None,
+        'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }]
+
+    assert_frame_equal(pd.DataFrame(expected), e.value.fragments)
+    assert e.value.absent_identifiers == ['0000']
+
+
 @pytest.fixture
 def base_url():
     return 'http://localhost:8084/kripo'
@@ -149,7 +194,7 @@ def test_fragments_by_pdb_codes__usingwebservice_withsomebadid(base_url):
             pdb_codes = pd.Series(['2n2k', '0000'])
             fragments_by_pdb_codes(pdb_codes, base_url)
 
-        assert pd.DataFrame(fragments).equals(e.value.fragments)
+        assert_frame_equal(pd.DataFrame(fragments), e.value.fragments)
         assert e.value.absent_identifiers == ['0000']
 
 
@@ -237,5 +282,35 @@ def test_fragments_by_id__usingwebservice_withsomebadid(base_url):
             frag_ids = pd.Series(['2n2k_MTN_frag1', 'foo-bar'])
             fragments_by_id(frag_ids, base_url)
 
-        assert pd.DataFrame(fragments).equals(e.value.fragments)
+        assert_frame_equal(pd.DataFrame(fragments), e.value.fragments)
         assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_fragments_by_id__withbadid():
+    frag_ids = pd.Series(['foo-bar'])
+
+    with pytest.raises(IncompleteFragments) as e:
+        fragments_by_id(frag_ids, 'data/fragments.sqlite')
+
+    assert_frame_equal(e.value.fragments, pd.DataFrame())
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_fragments_by_id__withsomebadid():
+    frag_ids = pd.Series(['2n2k_MTN_frag1', 'foo-bar'])
+
+    with pytest.raises(IncompleteFragments) as e:
+        fragments_by_id(frag_ids, 'data/fragments.sqlite')
+
+    fragments = [{
+        'nr_r_groups': 0, 'smiles': 'CC1(C)C=C(C[S-])C(C)(C)[NH+]1O', 'pdb_code': '2n2k',
+        'atom_codes': 'O1,N1,C1,C2,C3,C4,S1,C5,C6,C7,C8,C9', 'het_code': 'MTN', 'hash_code': 'd491952cd7c9dc30',
+        'frag_nr': 1, 'frag_id': '2n2k_MTN_frag1', 'rowid': 175992, 'het_chain': 'A', 'het_seq_nr': 101,
+        'prot_chain': 'A', 'uniprot_acc': 'P0CG48', 'uniprot_name': 'Polyubiquitin-C', 'prot_name': 'ubiquitin',
+        'ec_number': None,
+        'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
+    }]
+    # ignoring molecules
+    e.value.fragments.drop('mol', axis=1, inplace=True, errors='ignore')
+    assert_frame_equal(e.value.fragments, pd.DataFrame(fragments))
+    assert e.value.absent_identifiers == ['foo-bar']
