@@ -19,7 +19,7 @@ from numpy.testing import assert_array_almost_equal
 
 from kripodb.hdf5 import SimilarityMatrix
 import kripodb.script.similarities
-from .utils import tmpname
+from ..utils import tmpname
 
 
 def test_simmatrix_import_run():

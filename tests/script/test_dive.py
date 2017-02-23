@@ -19,7 +19,7 @@ from six import StringIO
 import pytest
 
 import kripodb.script.dive as dive
-from .utils import FrozenSimilarityMatrixInMemory
+from ..utils import FrozenSimilarityMatrixInMemory
 
 
 def uniprot_mapping():

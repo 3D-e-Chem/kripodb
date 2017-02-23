@@ -125,7 +125,7 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
             # connexion.problem is using json.dumps instead of flask custom json encoder, so performing convert myself
             # TODO remove mol2string conversion when https://github.com/zalando/connexion/issues/266 is fixed
             for fragment in fragments:
-                fragment['mol'] = MolToMolBlock(fragment['mol']).encode()
+                fragment['mol'] = MolToMolBlock(fragment['mol'])
             ext = {'absent_identifiers': missing_ids, 'fragments': fragments}
             return connexion.problem(404, title, description, ext=ext)
         return fragments
