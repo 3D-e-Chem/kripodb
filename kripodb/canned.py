@@ -108,10 +108,10 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
             df = pd.DataFrame({'query_frag_id': pd.Series(dtype=str),
                                'hit_frag_id': pd.Series(dtype=str),
                                'score': pd.Series(dtype=np.double)
-                               })
+                               }, columns=['query_frag_id', 'hit_frag_id', 'score'])
         raise IncompleteHits(absent_identifiers, df)
 
-    return pd.DataFrame(hits)
+    return pd.DataFrame(hits, columns=['query_frag_id', 'hit_frag_id', 'score'])
 
 
 def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):

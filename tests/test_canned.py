@@ -30,7 +30,7 @@ def empty_hits_df():
     return pd.DataFrame({'query_frag_id': pd.Series(dtype=str),
                          'hit_frag_id': pd.Series(dtype=str),
                          'score': pd.Series(dtype=np.double)
-                         })
+                         }, columns=['query_frag_id', 'hit_frag_id', 'score'])
 
 
 def test_similarities():
@@ -41,7 +41,7 @@ def test_similarities():
     expected = [
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
     ]
-    assert_frame_equal(result, pd.DataFrame(expected))
+    assert_frame_equal(result, pd.DataFrame(expected, columns=['query_frag_id', 'hit_frag_id', 'score']))
 
 
 def test_similarities_limitof1():
@@ -52,7 +52,7 @@ def test_similarities_limitof1():
     expected = [
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
     ]
-    assert_frame_equal(result, pd.DataFrame(expected))
+    assert_frame_equal(result, pd.DataFrame(expected, columns=['query_frag_id', 'hit_frag_id', 'score']))
 
 
 def test_similarities__filebased_badid(empty_hits_df):
