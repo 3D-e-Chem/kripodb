@@ -15,6 +15,22 @@
 from __future__ import absolute_import
 import requests
 from rdkit.Chem.AllChem import MolFromMolBlock
+from requests import HTTPError
+
+
+class IncompleteFragments(Exception):
+
+    def __init__(self, absent_identifiers, fragments):
+        """List of fragments and list of identifiers for which no information could be found
+
+        Args:
+            absent_identifiers (List[str]): List of identifiers for which no information could be found
+            fragments (List[dict]): List of fragment information that could be retrieved
+        """
+        message = 'Some identifiers could not be found'
+        super(IncompleteFragments, self).__init__(message)
+        self.absent_identifiers = absent_identifiers
+        self.fragments = fragments
 
 
 class WebserviceClient(object):
@@ -41,6 +57,9 @@ class WebserviceClient(object):
 
         Returns:
             list[dict]: Query fragment identifier, hit fragment identifier and similarity score
+
+        Raises:
+            request.HTTPError: When fragment_id could not be found
         """
         url = self.base_url + '/fragments/{fragment_id}/similar'.format(fragment_id=fragment_id)
         params = {'cutoff': cutoff, 'limit': limit}
@@ -74,24 +93,36 @@ class WebserviceClient(object):
             list[dict]: List of fragment information
 
         Raises:
-            requests.HTTPError: When one of the identifiers could not be found.
+            IncompleteFragments: When one or more of the identifiers could not be found.
         """
         return self._fetch_chunked_fragments('fragment_ids', fragment_ids, chunk_size)
 
     def _fetch_chunked_fragments(self, idtype, ids, chunk_size):
         fragments = []
+        absent_identifiers = []
         for start in range(0, len(ids), chunk_size):
             stop = chunk_size + start
-            fragments += self._fetch_fragments(idtype, ids[start:stop])
+            (chunk_fragments, chunk_absent_identifiers) = self._fetch_fragments(idtype, ids[start:stop])
+            fragments += chunk_fragments
+            absent_identifiers += chunk_absent_identifiers
+        if chunk_absent_identifiers:
+            raise IncompleteFragments(absent_identifiers, fragments)
         return fragments
 
     def _fetch_fragments(self, idtype, ids):
         url = self.base_url + '/fragments?{idtype}={ids}'.format(idtype=idtype, ids=','.join(ids))
-        response = requests.get(url)
-        response.raise_for_status()
-        fragments = response.json()
+        absent_identifiers = []
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            fragments = response.json()
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                body = e.response.json()
+                fragments = body['fragments']
+                absent_identifiers = body['absent_identifiers']
         # Convert molblock string to RDKit Mol object
         for fragment in fragments:
             if fragment['mol'] is not None:
                 fragment['mol'] = MolFromMolBlock(fragment['mol'])
-        return fragments
+        return fragments, absent_identifiers

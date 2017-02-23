@@ -5,9 +5,16 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
-### Fixes
+## [2.2.0] - 2017-02-23
+
+### Changed
+
+- Canned methods can now raise exception with ids which could not be found and data for ids which could
+
+### Fixed
 
 - Fetch fragment with no molblock throws error (#41)
+- Not found response of web service should be JSON (#42)
 
 ## [2.1.0] - 2017-01-17
 
