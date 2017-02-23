@@ -106,12 +106,19 @@ def test_get_fragments__fragid(app, expected_fragments_info):
         assert result == expected_fragments_info
 
 
+def response_json(response):
+    try:
+        return json.loads(response.data.decode())
+    except AttributeError:
+        return json.loads(response.data)
+
+
 def test_get_fragments__fragid_notfound(app):
     fragment_id = 'foo-bar'
     with app.app.test_request_context():
         response = server.get_fragments(fragment_ids=[fragment_id])
         assert response.status_code == 404
-        body = json.loads(response.data.decode())
+        body = response_json(response)
         assert fragment_id in body['detail']
         assert [fragment_id] == body['absent_identifiers']
 
@@ -122,7 +129,7 @@ def test_fragments_by_id_withsomenotfound(app, expected_fragments_info_with_mol)
     with app.app.test_request_context():
         response = server.get_fragments(fragment_ids=[present_fragment_id, absent_fragment_id])
         assert response.status_code == 404
-        body = json.loads(response.data.decode())
+        body = response_json(response)
         assert body['fragments'] == expected_fragments_info_with_mol
         assert absent_fragment_id in body['detail']
         assert [absent_fragment_id] == body['absent_identifiers']
@@ -141,7 +148,7 @@ def test_get_fragments__pdbcode_notfound(app):
     with app.app.test_request_context():
         response = server.get_fragments(pdb_codes=[pdb_code])
         assert response.status_code == 404
-        body = json.loads(response.data.decode())
+        body = response_json(response)
         assert pdb_code in body['detail']
         assert [pdb_code] == body['absent_identifiers']
 
@@ -171,8 +178,8 @@ def test_get_fragment_svg(app):
 def test_get_fragment_svg_notfound(app):
     fragment_id = 'foo-bar'
     with app.app.test_request_context():
-        r = server.get_fragment_svg(fragment_id, 400, 150)
-        assert r.status_code == 404
-        body = json.loads(r.data.decode())
+        response = server.get_fragment_svg(fragment_id, 400, 150)
+        assert response.status_code == 404
+        body = response_json(response)
         assert fragment_id in body['detail']
         assert fragment_id == body['identifier']
