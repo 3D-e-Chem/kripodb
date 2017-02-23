@@ -105,10 +105,10 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
             df = pd.DataFrame(hits)
         else:
             # empty hits array will give dataframe without columns
-            df = pd.DataFrame({'hit_frag_id': pd.Series(dtype=str),
-                          'query_frag_id': pd.Series(dtype=str),
-                          'score': pd.Series(dtype=np.double)
-                          })
+            df = pd.DataFrame({'query_frag_id': pd.Series(dtype=str),
+                               'hit_frag_id': pd.Series(dtype=str),
+                               'score': pd.Series(dtype=np.double)
+                               })
         raise IncompleteHits(absent_identifiers, df)
 
     return pd.DataFrame(hits)

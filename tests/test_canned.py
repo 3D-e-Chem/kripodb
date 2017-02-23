@@ -27,8 +27,8 @@ from kripodb.webservice.client import IncompleteFragments
 
 @pytest.fixture
 def empty_hits_df():
-    return pd.DataFrame({'hit_frag_id': pd.Series(dtype=str),
-                         'query_frag_id': pd.Series(dtype=str),
+    return pd.DataFrame({'query_frag_id': pd.Series(dtype=str),
+                         'hit_frag_id': pd.Series(dtype=str),
                          'score': pd.Series(dtype=np.double)
                          })
 
