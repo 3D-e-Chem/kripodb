@@ -91,7 +91,7 @@ def test_get_similar_fragments_notfound(app):
     with app.app.test_request_context():
         response = server.get_similar_fragments(fragment_id, cutoff, 1000)
         assert response.status_code == 404
-        body = json.loads(response.data.decode())
+        body = response_json(response)
         assert fragment_id in body['detail']
         assert fragment_id == body['identifier']
 
