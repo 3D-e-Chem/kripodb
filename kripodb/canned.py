@@ -18,6 +18,7 @@ For using Kripo data files inside KNIME (http://www.knime.org)
 
 from __future__ import absolute_import
 
+import numpy as np
 import pandas as pd
 from requests import HTTPError
 
@@ -100,7 +101,15 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
         similarity_matrix.close()
 
     if absent_identifiers:
-        raise IncompleteHits(absent_identifiers, pd.DataFrame(hits))
+        if len(hits) > 0:
+            df = pd.DataFrame(hits)
+        else:
+            # empty hits array will give dataframe without columns
+            df = pd.DataFrame({'hit_frag_id': pd.Series(dtype=str),
+                          'query_frag_id': pd.Series(dtype=str),
+                          'score': pd.Series(dtype=np.double)
+                          })
+        raise IncompleteHits(absent_identifiers, df)
 
     return pd.DataFrame(hits)
 

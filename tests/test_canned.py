@@ -18,10 +18,19 @@ import pytest
 
 import requests_mock
 from pandas.util.testing import assert_frame_equal
+import numpy as np
 import pandas as pd
 
 from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id, IncompleteHits
 from kripodb.webservice.client import IncompleteFragments
+
+
+@pytest.fixture
+def empty_hits_df():
+    return pd.DataFrame({'hit_frag_id': pd.Series(dtype=str),
+                         'query_frag_id': pd.Series(dtype=str),
+                         'score': pd.Series(dtype=np.double)
+                         })
 
 
 def test_similarities():
@@ -46,13 +55,13 @@ def test_similarities_limitof1():
     assert_frame_equal(result, pd.DataFrame(expected))
 
 
-def test_similarities__filebased_badid():
+def test_similarities__filebased_badid(empty_hits_df):
     queries = pd.Series(['foo-bar'])
 
     with pytest.raises(IncompleteHits) as e:
         similarities(queries, 'data/similarities.h5', 0.55, 1)
 
-    assert_frame_equal(e.value.hits, pd.DataFrame())
+    assert_frame_equal(e.value.hits, empty_hits_df)
     assert e.value.absent_identifiers == ['foo-bar']
 
 
@@ -69,7 +78,7 @@ def test_similarities__filebased_partbadid():
     assert e.value.absent_identifiers == ['foo-bar']
 
 
-def test_similarities__webbased_badid(base_url):
+def test_similarities__webbased_badid(base_url, empty_hits_df):
     queries = pd.Series(['foo-bar'])
 
     with requests_mock.mock() as m:
@@ -79,7 +88,7 @@ def test_similarities__webbased_badid(base_url):
         with pytest.raises(IncompleteHits) as e:
             similarities(queries, base_url, 0.55)
 
-    assert_frame_equal(e.value.hits, pd.DataFrame())
+    assert_frame_equal(e.value.hits, pd.DataFrame(empty_hits_df))
     assert e.value.absent_identifiers == ['foo-bar']
 
 
