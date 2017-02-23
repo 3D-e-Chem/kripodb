@@ -16,13 +16,11 @@ from __future__ import absolute_import
 import json
 
 import pytest
-from rdkit.Chem.AllChem import MolFromSmiles, Mol
-import requests_mock
+from rdkit.Chem.AllChem import MolFromSmiles
 
 from kripodb.webservice import server
 from kripodb.pairs import open_similarity_matrix
 from kripodb.version import __version__
-from kripodb.webservice.client import WebserviceClient, IncompleteFragments
 from kripodb.webservice.server import KripodbJSONEncoder
 
 
