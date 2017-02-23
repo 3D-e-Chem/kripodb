@@ -74,7 +74,7 @@ def test_similarities__filebased_partbadid():
     expected = [
         {'query_frag_id': '3j7u_NDP_frag24', 'hit_frag_id': '3j7u_NDP_frag23', 'score': 0.8991},
     ]
-    assert_frame_equal(e.value.hits, pd.DataFrame(expected))
+    assert_frame_equal(e.value.hits, pd.DataFrame(expected, columns=['query_frag_id', 'hit_frag_id', 'score']))
     assert e.value.absent_identifiers == ['foo-bar']
 
 
@@ -106,7 +106,7 @@ def test_similarities__webbased_partbadid(base_url):
         with pytest.raises(IncompleteHits) as e:
             similarities(queries, base_url, 0.55)
 
-    assert_frame_equal(e.value.hits, pd.DataFrame(body))
+    assert_frame_equal(e.value.hits, pd.DataFrame(body, columns=['query_frag_id', 'hit_frag_id', 'score']))
     assert e.value.absent_identifiers == ['foo-bar']
 
 
