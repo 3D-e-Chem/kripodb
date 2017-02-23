@@ -34,7 +34,7 @@ class IncompleteHits(Exception):
             absent_identifiers (List[str]): List of identifiers for which no information could be found
             hits (pandas.DataFrame): Data frame with query_fragment_id, hit_frag_id and score columns
         """
-        message = 'Some identifiers could not be found'
+        message = 'Some query fragment identifiers could not be found'
         super(IncompleteHits, self).__init__(message)
         self.absent_identifiers = absent_identifiers
         self.hits = hits
