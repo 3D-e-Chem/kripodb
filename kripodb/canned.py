@@ -102,7 +102,7 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
 
     if absent_identifiers:
         if len(hits) > 0:
-            df = pd.DataFrame(hits)
+            df = pd.DataFrame(hits, columns=['query_frag_id', 'hit_frag_id', 'score'])
         else:
             # empty hits array will give dataframe without columns
             df = pd.DataFrame({'query_frag_id': pd.Series(dtype=str),
