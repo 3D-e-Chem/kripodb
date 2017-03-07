@@ -5,6 +5,12 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [2.2.1] - 2017-03-07
+
+### Fixed
+
+- Web service has internal server error when fragment has no molblock (#45)
+
 ## [2.2.0] - 2017-02-23
 
 ### Changed

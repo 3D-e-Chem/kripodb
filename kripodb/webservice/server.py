@@ -14,6 +14,8 @@
 """Kripo datafiles wrapped in a webservice"""
 from __future__ import absolute_import
 
+from _ctypes import ArgumentError
+
 from pkg_resources import resource_filename
 import logging
 
@@ -125,7 +127,8 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
             # connexion.problem is using json.dumps instead of flask custom json encoder, so performing convert myself
             # TODO remove mol2string conversion when https://github.com/zalando/connexion/issues/266 is fixed
             for fragment in fragments:
-                fragment['mol'] = MolToMolBlock(fragment['mol'])
+                if fragment['mol']:
+                    fragment['mol'] = MolToMolBlock(fragment['mol'])
             ext = {'absent_identifiers': missing_ids, 'fragments': fragments}
             return connexion.problem(404, title, description, ext=ext)
         return fragments
@@ -154,6 +157,11 @@ def get_fragment_svg(fragment_id, width, height):
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         try:
             fragment = fragmentsdb[fragment_id]
+            if not fragment['mol']:
+                title = 'Not Found'
+                description = 'Fragment with identifier \'{0}\' has no molblock'.format(fragment_id)
+                ext = {'identifier': fragment_id}
+                return connexion.problem(404, title, description, ext=ext)
             mol = fragment['mol']
             return mol2svg(mol, width, height)
         except LookupError:
