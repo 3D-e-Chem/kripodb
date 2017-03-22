@@ -2,7 +2,7 @@
 -e .
 # requirements for development of kripodb
 pytest==3.0.7
-pytest-cov
+pytest-cov==2.4.0
 setuptools>=18.8.1
 six>=1.7
 mock
