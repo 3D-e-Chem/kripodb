@@ -13,4 +13,4 @@ sphinx==1.5.3
 sphinx-rtd-theme==0.2.4
 sphinx-argparse==0.1.17
 # for faster pydev debugging
-cython
+cython==0.25.2
