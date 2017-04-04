@@ -68,12 +68,12 @@ The similarities between the new and existing fingerprints and between new finge
 
     # Compute similarities against itself
     nrrows=10000000
-    srun -J new__new -n 1 /bin/sh -c "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp | kripodb similarities import --nrrows $nrrows --ignore_upper_triangle - fragments.sqlite similarities.new__new.h5" &
+    srun -J new__new -n 1 /bin/sh -c "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp > similarities.new_new.txt && tail similarities.new_new.txt && kripodb similarities import --nrrows $nrrows --ignore_upper_triangle similarities.new_new.txt fragments.sqlite similarities.new__new.h5 && rm similarities.new_new.txt" &
 
     # Compute similarities against existing fingerprint chunks
     for x in `ls ../current/*fp.gz`
     do
-    srun -J new__$x -n 1 /bin/sh -c "gunzip -c $x | fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp | kripodb similarities import --nrrows $nrrows - fragments.sqlite similarities.new__$(basename $x .fp.gz).h5" &
+    srun -J new__$x -n 1 /bin/sh -c "gunzip -c $x > $(basename $x .gz) && fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp $(basename $x .gz) > similarities.new__$(basename $x .fp.gz).txt && tail similarities.new__$(basename $x .fp.gz).txt && kripodb similarities import --nrrows $nrrows similarities.new__$(basename $x .fp.gz).txt fragments.sqlite similarities.new__$(basename $x .fp.gz).h5 && rm similarities.new__$(basename $x .fp.gz).txt $(basename $x .gz)" &
     done
     wait
     EOF
@@ -106,6 +106,7 @@ To prevent duplicates similarities of a chunk against itself should ignore the u
 The following commands converts the pairs into a compressed dense matrix::
 
     jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices << EOF
+    #!/bin/sh
     kripodb similarities freeze -f 400000000 similarities.h5 similarities.frozen.h5
     ptrepack --complevel 6 --complib blosc:zlib similarities.frozen.h5 similarities.packedfrozen.h5 && rm similarities.frozen.h5
     EOF
@@ -114,7 +115,28 @@ The following commands converts the pairs into a compressed dense matrix::
 The output of this step is ready used to find similar fragments,
 using either the webservice with the `kripodb serve` command or with the `kripodb similarities similar` command directly.
 
-8. Switch staging to current
+8. Checks
+---------
+
+The `similarities.packedfrozen.h5.hist` should contain no contain no similarity scores below the threshold of 0.45::
+
+    jid_hist_matrix=$(sbatch --parsable -n 1 -J hist_matrix --dependency=afterok:$jid_merge_matrices << EOF
+    #!/bin/sh
+    kripodb similarities histogram similarities.h5 similarities.h5.hist
+    EOF
+    )
+    head similarities.h5.hist
+
+The number of rows and columns of `similarities.packedfrozen.h5` should be equal to the nr of fragments in `fragments.sqlite`::
+
+    ptdump similarities.packedfrozen.h5
+    / (RootGroup) ''
+    /labels (CArray(534806,), shuffle, blosc:zlib(6)) ''
+    /scores (CArray(534806, 534806), shuffle, blosc:zlib(6)) ''
+    sqlite3 fragments.sqlite 'SELECT count(*) FROM fragments'
+    534806
+
+9. Switch staging to current
 ----------------------------
 
 The webserver and webservice are configure to look in the `current` directory for files.
