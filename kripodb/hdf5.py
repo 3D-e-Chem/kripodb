@@ -115,16 +115,18 @@ class SimilarityMatrix(object):
             for hit_frag_id, score in self.pairs.find(frag_id, cutoff, limit):
                 yield self.labels.by_id(hit_frag_id), score
 
-    def count(self, frame_size):
+    def count(self, frame_size, raw_score=False, lower_triangle=False):
         """Count occurrences of each score
 
         Args:
             frame_size (int): Size of matrix loaded each time. Larger requires more memory and smaller is slower.
+            raw_score (bool): Return raw int16 score or fraction score
+            lower_triangle (bool): Dummy argument to force same interface for thawed and frozen matrix
 
         Returns:
             (str, int): Score and number of occurrences
         """
-        return self.pairs.count(frame_size)
+        return self.pairs.count(frame_size, raw_score)
 
 
 class AbstractSimpleTable(object):
@@ -291,11 +293,12 @@ class PairsTable(AbstractSimpleTable):
             score = ceil(precision10 * pair['score'] / precision) / precision10
             yield {'a': pair['a'], 'b': pair['b'], 'score': score}
 
-    def count(self, frame_size):
+    def count(self, frame_size, raw_score=False):
         """Count occurrences of each score
 
         Args:
             frame_size (int): Size of matrix loaded each time. Larger requires more memory and smaller is slower.
+            raw_score (bool): Return raw int16 score or fraction score
 
         Returns:
             Tuple[(str, int)]: Score and number of occurrences
@@ -311,13 +314,17 @@ class PairsTable(AbstractSimpleTable):
             frame_counts = np.bincount(frame['score'], minlength=nr_bins)
             counts += frame_counts
 
-        # Convert int score into fraction
-        precision = float(self.score_precision)
-        precision10 = float(10 ** (ceil(log10(precision))))
-        for raw_score in counts.nonzero()[0]:
-            score = ceil(precision10 * raw_score / precision) / precision10
-            count = counts[raw_score]
-            yield (score, count)
+        if raw_score:
+            for raw_score in counts.nonzero()[0]:
+                yield (raw_score, counts[raw_score])
+        else:
+            # Convert int score into fraction
+            precision = float(self.score_precision)
+            precision10 = float(10 ** (ceil(log10(precision))))
+            for raw_score in counts.nonzero()[0]:
+                score = ceil(precision10 * raw_score / precision) / precision10
+                count = counts[raw_score]
+                yield (score, count)
 
 
 class Id2Label(tables.IsDescription):

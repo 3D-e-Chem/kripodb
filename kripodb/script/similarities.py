@@ -301,12 +301,18 @@ def histogram_sc(subparsers):
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
     sc.add_argument('-f', '--frame_size', type=int, default=10**8, help='Size of frame (default: %(default)s)')
+    sc.add_argument('-r', '--raw_score',
+                    action='store_true',
+                    help='Return raw score (16 bit integer) instead of fraction score')
+    sc.add_argument('-l', '--lower_triangle',
+                    action='store_true',
+                    help='Return scores from lower triangle else return scores from upper triangle')
     sc.set_defaults(func=histogram)
 
 
-def histogram(inputfile, outputfile, frame_size):
-    matrix = SimilarityMatrix(inputfile)
-    counts = matrix.count(frame_size)
+def histogram(inputfile, outputfile, frame_size, raw_score, lower_triangle):
+    matrix = pairs.open_similarity_matrix(inputfile)
+    counts = matrix.count(frame_size=frame_size, raw_score=raw_score, lower_triangle=lower_triangle)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
     writer.writerow(['score', 'count'])
     writer.writerows(counts)

@@ -286,3 +286,41 @@ class FrozenSimilarityMatrix(object):
             filled_subjects = [(query_id, i, subjects[i]) for i in filled_subjects_ids if query_id < i]
             if filled_subjects:
                 pairs.pairs.table.append(filled_subjects)
+
+    def count(self, frame_size=None, raw_score=False, lower_triangle=False):
+        """Count occurrences of each score
+
+        Only scores are counted of the upper triangle or lower triangle.
+        Zero scores are skipped.
+
+        Args:
+            frame_size (int): Dummy argument to force same interface for thawed and frozen matrix
+            raw_score (bool): When true return raw int16 score else fraction score
+            lower_triangle (bool): When true return scores from lower triangle else return scores from upper triangle
+
+        Returns:
+            Tuple[(str, int)]: Score and number of occurrences
+        """
+        nr_rows = self.scores.shape[0]
+        nr_bins = self.score_precision + 1
+        counts = np.zeros(shape=nr_bins, dtype=np.int64)
+        bar = ProgressBar()
+        for query_id in bar(six.moves.range(0, nr_rows)):
+            if lower_triangle:
+                subjects = self.scores[query_id, query_id + 1:]
+            else:
+                subjects = self.scores[query_id, :query_id + 1]
+            frame_counts = np.bincount(subjects[subjects.nonzero()], minlength=nr_bins)
+            counts += frame_counts
+
+        if raw_score:
+            for raw_score in counts.nonzero()[0]:
+                yield (raw_score, counts[raw_score])
+        else:
+            # Convert int score into fraction
+            precision = float(self.score_precision)
+            precision10 = float(10 ** (ceil(log10(precision))))
+            for raw_score in counts.nonzero()[0]:
+                score = ceil(precision10 * raw_score / precision) / precision10
+                count = counts[raw_score]
+                yield (score, count)

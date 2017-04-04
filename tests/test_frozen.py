@@ -181,3 +181,40 @@ class TestFrozenSimilarityMatrix(object):
                 [d[2] for d in similarity_matrix],
                 5
             )
+
+    def test_count(self, similarity_matrix, frozen_similarity_matrix):
+        frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
+
+        counts = list(frozen_similarity_matrix.count())
+        expected = [(0.5, 1),
+                    (0.6, 1),
+                    (0.7, 1),
+                    (0.9, 1)]
+        assert_array_almost_equal(counts, expected, 6)
+
+    def test_count_lower_triangle(self, similarity_matrix, frozen_similarity_matrix):
+        frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
+
+        counts = list(frozen_similarity_matrix.count(lower_triangle=True))
+        expected = [(0.5, 1),
+                    (0.6, 1),
+                    (0.7, 1),
+                    (0.9, 1)]
+        assert_array_almost_equal(counts, expected, 6)
+
+    def test_count_cmp_triangle(self, similarity_matrix, frozen_similarity_matrix):
+        frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
+
+        upper_triangle = list(frozen_similarity_matrix.count(lower_triangle=False))
+        lower_triangle = list(frozen_similarity_matrix.count(lower_triangle=True))
+        assert_array_almost_equal(upper_triangle, lower_triangle, 6)
+
+    def test_count_raw_score(self, similarity_matrix, frozen_similarity_matrix):
+        frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
+
+        counts = list(frozen_similarity_matrix.count(raw_score=True))
+        expected = [(32767, 1),
+                    (39321, 1),
+                    (45874, 1),
+                    (58981, 1)]
+        assert_array_almost_equal(counts, expected, 6)

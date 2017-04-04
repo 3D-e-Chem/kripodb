@@ -5,6 +5,11 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Added
+
+- Similarities histogram can output raw scores
+- Similarities histogram can read frozen matrices using either lower or upper triangle
+
 ## [2.2.1] - 2017-03-07
 
 ### Fixed

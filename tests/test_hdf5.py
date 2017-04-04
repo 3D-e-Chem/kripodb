@@ -76,6 +76,23 @@ class TestPairsTable(object):
                         (0.9,  1)]
             assert_array_almost_equal(counts, expected, 6)
 
+    def test_count_rawscore(self):
+        with SimilarityMatrixInMemory() as matrix:
+            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+            similarities = [
+                ('a', 'b', 0.9),
+                ('a', 'c', 0.6),
+                ('b', 'c', 0.6),
+                ('d', 'c', 0.7)
+            ]
+            matrix.update(similarities, labels)
+
+            counts = list(matrix.count(100000, True))
+            expected = [(39321,  2),
+                        (45874,  1),
+                        (58981,  1)]
+            assert_array_almost_equal(counts, expected, 6)
+
     def test_count_multiframe(self):
         with SimilarityMatrixInMemory() as matrix:
             labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
