@@ -105,10 +105,7 @@ def test_get_fragments__fragid(app, expected_fragments_info):
 
 
 def response_json(response):
-    try:
-        return json.loads(response.data.decode())
-    except AttributeError:
-        return json.loads(response.data)
+    return response.body
 
 
 def test_get_fragments__fragid_notfound(app):

@@ -1,5 +1,3 @@
-# install Kripodb itself
--e .
 # requirements for development of kripodb
 pytest==3.0.7
 pytest-cov==2.4.0
@@ -14,3 +12,7 @@ sphinx-rtd-theme==0.2.4
 sphinx-argparse==0.1.17
 # for faster pydev debugging
 cython==0.25.2
+# pinned deps
+connexion==1.1.8
+# install Kripodb itself
+-e .
