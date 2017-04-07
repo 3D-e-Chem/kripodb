@@ -56,45 +56,22 @@ The following command will updated the PDB metadata to fragments database::
 
     kripodb fragments pdb fragments.sqlite
 
-6. Calculate similarity scores between fingerprints
+6. Check no fragments are duplicated
+------------------------------------
+
+The similarity matrix can not handle duplicates. It will result in addition of scores::
+
+    jid_dups=$(sbatch --parsable -n 1 incremental_duplicates.sh)
+
+7. Calculate similarity scores between fingerprints
 ---------------------------------------------------
 
 The similarities between the new and existing fingerprints and between new fingerprints themselves can be calculated with::
 
     current_chunks=$(ls ../current/*fp.gz |wc -l)
     all_chunks=$(($current_chunks + 1))
-    jid_fpneigh=$(sbatch --parsable -n $all_chunks -J fpneigh << EOF
-    #!/bin/sh
-
-    # Compute similarities against itself
-    nrrows=10000000
-    srun -J new__new -n 1 /bin/sh -c "fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp out.fp > similarities.new_new.txt && tail similarities.new_new.txt && kripodb similarities import --nrrows $nrrows --ignore_upper_triangle similarities.new_new.txt fragments.sqlite similarities.new__new.h5 && rm similarities.new_new.txt" &
-
-    # Compute similarities against existing fingerprint chunks
-    for x in `ls ../current/*fp.gz`
-    do
-    srun -J new__$x -n 1 /bin/sh -c "gunzip -c $x > $(basename $x .gz) && fpneigh -m Mod_Tanimoto=0.01 -d 0.45 -q out.fp $(basename $x .gz) > similarities.new__$(basename $x .fp.gz).txt && tail similarities.new__$(basename $x .fp.gz).txt && kripodb similarities import --nrrows $nrrows similarities.new__$(basename $x .fp.gz).txt fragments.sqlite similarities.new__$(basename $x .fp.gz).h5 && rm similarities.new__$(basename $x .fp.gz).txt $(basename $x .gz)" &
-    done
-    wait
-    EOF
-    )
-
-    jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh << EOF
-    #!/bin/sh
-    kripodb similarities merge similarities.new__*[0-9].h5 similarities.new__existing.h5 && \
-    rm similarities.new__*[0-9].h5
-
-    # Compact the fingerprint file (makebits ascii format)
-    gzip out.fp
-    mv out.fp.gz out.$(date +%Y%U).fp.gz
-
-    # Add new similarities to existing similarities file
-    kripodb similarities merge ../current/similarities.h5 similarities.new__existing.h5 similarities.new__new.h5 similarities.h5 && \
-    rm similarities.new__existing.h5 similarities.new__new.h5
-    EOF
-    )
-
-To prevent duplicates similarities of a chunk against itself should ignore the upper triangle.
+    jid_fpneigh=$(sbatch --parsable -n $all_chunks -J fpneigh incremental_similarities.sh)
+    jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh incremental_merge_similarities.sh)
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------
