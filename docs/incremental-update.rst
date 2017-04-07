@@ -61,7 +61,8 @@ The following command will updated the PDB metadata to fragments database::
 
 The similarity matrix can not handle duplicates. It will result in addition of scores::
 
-    jid_dups=$(sbatch --parsable -n 1 incremental_duplicates.sh)
+    export SCRIPTS=$PWD/../kripodb/update_scripts
+    jid_dups=$(sbatch --parsable -n 1 $SCRIPTS/incremental_duplicates.sh)
 
 7. Calculate similarity scores between fingerprints
 ---------------------------------------------------
@@ -70,8 +71,8 @@ The similarities between the new and existing fingerprints and between new finge
 
     current_chunks=$(ls ../current/*fp.gz |wc -l)
     all_chunks=$(($current_chunks + 1))
-    jid_fpneigh=$(sbatch --parsable -n $all_chunks -J fpneigh incremental_similarities.sh)
-    jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh incremental_merge_similarities.sh)
+    jid_fpneigh=$(sbatch --parsable -n $all_chunks -J fpneigh $SCRIPTS/incremental_similarities.sh)
+    jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh $SCRIPTS/incremental_merge_similarities.sh)
 
 7. Convert pairs file into dense similarity matrix
 --------------------------------------------------

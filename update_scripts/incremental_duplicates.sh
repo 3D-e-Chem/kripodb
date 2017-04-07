@@ -8,4 +8,4 @@ gunzip -c $x | perl -p -e 's/^(.*?) .*$/$1,$ENV{"x"}/' >> ids.csv
 done
 perl -p -e 's/^(.*?) .*$/$1,out.fp/' out.fp >> ids.csv
 
-python fix_dup_ids.py
+python $SCRIPTS/fix_dup_ids.py
