@@ -19,9 +19,10 @@ Overview of steps involved in updating Kripo:
 3. Create fragment information
 4. Add new fragment information to fragment sqlite db
 5. Populate PDB metadata in fragments database
-6. Calculate similarity scores between fingerprints
-7. Convert pairs file into dense similarity matrix
-8. Switch staging to current
+6. Check no fragments are duplicated
+7. Calculate similarity scores between fingerprints
+8. Convert pairs file into dense similarity matrix
+9. Switch staging to current
 
 .. note:: Steps 2 through 3 require undisclosed scripts
 .. note:: Steps 4 and 6 through 7 can be done using the KripoDB Python library.
