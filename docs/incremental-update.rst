@@ -90,7 +90,7 @@ The similarities between the new and existing fingerprints and between new finge
 
 The following commands converts the pairs into a compressed dense matrix::
 
-    jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices freeze_similarities.sh)
+    jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices $SCRIPTS/freeze_similarities.sh)
 
 The output of this step is ready used to find similar fragments,
 using either the webservice with the `kripodb serve` command or with the `kripodb similarities similar` command directly.

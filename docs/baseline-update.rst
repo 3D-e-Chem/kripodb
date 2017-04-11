@@ -92,18 +92,18 @@ To prevent duplicates similarities of a chunk against itself should ignore the u
 
 .. todo:: Don't fpneigh run sequentially but submit to batch queue system and run in parallel
 
-7. Convert pairs file into dense similarity matrix
+8. Convert pairs file into dense similarity matrix
 --------------------------------------------------
 
 .. tip:: Converting the pairs file into a dense matrix goes quicker with more memory.
 
 The following commands converts the pairs into a compressed dense matrix::
 
-    jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices freeze_similarities.sh)
+    jid_compress_matrix=$(sbatch --parsable -n 1 -J compress_matrix --dependency=afterok:$jid_merge_matrices $SCRIPTS/freeze_similarities.sh)
 
 The output of this step is ready to be served as a webservice using the `kripodb serve` command.
 
-8. Switch staging to current
+9. Switch staging to current
 ----------------------------
 
 The webserver and webservice are configure to look in the `current` directory for files.
