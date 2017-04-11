@@ -9,6 +9,12 @@ Formatted as described on http://keepachangelog.com/.
 
 - Similarities histogram can output raw scores
 - Similarities histogram can read frozen matrices using either lower or upper triangle
+- Similarities export can be filtered by frag1 and/or pdb codes
+- Use scripts in update steps
+
+### Fixed
+
+- Connexion internal change broke web service server 
 
 ## [2.2.1] - 2017-03-07
 
