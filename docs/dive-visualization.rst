@@ -27,8 +27,28 @@ Output datasets
 
 Dump the similarity matrix to csv::
 
-    kripodb similarities export --no_header similarities.h5 similarities.txt
-    perl -ne 'print if /.*frag1\s.*frag1/' < similarities.txt > similarities.frag1.txt
+    kripodb similarities export --no_header --frag1 similarities.h5 similarities.frag1.txt
+
+Similarities between GPCR pdb entries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use the `GPCRDB web service<http://gpcrdb.org/services/reference/#!/structure/structure_list>`_ to fetch a list of PDB codes which contain GPCR proteins::
+
+    curl -X GET --header 'Accept: application/json' 'http://gpcrdb.org/services/structure/' | jq  -r '.[] | .pdb_code' > pdb.gpcr.txt
+
+Dump the similarity matrix to csv::
+
+    kripodb similarities export --no_header --frag1 --pdb pdb.gpcr.txt similarities.h5 similarities.frag1.gpcr.txt
+
+Similarities between GPCR and Kinase pdb entries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use the `KLIFS KNIME nodes<https://github.com/3D-e-Chem/knime-klifs>`_ to create a file with of PDB codes of Kinases called `pdb.kinase.txt`.
+
+Dump the similarity matrix to csv::
+
+    cat pdb.gpcr.txt pdb.kinase.txt > pdb.gpcr.kinase.txt
+    kripodb similarities export --no_header --frag1 --pdb pdb.gpcr.kinase.txt similarities.h5 similarities.frag1.gpcr.kinase.txt
 
 2. Perform embedding using LargeVis
 -----------------------------------

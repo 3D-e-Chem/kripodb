@@ -84,7 +84,7 @@ def test_simmatrix_import_run_ignore_upper_triangle():
 
 def test_simmatrix_export_run():
     outputfile = StringIO()
-    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False)
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False, False, None)
 
     # go back to start of file
     outputfile.seek(0)
@@ -97,13 +97,54 @@ def test_simmatrix_export_run():
 
 def test_simmatrix_export_run_noheader():
     outputfile = StringIO()
-    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, True)
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, True, False, None)
 
     # go back to start of file
     outputfile.seek(0)
     output = outputfile.getvalue()
     expected = '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' \
                '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4634\n'
+    assert output.startswith(expected)
+
+
+def test_simmatrix_export_run_frag1():
+    outputfile = StringIO()
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False, True, None)
+
+    # go back to start of file
+    outputfile.seek(0)
+    output = outputfile.getvalue()
+    expected = 'frag_id1\tfrag_id2\tscore\n' \
+               '2mlr_PX4_frag1\t2n2k_MTN_frag1\t0.4661\n' \
+               '2mm3_CHO_frag1\t3wt8_RET_frag1\t0.4689\n'
+    assert output.startswith(expected)
+
+
+def test_simmatrix_export_run_pdb():
+    pdbio = StringIO('2mlm\n')
+    outputfile = StringIO()
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False, False, pdbio)
+
+    # go back to start of file
+    outputfile.seek(0)
+    output = outputfile.getvalue()
+    expected = 'frag_id1\tfrag_id2\tscore\n' \
+               '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' \
+               '2mlm_2W7_frag2\t2mlm_2W7_frag4\t0.4609\n'
+    assert output.startswith(expected)
+
+
+def test_simmatrix_export_run_frag1_and_pdb():
+    pdbio = StringIO('2mm3\n3wt8\n')
+    outputfile = StringIO()
+    kripodb.script.similarities.simmatrix_export_run('data/similarities.h5', outputfile, False, True, pdbio)
+
+    # go back to start of file
+    outputfile.seek(0)
+    output = outputfile.getvalue()
+    expected = 'frag_id1\tfrag_id2\tscore\n' \
+               '2mm3_CHO_frag1\t3wt8_RET_frag1\t0.4689\n' \
+               '2mm3_CHO_frag1\t2mm3_GCH_frag1\t0.571\n'
     assert output.startswith(expected)
 
 

@@ -54,10 +54,32 @@ def simmatrix_export_sc(subparsers):
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
     sc.add_argument('--no_header', action='store_false', help='Output no header (default: %(default)s)')
+    sc.add_argument('--frag1', action='store_true', help='Only output *frag1 fragments (default: %(default)s)')
+    pdbhelp = 'Only output fragments which are from pdb code in file, one pdb code per line (default: %(default)s)'
+    sc.add_argument('--pdb', type=argparse.FileType('r'), help=pdbhelp)
     sc.set_defaults(func=simmatrix_export_run)
 
 
-def simmatrix_export_run(simmatrixfn, outputfile, no_header):
+def load_pdb_filter_file(pdbs_file):
+    pdbs = set()
+    for line in pdbs_file:
+        pdbs.add(line.strip().lower())
+    return pdbs
+
+
+def pdb_filter(rows, pdbs):
+    for row in rows:
+        if row[0][:4] in pdbs and row[1][:4] in pdbs:
+            yield row
+
+
+def frag1_filter(rows):
+    for row in rows:
+        if row[0].endswith('frag1') and row[1].endswith('frag1'):
+            yield row
+
+
+def simmatrix_export_run(simmatrixfn, outputfile, no_header, frag1, pdb):
     """Export similarity matrix to tab delimited file
 
     Args:
@@ -67,10 +89,22 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header):
 
     """
     simmatrix = pairs.open_similarity_matrix(simmatrixfn)
+    if pdb:
+        pdbs = load_pdb_filter_file(pdb)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
+
     if not no_header:
         writer.writerow(['frag_id1', 'frag_id2', 'score'])
-    writer.writerows(simmatrix)
+
+    if frag1 and pdb:
+        writer.writerows(pdb_filter(frag1_filter(simmatrix), pdbs))
+    elif frag1:
+        writer.writerows(frag1_filter(simmatrix))
+    elif pdb:
+        writer.writerows(pdb_filter(simmatrix, pdbs))
+    else:
+        writer.writerows(simmatrix)
+
     simmatrix.close()
 
 
