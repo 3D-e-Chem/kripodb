@@ -16,7 +16,7 @@ matrix:
       # pretend to be another language which does not error
       language: objective-c
       env:
-        - INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
+        - INSTALLER=Miniconda2-latest-MacOSX-x86_64.sh
         - CONDA_INSTALL=""
 before_install:
   - if [ ! -e $HOME/conda/bin/activate ]; then
