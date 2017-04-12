@@ -117,3 +117,12 @@ The staging can be made current with the following commands::
 
     mv current old && mv staging current
 
+9.1 Merge fingerprint files (optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To keep the number of files to a minimum it is advised to merge the fingerprint files from incremental updates of a year.
+
+The incremental fingerprint files are named like `out.<year><week>.fp.gz`, to generate kripo_fingerprints_<year>_fp.gz run::
+
+    sbatch --parsable -n 1 -J merge_fp $SCRIPTS/incremental_merge_fp.sh <year>
+
