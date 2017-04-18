@@ -53,7 +53,7 @@ def simmatrix_export_sc(subparsers):
     sc.add_argument('simmatrixfn', type=str, help='Compact hdf5 similarity matrix filename')
     sc.add_argument('outputfile', type=argparse.FileType('w'),
                     help='Tab delimited output file, use - for stdout')
-    sc.add_argument('--no_header', action='store_false', help='Output no header (default: %(default)s)')
+    sc.add_argument('--no_header', action='store_true', help='Output no header (default: %(default)s)')
     sc.add_argument('--frag1', action='store_true', help='Only output *frag1 fragments (default: %(default)s)')
     pdbhelp = 'Only output fragments which are from pdb code in file, one pdb code per line (default: %(default)s)'
     sc.add_argument('--pdb', type=argparse.FileType('r'), help=pdbhelp)
@@ -93,7 +93,8 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header, frag1, pdb):
         pdbs = load_pdb_filter_file(pdb)
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
 
-    if not no_header:
+    with_header = not no_header
+    if with_header:
         writer.writerow(['frag_id1', 'frag_id2', 'score'])
 
     if frag1 and pdb:
