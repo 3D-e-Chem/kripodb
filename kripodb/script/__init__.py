@@ -21,6 +21,7 @@ from .fragments import make_fragments_parser
 from .similarities import make_similarities_parser
 from .dive import make_dive_parsers
 from ..webservice.server import serve_app
+from .pharmacophores import make_pharmacophores_parser
 from ..version import __version__
 
 
@@ -43,6 +44,8 @@ def make_parser():
     make_dive_parsers(subparsers)
 
     serve_sc(subparsers)
+
+    make_pharmacophores_parser(subparsers)
 
     return parser
 
