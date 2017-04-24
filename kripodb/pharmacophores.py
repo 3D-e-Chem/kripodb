@@ -1,97 +1,150 @@
-from os import walk
+from os import path, walk
 
-from rdkit.Chem.rdmolfiles import SDMolSupplier
+import tables
+import gzip
+from rdkit.Chem import ForwardSDMolSupplier
 
-from db import SqliteDb
+FEATURE_TYPES = [{
+    'key': 'LIPO',
+    'label': 'Hydrophobe',
+    'color': 'ff33cc',
+    'element': 'He',
+}, {
+    'key': 'POSC',
+    'label': 'Positive charge',
+    'color': 'ff9933',
+    'element': 'P'
+}, {
+    'key': 'NEGC',
+    'label': 'Negative charge',
+    'color': '376092',
+    'element': 'Ne'
+}, {
+    'key': 'HDON',
+    'label': 'H-bond donor',
+    'color': '00ff00',
+    'element': 'As'
+}, {
+    'key': 'HACC',
+    'label': 'H-bond acceptor',
+    'color': 'bfbfbf',
+    'element': 'O'
+}, {
+    'key': 'AROM',
+    'label': 'Aromatic',
+    'color': '00ffff',
+    'element': 'Rn'
+}]
+FEATURE_TYPE_KEYS = [r['key'] for r in FEATURE_TYPES]
+FEATURE_TYPE_ATOM2KEY = {r['element']: r['key'] for r in FEATURE_TYPES}
 
-symbol2point_type = {
-    'He': 'HDON',
-    # TODO add other types and correct He
-}
+PYTABLE_FILTERS = tables.Filters(complevel=6, complib='blosc')
 
 
-def _mol2points(point_ids, mol):
-    conf = mol.GetConformer(0)
-    points = []
-    for point_id in point_ids:
-        atom_idx = point_id + 1
-        pos = conf.GetAtomPosition(atom_idx)
-        symbol = mol.GetAtomWithIdx(atom_idx).GetSymbol()
-        point = (
-            symbol2point_type[symbol],
-            pos.x,
-            pos.y,
-            pos.z
-        )
-        points.append(point)
-    return points
+class PharmacophoreRow(tables.IsDescription):
+    """Table description for similarity pair"""
+    frag_id = tables.StringCol(16)
+    type = tables.EnumCol(FEATURE_TYPE_KEYS, FEATURE_TYPE_KEYS[0], base='uint8')
+    x = tables.Float16Col()
+    y = tables.Float16Col()
+    z = tables.Float16Col()
 
 
-def _row2pharmacophore(row):
-    mol = row['points']
-    point_ids = row['point_ids'].split(',')
-    return {
-        'frag_id': row['frag_id'],
-        'points': _mol2points(point_ids, mol)
-    }
+class PharmacophoresDb(object):
+    def __init__(self, filename, mode='r', expectedrows=0, **kwargs):
+        self.h5file = tables.open_file(filename, mode, filters=PYTABLE_FILTERS, **kwargs)
+        self.points = PharmacophorePointsTable(self.h5file, expectedrows)
+
+    def close(self):
+        self.h5file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def add_dir(self, startdir):
+        self.points.add_dir(startdir)
+
+    def __getitem__(self, item):
+        return self.points[item]
 
 
-class PharmacophoresDb(SqliteDb):
-    def create_tables(self):
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS ligand_pharmacophores (
-            phar_id TEXT PRIMARY KEY,
-            points molblockgz
-        )''')
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS fragments_pharmacophores (
-            frag_id TEXT PRIMARY KEY,
-            phar_id TEXT NOT NULL,
-            point_ids TEXT NOT NULL,
-            FOREIGN KEY(phar_id) REFERENCES ligand_pharmacophores(phar_id)
-        )''')
-        self.cursor.execute('''CREATE INDEX IF NOT EXISTS fp_fk ON ligand_pharmacophores(phar_id)''')
+class PharmacophorePointsTable(object):
+    table_name = 'pharmacophores'
+
+    def __init__(self, h5file, expectedrows=0):
+        if self.table_name in h5file.root:
+            table = h5file.root.__getattr__(self.table_name)
+        else:
+            table = h5file.create_table('/',
+                                        self.table_name,
+                                        PharmacophoreRow,
+                                        'Pharmacophore points of Kripo sub-pockets',
+                                        expectedrows=expectedrows)
+            table.cols.frag_id.create_index(filters=PYTABLE_FILTERS)
+        self.table = table
 
     def add_dir(self, startdir):
         for root, dirs, files in walk(startdir):
-            sdfiles = [file for file in files if file.endswith('.pphores.sd.gz')]
+            sdfiles = [path.join(root, file) for file in files if file.endswith('_pphore.sd.gz')]
             for sdfile in sdfiles:
-                fragtxtfile = sdfile.replace('.sd.gz', '.txt')
+                fragtxtfile = sdfile.replace('_pphore.sd.gz', '_pphores.txt')
                 self.add_ligand(sdfile, fragtxtfile)
 
-    def add_ligand_pharmacophores(self, sdfile, fragtxtfile):
-        phar_id = self.add_ligand_pharmacophore(sdfile)
+    def parse_sdf(self, sdfile):
+        with gzip.open(sdfile) as gzfile:
+            mols = list(ForwardSDMolSupplier(gzfile))
+        mol = mols[0]
+        conf = mol.GetConformer(0)
+        points = []
+        for atom in mol.GetAtoms():
+            pos = conf.GetAtomPosition(atom.GetIdx())
+            point = (
+                FEATURE_TYPE_ATOM2KEY[atom.GetSymbol()],
+                float(pos.x),
+                float(pos.y),
+                float(pos.z),
+            )
+            points.append(point)
+        return points
+
+    def add_ligand(self, sdfile, fragtxtfile):
+        points = self.parse_sdf(sdfile)
         with open(fragtxtfile) as f:
             for line in f:
-                # TODO add test with example file to parse
                 point_ids = line.split(' ')
                 frag_id = point_ids.pop(0)
-                self.add_fragment(phar_id, frag_id, point_ids)
+                point_ids = [int(r)-1 for r in point_ids]
+                self.add_fragment(frag_id, point_ids, points)
+        self.table.flush()
 
-    def __getitem__(self, key):
-        sql = 'SELECT * FROM fragments_pharmacophores JOIN ligand_pharmacophores USING (phar_id) WHERE frag_id=?'
-        self.cursor.execute(sql, (key,))
-        row = self.cursor.fetchone()
-
-        if row is None:
-            raise KeyError(key)
-
-        return _row2pharmacophore(row)
+    def add_fragment(self, frag_id, points_ids, points):
+        row = self.table.row
+        types = self.table.get_enum('type')
+        for i in points_ids:
+            row['frag_id'] = frag_id
+            point = points[i]
+            row['type'] = types[point[0]]
+            row['x'] = point[1]
+            row['y'] = point[2]
+            row['z'] = point[3]
+            row.append()
 
     def __len__(self):
-        self.cursor.execute('SELECT count(*) FROM fragments_pharmacophores')
-        row = self.cursor.fetchone()
-        return row[0]
+        return len(self.table)
 
-    def add_ligand_pharmacophore(self, sdfile):
-        suppl = SDMolSupplier(sdfile)
-        mol = suppl.next()
-        sql = '''INSERT OR REPLACE INTO ligand_pharmacophores (phar_id, points) VALUES (?, ?)'''
-        phar_id =mol.GetProp('_Name')  # TODO find way to get frag_id similiar to the ones in frag dbs
-        self.cursor.execute(sql, (phar_id, mol,))
-        self.connection.commit()
-        return phar_id
-
-    def add_fragment(self, phar_id, frag_id, point_ids):
-        sql = '''INSERT OR REPLACE INTO fragments_pharmacophores (frag_id, phar_id, points) VALUES (?, ?, ?)'''
-        self.cursor.execute(sql, (frag_id, phar_id, ','.join(point_ids),))
-        self.connection.commit()
-
+    def __getitem__(self, key):
+        points = []
+        types = self.table.get_enum('type')
+        query = 'frag_id == z'
+        binds = {'z': key}
+        for row in self.table.where(query, binds):
+            points.append((
+                types(row['type']),
+                row['x'],
+                row['y'],
+                row['z'],
+            ))
+        return points
