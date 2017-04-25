@@ -86,11 +86,15 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header, frag1, pdb):
         simmatrixfn (str): (Compact) hdf5 similarity matrix filename
         outputfile (file): Tab delimited output file
         no_header (bool): Output no header
+        frag1 (bool): Only output *frag1
+        pdb (str): Filename with pdb codes inside
 
     """
     simmatrix = pairs.open_similarity_matrix(simmatrixfn)
     if pdb:
         pdbs = load_pdb_filter_file(pdb)
+    else:
+        pdbs = None
     writer = csv.writer(outputfile, delimiter="\t", lineterminator='\n')
 
     with_header = not no_header
@@ -147,8 +151,8 @@ def simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upp
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     simmatrix = SimilarityMatrix(simmatrixfn, 'w',
-                                expectedlabelrows=len(label2id),
-                                expectedpairrows=nrrows)
+                                 expectedlabelrows=len(label2id),
+                                 expectedpairrows=nrrows)
 
     reader = csv.reader(inputfile, delimiter="\t")
     # ignore header
@@ -172,8 +176,8 @@ def simmatrix_importfpneigh_run(inputfile, fragmentsdb, simmatrixfn, nrrows, ign
     frags = FragmentsDb(fragmentsdb)
     label2id = frags.label2id().materialize()
     simmatrix = SimilarityMatrix(simmatrixfn, 'w',
-                                expectedlabelrows=len(label2id),
-                                expectedpairrows=nrrows)
+                                 expectedlabelrows=len(label2id),
+                                 expectedpairrows=nrrows)
 
     simmatrix.update(read_fpneighpairs_file(inputfile, ignore_upper_triangle), label2id)
     simmatrix.close()
@@ -200,10 +204,10 @@ def simmatrix_filter(input, output, fragmentsdb):
     expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
 
     simmatrix_out = SimilarityMatrix(output,
-                                    'w',
-                                    expectedlabelrows=expectedlabelrows,
-                                    expectedpairrows=expectedpairrows,
-                                    )
+                                     'w',
+                                     expectedlabelrows=expectedlabelrows,
+                                     expectedpairrows=expectedpairrows,
+                                     )
 
     print('Building frag_id keep list')
     frag_labels2keep = set(frags.id2label().values())
