@@ -70,6 +70,10 @@ class PharmacophoresDb(object):
     def __getitem__(self, item):
         return self.points[item]
 
+    def write_phar(self, outfile, frag_id):
+        """Write pharmacophore of frag_id as phar format to outfile"""
+        outfile.write(as_phar(frag_id, self[frag_id]))
+
 
 def read_pphore_gzipped_sdfile(sdfile):
     """Read a gzipped sdfile which contains pharmacophore points as atoms
@@ -107,6 +111,29 @@ def read_pphore_sdfile(sdfile):
         )
         points.append(point)
     return points
+
+
+def as_phar(frag_id, points):
+    """Return pharmacophore in *.phar format.
+
+    See `align-it <http://silicos-it.be.s3-website-eu-west-1.amazonaws.com/software/align-it/1.0.4/align-it.html#format>`_ for format description.
+
+    Args:
+        frag_id (str): Fragment identifier
+        points (list): List of points where each point is (key,x,y,z)
+
+    Returns: str
+
+    """
+    lines = [frag_id]
+    for point in points:
+        # Kripo only has code and x/y/z position,
+        # it has no alpha and no normal position
+        # so use zeros
+        line = '{0} {1:.4f} {2:.4f} {3:.4f} 0 0 0 0 0'.format(*point)
+        lines.append(line)
+    lines.append('$$$$')
+    return '\n'.join(lines) + '\n'
 
 
 class PharmacophorePointsTable(object):

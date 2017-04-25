@@ -6,7 +6,7 @@ from numpy.testing import assert_array_almost_equal
 import pytest
 
 from .utils import tmpname
-from kripodb.pharmacophores import PharmacophoresDb, read_pphore_sdfile
+from kripodb.pharmacophores import PharmacophoresDb, read_pphore_sdfile, as_phar
 
 
 @pytest.fixture
@@ -131,3 +131,18 @@ class TestPharmacophorePointsTable(object):
             filled_PharmacophorePointsTable.add_fragment('frag1', [0], example1_points)
         assert str(excinfo.value) == "Duplicate key 'frag1' found"
         assert len(filled_PharmacophorePointsTable) == 6
+
+
+def test_as_phar(filled_PharmacophorePointsTable):
+    frag_id = 'frag3'
+    points = filled_PharmacophorePointsTable[frag_id]
+
+    result = as_phar(frag_id, points)
+
+    expected = '''frag3
+HACC 22.5699 -6.3076 36.8593 0 0 0 0 0
+POSC 23.7871 -3.9004 36.3395 0 0 0 0 0
+AROM 22.3608 -5.1679 39.2345 0 0 0 0 0
+$$$$
+'''
+    assert result == expected

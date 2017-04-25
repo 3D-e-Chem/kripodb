@@ -24,9 +24,9 @@ def add_sc(sc):
     parser.set_defaults(func=dir2db_run)
 
 
-def get_run(pharmacophoresdb, query):
+def get_run(pharmacophoresdb, query, output):
     with PharmacophoresDb(pharmacophoresdb) as db:
-        print(db[query])
+       db.write_phar(output, query)
 
 
 def get_sc(sc):
@@ -35,6 +35,7 @@ def get_sc(sc):
                         default='pharmacophores.db',
                         help='Name of pharmacophore db file (default: %(default)s)')
     parser.add_argument('query', type=str, help='Query fragment identifier')
+    parser.add_argument('--output', type=argparse.FileType('w'), default='-')
     parser.set_defaults(func=get_run)
 
 
