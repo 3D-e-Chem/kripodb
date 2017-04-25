@@ -45,9 +45,9 @@ class PharmacophoreRow(tables.IsDescription):
     """Table description for similarity pair"""
     frag_id = tables.StringCol(16)
     type = tables.EnumCol(FEATURE_TYPE_KEYS, FEATURE_TYPE_KEYS[0], base='uint8')
-    x = tables.Float16Col()
-    y = tables.Float16Col()
-    z = tables.Float16Col()
+    x = tables.Float32Col()
+    y = tables.Float32Col()
+    z = tables.Float32Col()
 
 
 class PharmacophoresDb(object):
