@@ -176,4 +176,6 @@ class PharmacophorePointsTable(object):
                 row['y'],
                 row['z'],
             ))
+        if len(points) == 0:
+            raise KeyError(key)
         return points

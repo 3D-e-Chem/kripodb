@@ -115,6 +115,17 @@ class TestPharmacophorePointsTable(object):
         expected = [example1_points[0]]
         assert_points(result, expected)
 
+    def test_getitem_absent(self, filled_PharmacophorePointsTable):
+        with pytest.raises(KeyError) as excinfo:
+            filled_PharmacophorePointsTable['frag999']
+        assert excinfo.value.args[0] == 'frag999'
+
+    def test_contains_present(self, filled_PharmacophorePointsTable, example1_points):
+        assert 'frag1' in filled_PharmacophorePointsTable
+
+    def test_contains_absent(self, filled_PharmacophorePointsTable):
+        assert 'frag999' not in filled_PharmacophorePointsTable
+
     def test_add_fragment_duplicate(self, filled_PharmacophorePointsTable, example1_points):
         with pytest.raises(ValueError) as excinfo:
             filled_PharmacophorePointsTable.add_fragment('frag1', [0], example1_points)
