@@ -71,6 +71,44 @@ class PharmacophoresDb(object):
         return self.points[item]
 
 
+def read_pphore_gzipped_sdfile(sdfile):
+    """Read a gzipped sdfile which contains pharmacophore points as atoms
+
+    Args:
+        sdfile (string): Path to filename
+
+    Returns: List of Pharmacophore points
+
+    """
+    with gzip.open(sdfile) as gzfile:
+        return read_pphore_sdfile(gzfile)
+
+
+def read_pphore_sdfile(sdfile):
+    """Read a gzipped sdfile which contains pharmacophore points as atoms
+
+    Args:
+        sdfile (file): File object with sdfile contents
+
+    Returns: List of pharmacophore points
+
+    """
+    mols = list(ForwardSDMolSupplier(sdfile))
+    mol = mols[0]
+    conf = mol.GetConformer(0)
+    points = []
+    for atom in mol.GetAtoms():
+        pos = conf.GetAtomPosition(atom.GetIdx())
+        point = (
+            FEATURE_TYPE_ATOM2KEY[atom.GetSymbol()],
+            float(pos.x),
+            float(pos.y),
+            float(pos.z),
+        )
+        points.append(point)
+    return points
+
+
 class PharmacophorePointsTable(object):
     table_name = 'pharmacophores'
 
@@ -93,30 +131,13 @@ class PharmacophorePointsTable(object):
                 fragtxtfile = sdfile.replace('_pphore.sd.gz', '_pphores.txt')
                 self.add_pocket(sdfile, fragtxtfile)
 
-    def parse_sdf(self, sdfile):
-        with gzip.open(sdfile) as gzfile:
-            mols = list(ForwardSDMolSupplier(gzfile))
-        mol = mols[0]
-        conf = mol.GetConformer(0)
-        points = []
-        for atom in mol.GetAtoms():
-            pos = conf.GetAtomPosition(atom.GetIdx())
-            point = (
-                FEATURE_TYPE_ATOM2KEY[atom.GetSymbol()],
-                float(pos.x),
-                float(pos.y),
-                float(pos.z),
-            )
-            points.append(point)
-        return points
-
     def add_pocket(self, sdfile, fragtxtfile):
-        points = self.parse_sdf(sdfile)
+        points = read_pphore_gzipped_sdfile(sdfile)
         with open(fragtxtfile) as f:
             for line in f:
                 point_ids = line.split(' ')
                 frag_id = point_ids.pop(0)
-                point_ids = [int(r)-1 for r in point_ids]
+                point_ids = [int(r) - 1 for r in point_ids]
                 self.add_fragment(frag_id, point_ids, points)
         self.table.flush()
 
