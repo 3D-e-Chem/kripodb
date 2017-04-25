@@ -12,9 +12,7 @@ def dir2db_run(startdir, pharmacophoresdb, nrrows):
 def add_sc(sc):
     parser = sc.add_parser('add', help='Add pharmacophores from directory to database')
     parser.add_argument('startdir', help='Directory to start finding *.pphores.sd.gz and *.pphores.txt files in')
-    parser.add_argument('pharmacophoresdb',
-                        default='pharmacophores.db',
-                        help='Name of pharmacophore db file (default: %(default)s)')
+    parser.add_argument('pharmacophoresdb', help='Name of pharmacophore db file')
     parser.add_argument('--nrrows',
                         type=int,
                         default=2 ** 16,
@@ -31,9 +29,7 @@ def get_run(pharmacophoresdb, query, output):
 
 def get_sc(sc):
     parser = sc.add_parser('get', help='Retrieve pharmacophore of a fragment')
-    parser.add_argument('pharmacophoresdb',
-                        default='pharmacophores.db',
-                        help='Name of pharmacophore db file (default: %(default)s)')
+    parser.add_argument('pharmacophoresdb', help='Name of pharmacophore db file')
     parser.add_argument('query', type=str, help='Query fragment identifier')
     parser.add_argument('--output', type=argparse.FileType('w'), default='-')
     parser.set_defaults(func=get_run)
@@ -57,16 +53,12 @@ def filter_run(input, fragmentsdb, output):
 
 def filter_sc(sc):
     parser = sc.add_parser('filter', help='Filter pharmacophores')
-    parser.add_argument('input',
-                        default='pharmacophores.db',
-                        help='Name of input pharmacophore db file (default: %(default)s)')
+    parser.add_argument('input', help='Name of input pharmacophore db file')
     parser.add_argument('--fragmentsdb',
                         default='fragments.db',
                         help='Name of fragments db file, fragments present in db are passed '
                              '(default: %(default)s)')
-    parser.add_argument('output',
-                        default='pharmacophores.filtered.db',
-                        help='Name of output pharmacophore db file (default: %(default)s)')
+    parser.add_argument('output', help='Name of output pharmacophore db file')
     parser.set_defaults(func=filter_run)
 
 

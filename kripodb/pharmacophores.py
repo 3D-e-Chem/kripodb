@@ -4,6 +4,19 @@ import tables
 import gzip
 from rdkit.Chem import ForwardSDMolSupplier
 
+"""
+Module for pharmacophores, for filling a database and reading from it
+
+.. data:: FEATURE_TYPES
+
+    Types of pharmacophore feature types. List of dictionaries with the following keys:
+    * key, short identifier of type
+    * label, human readable label
+    * color, hex rrggbb color
+    * element, Element used in kripo pharmacophore sdfile for this type
+
+"""
+
 FEATURE_TYPES = [{
     'key': 'LIPO',
     'label': 'Hydrophobe',
@@ -51,11 +64,26 @@ class PharmacophoreRow(tables.IsDescription):
 
 
 class PharmacophoresDb(object):
+    """Database for pharmacophores of fragments aka sub-pockets.
+
+    Args:
+        filename (str): File name of hdf5 file to write or read pharmacophores to/from
+        mode (str): Can be 'r' for reading or 'w' for writing or 'a' for appending
+        expectedrows (int): Expected number of pharmacophores.
+            Required when hdf5 file is created, helps optimize compression
+        **kwargs: Passed to tables.open_file
+
+    Attributes:
+        h5file (tables.File): Object representing an open hdf5 file
+        points (PharmacophorePointsTable): HDF5 table that contains pharmacophore points
+
+    """
     def __init__(self, filename, mode='r', expectedrows=0, **kwargs):
         self.h5file = tables.open_file(filename, mode, filters=PYTABLE_FILTERS, **kwargs)
         self.points = PharmacophorePointsTable(self.h5file, expectedrows)
 
     def close(self):
+        """Closes the hdf5file"""
         self.h5file.close()
 
     def __enter__(self):

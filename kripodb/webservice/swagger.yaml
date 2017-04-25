@@ -108,6 +108,10 @@ paths:
       responses:
         '200':
           description: SVG image
+        '404':
+          description: Fragment was not found
+          schema:
+            $ref: '#/definitions/FragmentNotFound'
         default:
           description: Unexpected error
           schema:
@@ -140,6 +144,32 @@ paths:
       produces:
         - image/svg+xml
       summary: 2D drawing of fragment in SVG format
+  '/fragments/{fragment_id}.phar':
+    get:
+      x-swagger-router-controller: kripodb.webservice.server
+      responses:
+        '200':
+          description: Pharmacophore
+        '404':
+          description: Pharmacophore of fragment was not found
+          schema:
+            $ref: '#/definitions/FragmentNotFound'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+      parameters:
+        - required: true
+          type: string
+          description: Query fragment identifier. e.g. 3j7u_NDP_frag24
+          in: path
+          name: fragment_id
+      tags:
+        - Fragments
+      operationId: get_fragment_phar
+      produces:
+        - text/plain
+      summary: Pharmacophore of fragment in phar format
   /version:
     get:
       x-swagger-router-controller: kripodb.webservice.server

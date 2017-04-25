@@ -18,7 +18,13 @@ from rdkit.Chem.AllChem import MolFromMolBlock
 from requests import HTTPError
 
 
-class IncompleteFragments(Exception):
+class Incomplete(Exception):
+    def __init__(self, message, absent_identifiers):
+        super(Incomplete, self).__init__(message)
+        self.absent_identifiers = absent_identifiers
+
+
+class IncompleteFragments(Incomplete):
 
     def __init__(self, absent_identifiers, fragments):
         """List of fragments and list of identifiers for which no information could be found
@@ -28,9 +34,21 @@ class IncompleteFragments(Exception):
             fragments (List[dict]): List of fragment information that could be retrieved
         """
         message = 'Some identifiers could not be found'
-        super(IncompleteFragments, self).__init__(message)
-        self.absent_identifiers = absent_identifiers
+        super(IncompleteFragments, self).__init__(message, absent_identifiers)
         self.fragments = fragments
+
+
+class IncompletePharmacophores(Incomplete):
+    def __init__(self, absent_identifiers, pharmacophores):
+        """List of fragments and list of identifiers for which no information could be found
+
+        Args:
+            absent_identifiers (List[str]): List of identifiers for which no information could be found
+            pharmacophores (List[dict]): List of pharmacophores that could be retrieved
+        """
+        message = 'Some identifiers could not be found'
+        super(IncompletePharmacophores, self).__init__(message, absent_identifiers)
+        self.pharmacophores = pharmacophores
 
 
 class WebserviceClient(object):
@@ -87,7 +105,7 @@ class WebserviceClient(object):
 
         Args:
             fragment_ids (List[str]): List of fragment identifiers
-            chunk_size (int): Number of PDB codes to retrieve in a single http request
+            chunk_size (int): Number of fragment to retrieve in a single http request
 
         Returns:
             list[dict]: List of fragment information
@@ -121,8 +139,29 @@ class WebserviceClient(object):
                 body = e.response.json()
                 fragments = body['fragments']
                 absent_identifiers = body['absent_identifiers']
+            else:
+                raise e
         # Convert molblock string to RDKit Mol object
         for fragment in fragments:
             if fragment['mol'] is not None:
                 fragment['mol'] = MolFromMolBlock(fragment['mol'])
         return fragments, absent_identifiers
+
+    def pharmacophores(self, fragment_ids):
+        absent_identifiers = []
+        pharmacophores = []
+        for fragment_id in fragment_ids:
+            url = self.base_url + '/fragments/{0}.phar'.format(fragment_id)
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                pharmacophore = response.text
+                pharmacophores.append(pharmacophore)
+            except HTTPError as e:
+                if e.response.status_code == 404:
+                    absent_identifiers.append(fragment_id)
+                else:
+                    raise e
+        if absent_identifiers:
+            raise IncompletePharmacophores(absent_identifiers, pharmacophores)
+        return pharmacophores
