@@ -1,5 +1,6 @@
 import argparse
 
+from kripodb.db import FragmentsDb
 from ..pharmacophores import PharmacophoresDb
 
 
@@ -23,18 +24,6 @@ def add_sc(sc):
     parser.set_defaults(func=dir2db_run)
 
 
-def make_pharmacophores_parser(subparsers):
-    """Creates a parser for pharmacophores sub commands
-    
-    Args:
-        subparsers (argparse.ArgumentParser): Parser to which to add sub commands to 
-
-    """
-    sc = subparsers.add_parser('pharmacophores', help='Pharmacophores').add_subparsers()
-    add_sc(sc)
-    get_sc(sc)
-
-
 def get_run(pharmacophoresdb, query):
     with PharmacophoresDb(pharmacophoresdb) as db:
         print(db[query])
@@ -47,3 +36,47 @@ def get_sc(sc):
                         help='Name of pharmacophore db file (default: %(default)s)')
     parser.add_argument('query', type=str, help='Query fragment identifier')
     parser.set_defaults(func=get_run)
+
+
+def filter_run(input, fragmentsdb, output):
+    frags = FragmentsDb(fragmentsdb)
+    fragids2keep = set([f.encode() for f in frags.id2label().values()])
+    with PharmacophoresDb(input) as dbin:
+        expectedrows = len(dbin.points)
+        with PharmacophoresDb(output, 'w', expectedrows=expectedrows) as dbout:
+            col_names = [colName for colName in dbin.points.table.colpathnames]
+            rowout = dbout.points.table.row
+            for rowin in dbin.points.table.iterrows():
+                if rowin['frag_id'] in fragids2keep:
+                    for col_name in col_names:
+                        rowout[col_name] = rowin[col_name]
+                    rowout.append()
+            dbout.points.table.flush()
+
+
+def filter_sc(sc):
+    parser = sc.add_parser('filter', help='Filter pharmacophores')
+    parser.add_argument('input',
+                        default='pharmacophores.db',
+                        help='Name of input pharmacophore db file (default: %(default)s)')
+    parser.add_argument('--fragmentsdb',
+                        default='fragments.db',
+                        help='Name of fragments db file, fragments present in db are passed '
+                             '(default: %(default)s)')
+    parser.add_argument('output',
+                        default='pharmacophores.filtered.db',
+                        help='Name of output pharmacophore db file (default: %(default)s)')
+    parser.set_defaults(func=filter_run)
+
+
+def make_pharmacophores_parser(subparsers):
+    """Creates a parser for pharmacophores sub commands
+
+    Args:
+        subparsers (argparse.ArgumentParser): Parser to which sub commands are added
+
+    """
+    sc = subparsers.add_parser('pharmacophores', help='Pharmacophores').add_subparsers()
+    add_sc(sc)
+    get_sc(sc)
+    filter_sc(sc)
