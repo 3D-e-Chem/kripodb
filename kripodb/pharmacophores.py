@@ -91,7 +91,7 @@ class PharmacophorePointsTable(object):
             sdfiles = [path.join(root, file) for file in files if file.endswith('_pphore.sd.gz')]
             for sdfile in sdfiles:
                 fragtxtfile = sdfile.replace('_pphore.sd.gz', '_pphores.txt')
-                self.add_ligand(sdfile, fragtxtfile)
+                self.add_pocket(sdfile, fragtxtfile)
 
     def parse_sdf(self, sdfile):
         with gzip.open(sdfile) as gzfile:
@@ -110,7 +110,7 @@ class PharmacophorePointsTable(object):
             points.append(point)
         return points
 
-    def add_ligand(self, sdfile, fragtxtfile):
+    def add_pocket(self, sdfile, fragtxtfile):
         points = self.parse_sdf(sdfile)
         with open(fragtxtfile) as f:
             for line in f:
