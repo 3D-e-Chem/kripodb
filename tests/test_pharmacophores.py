@@ -115,3 +115,8 @@ class TestPharmacophorePointsTable(object):
         expected = [example1_points[0]]
         assert_points(result, expected)
 
+    def test_add_fragment_duplicate(self, filled_PharmacophorePointsTable, example1_points):
+        with pytest.raises(ValueError) as excinfo:
+            filled_PharmacophorePointsTable.add_fragment('frag1', [0], example1_points)
+        assert str(excinfo.value) == "Duplicate key 'frag1' found"
+        assert len(filled_PharmacophorePointsTable) == 6

@@ -142,6 +142,8 @@ class PharmacophorePointsTable(object):
         self.table.flush()
 
     def add_fragment(self, frag_id, points_ids, points):
+        if frag_id in self:
+            raise ValueError("Duplicate key '{0}' found".format(frag_id))
         row = self.table.row
         types = self.table.get_enum('type')
         for i in points_ids:
@@ -152,6 +154,12 @@ class PharmacophorePointsTable(object):
             row['y'] = point[2]
             row['z'] = point[3]
             row.append()
+
+    def __contains__(self, item):
+        query = 'frag_id == z'
+        binds = {'z': item}
+        nr_hits = len(self.table.get_where_list(query, binds))
+        return nr_hits > 0
 
     def __len__(self):
         return len(self.table)
