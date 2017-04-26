@@ -24,7 +24,8 @@ from requests import HTTPError
 
 from .db import FragmentsDb
 from .pairs import similar, open_similarity_matrix
-from .webservice.client import WebserviceClient, IncompleteFragments
+from .pharmacophores import PharmacophoresDb
+from .webservice.client import WebserviceClient, IncompleteFragments, IncompletePharmacophores
 
 
 class IncompleteHits(Exception):
@@ -227,5 +228,32 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
             raise IncompleteFragments(absent_identifiers, df)
 
     df = pd.DataFrame(fragments)
+    df.rename(columns=lambda x: prefix + x, inplace=True)
+    return df
+
+
+def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url, prefix=''):
+    if pharmacophores_db_filename_or_url.startswith('http'):
+        client = WebserviceClient(pharmacophores_db_filename_or_url)
+        try:
+            pphors = client.pharmacophores(fragment_ids)
+        except IncompletePharmacophores as e:
+            df = pd.DataFrame(e.pharmacophores)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompletePharmacophores(e.absent_identifiers, df)
+    else:
+        pharmacophoresdb = PharmacophoresDb(pharmacophores_db_filename_or_url)
+        pphors = []
+        absent_identifiers = []
+        for frag_id in fragment_ids:
+            try:
+                pharmacophores.append(pharmacophoresdb[frag_id])
+            except KeyError:
+                absent_identifiers.append(frag_id)
+        if absent_identifiers:
+            df = pd.DataFrame(pphors)
+            df.rename(columns=lambda x: prefix + x, inplace=True)
+            raise IncompletePharmacophores(absent_identifiers, df)
+    df = pd.DataFrame(pphors)
     df.rename(columns=lambda x: prefix + x, inplace=True)
     return df
