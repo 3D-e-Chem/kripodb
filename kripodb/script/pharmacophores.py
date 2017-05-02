@@ -35,12 +35,12 @@ def get_sc(sc):
     parser.set_defaults(func=get_run)
 
 
-def filter_run(input, fragmentsdb, output):
+def filter_run(inputfn, fragmentsdb, outputfn):
     frags = FragmentsDb(fragmentsdb)
     fragids2keep = set([f.encode() for f in frags.id2label().values()])
-    with PharmacophoresDb(input) as dbin:
+    with PharmacophoresDb(inputfn) as dbin:
         expectedrows = len(dbin.points)
-        with PharmacophoresDb(output, 'w', expectedrows=expectedrows) as dbout:
+        with PharmacophoresDb(outputfn, 'w', expectedrows=expectedrows) as dbout:
             col_names = [colName for colName in dbin.points.table.colpathnames]
             rowout = dbout.points.table.row
             for rowin in dbin.points.table.iterrows():
@@ -53,12 +53,12 @@ def filter_run(input, fragmentsdb, output):
 
 def filter_sc(sc):
     parser = sc.add_parser('filter', help='Filter pharmacophores')
-    parser.add_argument('input', help='Name of input pharmacophore db file')
+    parser.add_argument('inputfn', help='Name of input pharmacophore db file')
     parser.add_argument('--fragmentsdb',
                         default='fragments.db',
                         help='Name of fragments db file, fragments present in db are passed '
                              '(default: %(default)s)')
-    parser.add_argument('output', help='Name of output pharmacophore db file')
+    parser.add_argument('outputfn', help='Name of output pharmacophore db file')
     parser.set_defaults(func=filter_run)
 
 

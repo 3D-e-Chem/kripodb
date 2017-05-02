@@ -125,7 +125,7 @@ def simmatrix_import_sc(subparsers):
                     default='fragments.db',
                     help='Name of fragments db file (default: %(default)s)')
     sc.add_argument('simmatrixfn', type=str, help='Compact hdf5 similarity matrix file, will overwrite file if it exists')
-    sc.add_argument('--format',
+    sc.add_argument('--inputformat',
                     choices=['tsv', 'fpneigh'],
                     default='fpneigh',
                     help='tab delimited (tsv) or fpneigh formatted input (default: %(default)s)')
@@ -140,10 +140,10 @@ def simmatrix_import_sc(subparsers):
     sc.set_defaults(func=simmatrix_import_run)
 
 
-def simmatrix_import_run(inputfile, fragmentsdb, simmatrixfn, format, nrrows, ignore_upper_triangle=False):
-    if format == 'tsv':
+def simmatrix_import_run(inputfile, fragmentsdb, simmatrixfn, inputformat, nrrows, ignore_upper_triangle=False):
+    if inputformat == 'tsv':
         simmatrix_import_tsv(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle)
-    elif format == 'fpneigh':
+    elif inputformat == 'fpneigh':
         simmatrix_importfpneigh_run(inputfile, fragmentsdb, simmatrixfn, nrrows, ignore_upper_triangle)
 
 

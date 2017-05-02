@@ -33,7 +33,7 @@ def test_simmatrix_import_run():
 
     try:
         kripodb.script.similarities.simmatrix_import_run(inputfile=inputfile,
-                                                         format='tsv',
+                                                         inputformat='tsv',
                                                          simmatrixfn=output_fn,
                                                          fragmentsdb='data/fragments.sqlite',
                                                          nrrows=2)
@@ -64,7 +64,7 @@ def test_simmatrix_import_run_ignore_upper_triangle():
 
     try:
         kripodb.script.similarities.simmatrix_import_run(inputfile=inputfile,
-                                                         format='tsv',
+                                                         inputformat='tsv',
                                                          simmatrixfn=output_fn,
                                                          fragmentsdb='data/fragments.sqlite',
                                                          nrrows=2,

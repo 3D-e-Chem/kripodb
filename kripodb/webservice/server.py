@@ -14,19 +14,16 @@
 """Kripo datafiles wrapped in a webservice"""
 from __future__ import absolute_import
 
-from _ctypes import ArgumentError
-
-from pkg_resources import resource_filename
 import logging
-
-from rdkit.Chem.AllChem import Mol
-from rdkit.Chem.AllChem import MolToMolBlock
-from rdkit.Chem.Draw import rdMolDraw2D
-from six.moves.urllib_parse import urlparse
 
 import connexion
 from flask import current_app
 from flask.json import JSONEncoder
+from pkg_resources import resource_filename
+from rdkit.Chem.AllChem import Mol
+from rdkit.Chem.AllChem import MolToMolBlock
+from rdkit.Chem.Draw import rdMolDraw2D
+from six.moves.urllib_parse import urlparse
 
 from kripodb.pharmacophores import as_phar, PharmacophoresDb
 from ..db import FragmentsDb

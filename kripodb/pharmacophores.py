@@ -50,7 +50,7 @@ PYTABLE_FILTERS = tables.Filters(complevel=6, complib='blosc')
 
 class PharmacophoreRow(tables.IsDescription):
     """Table description for similarity pair
-    
+
     Attributes:
         frag_id (str): Fragment identifier
     """
@@ -268,7 +268,7 @@ class PharmacophorePointsTable(object):
         Args:
             startdir (str): Path to a start directory
         """
-        for root, dirs, files in walk(startdir):
+        for root, _dirs, files in walk(startdir):
             sdfiles = [path.join(root, file) for file in files if file.endswith('_pphore.sd.gz')]
             for sdfile in sdfiles:
                 fragtxtfile = sdfile.replace('_pphore.sd.gz', '_pphores.txt')
