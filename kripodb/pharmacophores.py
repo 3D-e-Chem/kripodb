@@ -72,7 +72,7 @@ class PharmacophoresDb(object):
         **kwargs: Passed to tables.open_file
 
     Pharmacophore points of a fragment can be retrieved using::
-    
+
         points = db['frag_id1']
         
     `points` is a list of points, each point is a tuple with following columns feature type key, x, y and z coordinate.
