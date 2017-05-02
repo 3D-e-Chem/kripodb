@@ -122,7 +122,12 @@ class PharmacophoresDb(object):
         return self.points[item]
 
     def write_phar(self, outfile, frag_id):
-        """Write pharmacophore of frag_id as phar format to outfile"""
+        """Write pharmacophore of frag_id as phar format to outfile
+
+        Args:
+            outfile (file): File object to write to
+            frag_id (str): Fragment identifier
+        """
         outfile.write(as_phar(frag_id, self[frag_id]))
 
 
