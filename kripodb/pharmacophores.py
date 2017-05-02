@@ -55,7 +55,11 @@ PYTABLE_FILTERS = tables.Filters(complevel=6, complib='blosc')
 
 
 class PharmacophoreRow(tables.IsDescription):
-    """Table description for similarity pair"""
+    """Table description for similarity pair
+    
+    Attributes:
+        frag_id (str): Fragment identifier
+    """
     frag_id = tables.StringCol(16)
     type = tables.EnumCol(FEATURE_TYPE_KEYS, FEATURE_TYPE_KEYS[0], base='uint8')
     x = tables.Float32Col()
@@ -73,17 +77,31 @@ class PharmacophoresDb(object):
             Required when hdf5 file is created, helps optimize compression
         **kwargs: Passed to tables.open_file
 
+    Pharmacophore points of a fragment can be retrieved using::
+    
+        points = db['frag_id1']
+        
+    `points` is a list of points, each point is a tuple with following columns feature type key, x, y and z coordinate.
+    The feature type key is defined in FEATURE_TYPES.
+
     Attributes:
         h5file (tables.File): Object representing an open hdf5 file
         points (PharmacophorePointsTable): HDF5 table that contains pharmacophore points
-
+        
     """
+
     def __init__(self, filename, mode='r', expectedrows=0, **kwargs):
         self.h5file = tables.open_file(filename, mode, filters=PYTABLE_FILTERS, **kwargs)
         self.points = PharmacophorePointsTable(self.h5file, expectedrows)
 
     def close(self):
-        """Closes the hdf5file"""
+        """Closes the hdf5file
+        
+        Instead of calling close() explicitly, use context manager::
+        
+            with PharmacophoresDb('data/pharmacophores.h5') as db:
+                points = db['frag_id1']
+        """
         self.h5file.close()
 
     def __enter__(self):
@@ -93,6 +111,11 @@ class PharmacophoresDb(object):
         self.close()
 
     def add_dir(self, startdir):
+        """Find \*_pphore.sd.gz \*_pphores.txt file pairs recursively in start directory and add them.
+
+        Args:
+            startdir (str): Path to a start directory
+        """
         self.points.add_dir(startdir)
 
     def __getitem__(self, item):
@@ -109,8 +132,8 @@ def read_pphore_gzipped_sdfile(sdfile):
     Args:
         sdfile (string): Path to filename
 
-    Returns: List of Pharmacophore points
-
+    Returns:
+        list: List of Pharmacophore points
     """
     with gzip.open(sdfile) as gzfile:
         return read_pphore_sdfile(gzfile)
@@ -122,8 +145,8 @@ def read_pphore_sdfile(sdfile):
     Args:
         sdfile (file): File object with sdfile contents
 
-    Returns: List of pharmacophore points
-
+    Returns:
+        list: List of pharmacophore points
     """
     mols = list(ForwardSDMolSupplier(sdfile))
     mol = mols[0]
@@ -141,8 +164,43 @@ def read_pphore_sdfile(sdfile):
     return points
 
 
+def read_fragtxtfile(fragtxtfile):
+    """Read a fragment text file
+
+    Args:
+        fragtxtfile: Filename of fragment text file
+
+    Returns:
+        dict: Dictionary where key is fragment identifier and value is a list of pharmacophore point indexes.
+    """
+    with open(fragtxtfile) as f:
+        return read_fragtxtfile_as_file(f)
+
+
+def read_fragtxtfile_as_file(fileobject):
+    """Read a fragment text file object which contains the pharmacophore point indexes for each fragment identifier.
+
+    File format is a fragment on each line,
+    the line is space separated with fragment_identifier followed by the pharmacophore point indexes.
+
+    Args:
+        fileobject (file): File object to read
+
+    Returns:
+        dict: Dictionary where key is fragment identifier and value is a list of pharmacophore point indexes.
+
+    """
+    frags = {}
+    for line in fileobject:
+        point_ids = line.strip().split(' ')
+        frag_id = point_ids.pop(0)
+        point_ids = [int(r) - 1 for r in point_ids]
+        frags[frag_id] = point_ids
+    return frags
+
+
 def as_phar(frag_id, points):
-    """Return pharmacophore in *.phar format.
+    """Return pharmacophore in \*.phar format.
 
     See `align-it <http://silicos-it.be.s3-website-eu-west-1.amazonaws.com/software/align-it/1.0.4/align-it.html#format>`_ for format description.
 
@@ -150,7 +208,8 @@ def as_phar(frag_id, points):
         frag_id (str): Fragment identifier
         points (list): List of points where each point is (key,x,y,z)
 
-    Returns: str
+    Returns:
+        str: Pharmacophore is \*.phar format
 
     """
     lines = [frag_id]
@@ -165,6 +224,31 @@ def as_phar(frag_id, points):
 
 
 class PharmacophorePointsTable(object):
+    """Wrapper around pytables table to store pharmacohpore points
+    
+    Args:
+        h5file (tables.File):  Pytables hdf5 file object which contains the pharmacophores table
+        expectedrows (int): Expected number of pharmacophores.
+            Required when hdf5 file is created, helps optimize compression
+    
+    Pharmacophore points of a fragment can be retrieved using::
+    
+        points = table['frag_id1']
+        
+    `points` is a list of points, each point is a tuple with following columns feature type key, x, y and z coordinate.
+    The feature type key is defined in FEATURE_TYPES.
+    
+    Number of pharmacophore points can be requested using::
+    
+        nr_points = len(table)
+        
+    To check whether fragment identifier is contained use::
+    
+        'frag_id1' in table
+    
+    Attributes:
+        table (tables.Table): Pytables table with rows of type PharmacophoreRow
+    """
     table_name = 'pharmacophores'
 
     def __init__(self, h5file, expectedrows=0):
@@ -180,6 +264,11 @@ class PharmacophorePointsTable(object):
         self.table = table
 
     def add_dir(self, startdir):
+        """Find \*_pphore.sd.gz \*_pphores.txt file pairs recursively in start directory and add them.
+
+        Args:
+            startdir (str): Path to a start directory
+        """
         for root, dirs, files in walk(startdir):
             sdfiles = [path.join(root, file) for file in files if file.endswith('_pphore.sd.gz')]
             for sdfile in sdfiles:
@@ -188,12 +277,8 @@ class PharmacophorePointsTable(object):
 
     def add_pocket(self, sdfile, fragtxtfile):
         points = read_pphore_gzipped_sdfile(sdfile)
-        with open(fragtxtfile) as f:
-            for line in f:
-                point_ids = line.split(' ')
-                frag_id = point_ids.pop(0)
-                point_ids = [int(r) - 1 for r in point_ids]
-                self.add_fragment(frag_id, point_ids, points)
+        for frag_id, point_ids in read_fragtxtfile(fragtxtfile):
+            self.add_fragment(frag_id, point_ids, points)
         self.table.flush()
 
     def add_fragment(self, frag_id, points_ids, points):

@@ -1,12 +1,12 @@
 import os
-from six import BytesIO
+from six import BytesIO, StringIO
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pytest
 
 from .utils import tmpname
-from kripodb.pharmacophores import PharmacophoresDb, read_pphore_sdfile, as_phar
+from kripodb.pharmacophores import PharmacophoresDb, read_pphore_sdfile, as_phar, read_fragtxtfile_as_file
 
 
 @pytest.fixture
@@ -158,3 +158,24 @@ def test_as_phar(filled_PharmacophorePointsTable, example3_phar):
     result = as_phar(frag_id, points)
 
     assert result == example3_phar
+
+
+@pytest.fixture
+def example4fragtxtfile():
+    return StringIO('''frag1 1 2 3
+frag2 
+frag3 2 3
+frag4 1
+''')
+
+
+def test_read_fragtxtfile_as_file(example4fragtxtfile):
+    result = read_fragtxtfile_as_file(example4fragtxtfile)
+
+    expected = {
+        'frag1': [0, 1, 2],
+        'frag2': [],
+        'frag3': [1, 2],
+        'frag4': [0]
+    }
+    assert result == expected

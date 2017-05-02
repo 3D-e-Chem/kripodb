@@ -86,7 +86,7 @@ def simmatrix_export_run(simmatrixfn, outputfile, no_header, frag1, pdb):
         simmatrixfn (str): (Compact) hdf5 similarity matrix filename
         outputfile (file): Tab delimited output file
         no_header (bool): Output no header
-        frag1 (bool): Only output *frag1
+        frag1 (bool): Only output \*frag1
         pdb (str): Filename with pdb codes inside
 
     """
