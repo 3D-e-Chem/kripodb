@@ -48,6 +48,16 @@ The fragment molblocks can be generated into a fragment sdf file with::
 
   fragid2sd.py > fragments.sd
 
+3. Pharmacophores
+^^^^^^^^^^^^^^^^^
+
+The raw pharmacophores are stored in the FRAGMENT_PPHORES sub-directory.
+Each pocket has a \*_pphore.sd.gz file which contains the pharmacophore points of the whole pocket and
+a \*_pphores.txt file which contains the indexes of pharmacophore points for each sub pocket or fragment.
+The raw pharmacophores need to be added to the pharmacophores datafile with::
+
+    kripodb pharmacophores add FRAGMENT_PPHORES pharmacophores.h5
+
 4. Add new fragment information to fragment sqlite db
 -----------------------------------------------------
 
