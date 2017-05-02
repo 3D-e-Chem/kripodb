@@ -190,7 +190,7 @@ def test_get_fragment_svg_notfound(app):
 
 
 def test_get_fragment_phar(app):
-    fragment_id = '4xbf_FAD_frag1'
+    fragment_id = '3j7u_NDP_frag24'
     with app.app.test_request_context():
         result = server.get_fragment_phar(fragment_id)
         assert 'LIPO' in result

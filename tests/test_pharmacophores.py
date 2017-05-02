@@ -150,6 +150,7 @@ AROM 22.3608 -5.1679 39.2345 0 0 0 0 0
 $$$$
 '''
 
+
 def test_as_phar(filled_PharmacophorePointsTable, example3_phar):
     frag_id = 'frag3'
     points = filled_PharmacophorePointsTable[frag_id]
