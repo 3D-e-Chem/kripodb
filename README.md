@@ -44,23 +44,7 @@ kripodb --help
 
 ## Create all
 
-Commands to create all data files
-```
-kripodb fragments shelve fragments.shelve fragments.sqlite
-kripodb fragments sdf fragment??.sdf fragments.sqlite
-kripodb fragments pdb fragments.sqlite
-kripodb fingerprints import 01.fp 01.fp.db
-kripodb fingerprints import 02.fp 02.fp.db
-kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 01.fp.db 01.fp.db sim_01_01.h5
-kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite --ignore_upper_triangle 02.fp.db 02.fp.db sim_02_02.h5
-kripodb fingerprints similarities --fragmentsdbfn fragments.sqlite 01.fp.db 02.fp.db sim_01_02.h5
-kripodb similarities merge sim_*_*.h5  sim_all.h5
-kripodb similarities freeze sim_all.h5 sim_all.frozen.h5
-# Make froze similarity matrix smaller, by using slower compression
-ptrepack --complevel 6 --complib blosc:zlib sim_all.frozen.h5 sim_all.packedfrozen.h5
-rm sim_all.frozen.h5
-kripodb similarities serve sim_all.packedfrozen.h5
-```
+Commands to create all data files see [update documentation](docs/data-update.rst).
 
 ## Search for most similar fragments
 
@@ -71,22 +55,7 @@ kripodb similar sim_all.h5 3kxm_K74_frag1 --cutoff 0.45
 
 ## Create similarity matrix from text files
 
-Input files `sim_??_??.txt.gz` looks like:
-```
-Compounds similar to 2xry_FAD_frag4:
-2xry_FAD_frag4   1.0000
-3cvv_FAD_frag3   0.5600
-```
-
-To create a single similarity matrix from multiple text files:
-```
-gunzip -c sim_01_01.txt.gz | kripodb similarities import --ignore_upper_triangle - fragments.sqlite sim_01_01.h5
-gunzip -c sim_01_02.txt.gz | kripodb similarities import - fragments.sqlite sim_01_02.h5
-gunzip -c sim_02_02.txt.gz | kripodb similarities import --ignore_upper_triangle - fragments.sqlite sim_02_02.h5
-kripodb similarities merge sim_??_??.h5 sim_all.h5
-```
-
-The `--ignore_upper_triangle` flag is used to prevent scores corruption when freezing similarity matrix.
+Commands to create similarity matrix see [update documentation](docs/data-update.rst).
 
 # Data sets
 
@@ -113,13 +82,13 @@ All fragments form all proteins-ligand complexes in PDB compared with all.
 
 A data set with PDB entries till 23 December 2015 has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
 
-# Knime
+# KNIME
 
-The [Knime-KripoDB-example.zip](https://github.com/3D-e-Chem/knime-kripodb/blob/master/examples/Knime-KripoDB-example.zip) file is an example workflow showing how to use KripoDB python package inside Knime (http://www.knime.org).
-It can be run by importing it into Knime.
-Make sure the Python used by Knime is the same as the Python with kripodb package installed.
+The [Knime-KripoDB-example.zip](https://github.com/3D-e-Chem/knime-kripodb/blob/master/examples/Knime-KripoDB-example.zip) file is an example workflow showing how to use KripoDB python package inside KNIME (http://www.knime.org).
+It can be run by importing it into KNIME.
+Make sure the Python used by KNIME is the same as the Python with kripodb package installed.
 
-The https://github.com/3D-e-Chem/knime-kripodb repo adds KripoDB code templates to Knime.
+The https://github.com/3D-e-Chem/knime-kripodb repo adds KripoDB code templates to KNIME.
 
 # Development of KripoDB
 
@@ -154,7 +123,7 @@ The Kripo data files can be queried using a web service.
 
 Start webservice with:
 ```
-kripodb serve data/similarities.h5 data/fragments.sqlite
+kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5
 ```
 It will print the urls for the swagger spec and UI.
 

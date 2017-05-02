@@ -63,7 +63,8 @@ def similarities(queries, similarity_matrix_filename_or_url, cutoff, limit=1000)
         11
 
         Retrieved from web service instead of local similarity matrix file.
-        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
+        Make sure the web service is running,
+        for example by `kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5`.
 
         >>> hits = similarities(queries, 'http://localhost:8084/kripo', 0.55)
         >>> len(hits)
@@ -135,7 +136,8 @@ def fragments_by_pdb_codes(pdb_codes, fragments_db_filename_or_url, prefix=''):
         3
 
         Retrieved from web service instead of local fragments db file.
-        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
+        Make sure the web service is running,
+        for example by `kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5`.
 
         >>> fragments = fragments_by_pdb_codes(pdb_codes, 'http://localhost:8084/kripo')
         >>> len(fragments)
@@ -193,7 +195,8 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
         1
 
         Retrieved from web service instead of local fragments db file.
-        Make sure the web service is running, for example by `kripodb serve data/similarities.h5 data/fragments.sqlite`.
+        Make sure the web service is running,
+        for example by `kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5`.
 
         >>> fragments = fragments_by_id(fragment_ids,, 'http://localhost:8084/kripo')
         >>> len(fragments)
@@ -240,8 +243,25 @@ def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url):
         pharmacophores_db_filename_or_url: Filename of pharmacophores db or base url of kripodb webservice
 
     Returns:
-        pandas.Series :Pandas series with pharmacophores as string in phar format.
+        pandas.Series: Pandas series with pharmacophores as string in phar format.
                        Fragment without pharmacophore will return None
+
+    Examples:
+        Fragments similar to '3j7u_NDP_frag24' fragment.
+
+        >>> from kripodb.canned import pharmacophores_by_id
+        >>> fragment_ids = pd.Series(['2n2k_MTN_frag1'])
+        >>> pharmacophores = pharmacophores_by_id(fragment_ids, 'data/pharmacophores.h5')
+        >>> len(pharmacophores)
+        1
+
+        Retrieved from web service instead of local pharmacophores db file.
+        Make sure the web service is running,
+        for example by `kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5`.
+
+        >>> pharmacophores = pharmacophores_by_id(fragment_ids,, 'http://localhost:8084/kripo')
+        >>> len(pharmacophores)
+        1
     """
     if pharmacophores_db_filename_or_url.startswith('http'):
         client = WebserviceClient(pharmacophores_db_filename_or_url)

@@ -4,19 +4,6 @@ import tables
 import gzip
 from rdkit.Chem import ForwardSDMolSupplier
 
-"""
-Module for pharmacophores, for filling a database and reading from it
-
-.. data:: FEATURE_TYPES
-
-    Types of pharmacophore feature types. List of dictionaries with the following keys:
-    * key, short identifier of type
-    * label, human readable label
-    * color, hex rrggbb color
-    * element, Element used in kripo pharmacophore sdfile for this type
-
-"""
-
 FEATURE_TYPES = [{
     'key': 'LIPO',
     'label': 'Hydrophobe',
@@ -48,6 +35,13 @@ FEATURE_TYPES = [{
     'color': '00ffff',
     'element': 'Rn'
 }]
+"""
+Types of pharmacophore feature types. List of dictionaries with the following keys:
+    * key, short identifier of type
+    * label, human readable label
+    * color, hex rrggbb color
+    * element, Element used in kripo pharmacophore sdfile for this type
+"""
 FEATURE_TYPE_KEYS = [r['key'] for r in FEATURE_TYPES]
 FEATURE_TYPE_ATOM2KEY = {r['element']: r['key'] for r in FEATURE_TYPES}
 
