@@ -159,6 +159,7 @@ class WebserviceClient(object):
                 pharmacophores.append(pharmacophore)
             except HTTPError as e:
                 if e.response.status_code == 404:
+                    pharmacophores.append(None)
                     absent_identifiers.append(fragment_id)
                 else:
                     raise e

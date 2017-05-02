@@ -17,6 +17,7 @@ Formatted as described on http://keepachangelog.com/.
   - Sub command to add points to table from a directory
   - Sub command to filter the pharmacophores points based on a fragments database
   - Sub command and webservice endpoint to fetch the pharmacophore points of a single fragment identifier (#30)
+  - Canned method to fetch pharmacophores of a list fragment identifiers
 
 ### Fixed
 

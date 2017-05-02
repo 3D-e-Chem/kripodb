@@ -165,7 +165,7 @@ def test_pharmacophores_somenotfound_incomplete(base_url, client, example1_phar)
             client.pharmacophores(['3j7u_NDP_frag24', '3j7u_NDP_frag23'])
 
         assert excinfo.value.absent_identifiers == ['3j7u_NDP_frag23']
-        assert excinfo.value.pharmacophores == [example1_phar]
+        assert excinfo.value.pharmacophores == [example1_phar, None]
 
 
 def test_pharmacophores_server500(base_url, client):

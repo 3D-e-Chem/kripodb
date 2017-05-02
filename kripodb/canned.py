@@ -24,7 +24,7 @@ from requests import HTTPError
 
 from .db import FragmentsDb
 from .pairs import similar, open_similarity_matrix
-from .pharmacophores import PharmacophoresDb
+from .pharmacophores import PharmacophoresDb, as_phar
 from .webservice.client import WebserviceClient, IncompleteFragments, IncompletePharmacophores
 
 
@@ -232,28 +232,37 @@ def fragments_by_id(fragment_ids, fragments_db_filename_or_url, prefix=''):
     return df
 
 
-def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url, prefix=''):
+def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url):
+    """Fetch pharmacophore points by fragment identifiers
+
+    Args:
+        fragment_ids (pd.Series): List of fragment identifiers
+        pharmacophores_db_filename_or_url: Filename of pharmacophores db or base url of kripodb webservice
+
+    Returns:
+        pandas.Series :Pandas series with pharmacophores as string in phar format.
+                       Fragment without pharmacophore will return None
+    """
     if pharmacophores_db_filename_or_url.startswith('http'):
         client = WebserviceClient(pharmacophores_db_filename_or_url)
         try:
             pphors = client.pharmacophores(fragment_ids)
         except IncompletePharmacophores as e:
-            df = pd.DataFrame(e.pharmacophores)
-            df.rename(columns=lambda x: prefix + x, inplace=True)
-            raise IncompletePharmacophores(e.absent_identifiers, df)
+            s = pd.Series(e.pharmacophores, dtype=str)
+            raise IncompletePharmacophores(e.absent_identifiers, s)
     else:
-        pharmacophoresdb = PharmacophoresDb(pharmacophores_db_filename_or_url)
-        pphors = []
-        absent_identifiers = []
-        for frag_id in fragment_ids:
-            try:
-                pharmacophores.append(pharmacophoresdb[frag_id])
-            except KeyError:
-                absent_identifiers.append(frag_id)
-        if absent_identifiers:
-            df = pd.DataFrame(pphors)
-            df.rename(columns=lambda x: prefix + x, inplace=True)
-            raise IncompletePharmacophores(absent_identifiers, df)
-    df = pd.DataFrame(pphors)
-    df.rename(columns=lambda x: prefix + x, inplace=True)
-    return df
+        with PharmacophoresDb(pharmacophores_db_filename_or_url) as pharmacophoresdb:
+            pphors = []
+            absent_identifiers = []
+            for frag_id in fragment_ids:
+                try:
+                    phar = as_phar(frag_id, pharmacophoresdb[frag_id])
+                    pphors.append(phar)
+                except KeyError:
+                    pphors.append(None)
+                    absent_identifiers.append(frag_id)
+            if absent_identifiers:
+                s = pd.Series(pphors, dtype=str)
+                raise IncompletePharmacophores(absent_identifiers, s)
+    s = pd.Series(pphors, dtype=str)
+    return s
