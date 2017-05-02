@@ -16,9 +16,11 @@ from __future__ import absolute_import
 import pytest
 import requests_mock
 from rdkit.Chem.AllChem import Mol
+from requests import HTTPError
 
-from kripodb.webservice.client import WebserviceClient, IncompleteFragments
+from kripodb.webservice.client import WebserviceClient, IncompleteFragments, IncompletePharmacophores
 from .test_server import expected_fragments_info, expected_fragments_info_with_mol
+from ..test_pharmacophores import example1_phar, example3_phar
 
 
 @pytest.fixture
@@ -135,3 +137,41 @@ def test_fragments_by_id___withsinglechunk_withsomenotfound(base_url, client, ex
         assert len(e.value.fragments) == 1
         assert e.value.fragments[0]['frag_id'] == '3j7u_NDP_frag24'
         assert e.value.absent_identifiers == ['foo']
+
+
+def test_pharmacophores(base_url, client, example1_phar, example3_phar):
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/3j7u_NDP_frag24.phar', text=example1_phar)
+        m.get(base_url + '/fragments/3j7u_NDP_frag23.phar', text=example3_phar)
+
+        response = client.pharmacophores(['3j7u_NDP_frag24', '3j7u_NDP_frag23'])
+
+        assert response == [example1_phar, example3_phar]
+
+
+def test_pharmacophores_somenotfound_incomplete(base_url, client, example1_phar):
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/3j7u_NDP_frag24.phar', text=example1_phar)
+        notfound = {
+            'detail': "Fragment with identifier '3j7u_NDP_frag23' not found",
+            'identifier': '3j7u_NDP_frag23',
+            'status': 404,
+            'title': 'Not Found',
+            'type': 'about:blank'
+        }
+        m.get(base_url + '/fragments/3j7u_NDP_frag23.phar', status_code=404, json=notfound, headers={'Content-Type': 'application/problem+json'})
+
+        with pytest.raises(IncompletePharmacophores) as excinfo:
+            client.pharmacophores(['3j7u_NDP_frag24', '3j7u_NDP_frag23'])
+
+        assert excinfo.value.absent_identifiers == ['3j7u_NDP_frag23']
+        assert excinfo.value.pharmacophores == [example1_phar, None]
+
+
+def test_pharmacophores_server500(base_url, client):
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/3j7u_NDP_frag24.phar', text='Internal server error', status_code=500)
+        with pytest.raises(HTTPError) as excinfo:
+            client.pharmacophores(['3j7u_NDP_frag24'])
+
+        assert excinfo.value.response.status_code == 500

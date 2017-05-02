@@ -13,11 +13,10 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-import json
-
 import pytest
 from rdkit.Chem.AllChem import MolFromSmiles
 
+from kripodb.pharmacophores import PharmacophoresDb
 from kripodb.webservice import server
 from kripodb.pairs import open_similarity_matrix
 from kripodb.version import __version__
@@ -45,8 +44,15 @@ def fragsdb_filename():
 
 
 @pytest.fixture
-def app(similarity_matrix, fragsdb_filename):
-    return server.wsgi_app(similarity_matrix, fragsdb_filename)
+def pharmacophores_db():
+    db = PharmacophoresDb('data/pharmacophores.h5')
+    yield db
+    db.close()
+
+
+@pytest.fixture
+def app(similarity_matrix, fragsdb_filename, pharmacophores_db):
+    return server.wsgi_app(similarity_matrix, fragsdb_filename, pharmacophores_db)
 
 
 @pytest.fixture
@@ -155,9 +161,10 @@ def test_get_version():
     assert result == expected
 
 
-def test_wsgi_app(similarity_matrix, fragsdb_filename, app):
-    assert app.app.config['matrix'] == similarity_matrix
-    assert app.app.config['db_fn'] == fragsdb_filename
+def test_wsgi_app(similarity_matrix, fragsdb_filename, pharmacophores_db, app):
+    assert app.app.config['similarities'] == similarity_matrix
+    assert app.app.config['fragments'] == fragsdb_filename
+    assert app.app.config['pharmacophores'] == pharmacophores_db
     assert app.app.json_encoder == KripodbJSONEncoder
 
 
@@ -174,6 +181,23 @@ def test_get_fragment_svg_notfound(app):
     fragment_id = 'foo-bar'
     with app.app.test_request_context():
         response = server.get_fragment_svg(fragment_id, 400, 150)
+        assert response.status_code == 404
+        body = response_json(response)
+        assert fragment_id in body['detail']
+        assert fragment_id == body['identifier']
+
+
+def test_get_fragment_phar(app):
+    fragment_id = '3j7u_NDP_frag24'
+    with app.app.test_request_context():
+        result = server.get_fragment_phar(fragment_id)
+        assert 'LIPO' in result
+
+
+def test_get_fragment_phar_notfound(app):
+    fragment_id = 'foo-bar'
+    with app.app.test_request_context():
+        response = server.get_fragment_phar(fragment_id)
         assert response.status_code == 404
         body = response_json(response)
         assert fragment_id in body['detail']

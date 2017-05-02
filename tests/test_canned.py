@@ -17,12 +17,12 @@ from __future__ import absolute_import
 import pytest
 
 import requests_mock
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 import numpy as np
 import pandas as pd
 
-from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id, IncompleteHits
-from kripodb.webservice.client import IncompleteFragments
+from kripodb.canned import similarities, fragments_by_pdb_codes, fragments_by_id, IncompleteHits, pharmacophores_by_id
+from kripodb.webservice.client import IncompleteFragments, IncompletePharmacophores
 
 
 @pytest.fixture
@@ -152,9 +152,12 @@ def test_fragments_by_pdb_codes_with_prefix():
 
     expected = [{
         'prefix_nr_r_groups': 0, 'prefix_smiles': 'O=P([O-])([O-])OCC(O)CO', 'prefix_pdb_code': '3wxj',
-        'prefix_atom_codes': 'O1,C1,C2,O2,C3,O1P,O4P,O2P,O3P,P', 'prefix_het_code': 'G3P', 'prefix_hash_code': 'ee9013689ff298d4',
-        'prefix_frag_nr': 1, 'prefix_frag_id': '3wxj_G3P_frag1', 'prefix_rowid': 352104, 'prefix_het_chain': 'B', 'prefix_het_seq_nr': 601,
-        'prefix_prot_chain': 'B', 'prefix_uniprot_acc': 'D3KVM3', 'prefix_uniprot_name': None, 'prefix_prot_name': 'Glycerol kinase',
+        'prefix_atom_codes': 'O1,C1,C2,O2,C3,O1P,O4P,O2P,O3P,P', 'prefix_het_code': 'G3P',
+        'prefix_hash_code': 'ee9013689ff298d4',
+        'prefix_frag_nr': 1, 'prefix_frag_id': '3wxj_G3P_frag1', 'prefix_rowid': 352104, 'prefix_het_chain': 'B',
+        'prefix_het_seq_nr': 601,
+        'prefix_prot_chain': 'B', 'prefix_uniprot_acc': 'D3KVM3', 'prefix_uniprot_name': None,
+        'prefix_prot_name': 'Glycerol kinase',
         'prefix_ec_number': '2.7.1.30',
         'prefix_pdb_title': 'Crystal structure of trypanosoma brucei gambiense glycerol kinase in complex with glycerol 3-phosphate',
     }]
@@ -215,13 +218,13 @@ def test_fragments_by_pdb_codes__usingwebservice_withbadid(base_url):
     with requests_mock.mock() as m:
         url = base_url + '/fragments?pdb_codes=0000'
         body = {
-                'detail': "Fragment with identifier '0000' not found",
-                'absent_identifiers': ['0000'],
-                'fragments': [],
-                'status': 404,
-                'title': 'Not Found',
-                'type': 'about:blank'
-            }
+            'detail': "Fragment with identifier '0000' not found",
+            'absent_identifiers': ['0000'],
+            'fragments': [],
+            'status': 404,
+            'title': 'Not Found',
+            'type': 'about:blank'
+        }
         m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
 
         with pytest.raises(IncompleteFragments) as e:
@@ -245,13 +248,13 @@ def test_fragments_by_pdb_codes__usingwebservice_withsomebadid(base_url):
             'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
         }]
         body = {
-                'detail': "Fragment with identifier '0000' not found",
-                'absent_identifiers': ['0000'],
-                'fragments': fragments,
-                'status': 404,
-                'title': 'Not Found',
-                'type': 'about:blank'
-            }
+            'detail': "Fragment with identifier '0000' not found",
+            'absent_identifiers': ['0000'],
+            'fragments': fragments,
+            'status': 404,
+            'title': 'Not Found',
+            'type': 'about:blank'
+        }
         m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
 
         with pytest.raises(IncompleteFragments) as e:
@@ -303,13 +306,13 @@ def test_fragments_by_id__usingwebservice_withbadid(base_url):
     with requests_mock.mock() as m:
         url = base_url + '/fragments?fragment_ids=foo-bar'
         body = {
-                'detail': "Fragment with identifier 'foo-bar' not found",
-                'absent_identifiers': ['foo-bar'],
-                'fragments': [],
-                'status': 404,
-                'title': 'Not Found',
-                'type': 'about:blank'
-            }
+            'detail': "Fragment with identifier 'foo-bar' not found",
+            'absent_identifiers': ['foo-bar'],
+            'fragments': [],
+            'status': 404,
+            'title': 'Not Found',
+            'type': 'about:blank'
+        }
         m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
 
         with pytest.raises(IncompleteFragments) as e:
@@ -333,13 +336,13 @@ def test_fragments_by_id__usingwebservice_withsomebadid(base_url):
             'pdb_title': 'Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand',
         }]
         body = {
-                'detail': "Fragment with identifier 'foo-bar' not found",
-                'absent_identifiers': ['foo-bar'],
-                'fragments': fragments,
-                'status': 404,
-                'title': 'Not Found',
-                'type': 'about:blank'
-            }
+            'detail': "Fragment with identifier 'foo-bar' not found",
+            'absent_identifiers': ['foo-bar'],
+            'fragments': fragments,
+            'status': 404,
+            'title': 'Not Found',
+            'type': 'about:blank'
+        }
         m.get(url, json=body, status_code=404, headers={'Content-Type': 'application/problem+json'})
 
         with pytest.raises(IncompleteFragments) as e:
@@ -378,3 +381,70 @@ def test_fragments_by_id__withsomebadid():
     e.value.fragments.drop('mol', axis=1, inplace=True, errors='ignore')
     assert_frame_equal(e.value.fragments, pd.DataFrame(fragments))
     assert e.value.absent_identifiers == ['foo-bar']
+
+
+@pytest.fixture
+def phar1():
+    return '''2n2k_MTN_frag1
+LIPO 12.3971 28.8415 21.9387 0 0 0 0 0
+LIPO 13.8665 28.9799 19.4300 0 0 0 0 0
+HACC 12.9295 31.8887 21.6508 0 0 0 0 0
+HDON 16.2247 32.8927 21.5269 0 0 0 0 0
+HDON 15.4769 31.9618 21.8863 0 0 0 0 0
+$$$$
+'''
+
+
+def test_pharmacophores_by_id(phar1):
+    frag_ids = pd.Series(['2n2k_MTN_frag1'])
+
+    result = pharmacophores_by_id(frag_ids, 'data/pharmacophores.h5')
+
+    expected = pd.Series([phar1])
+    assert_series_equal(result, expected)
+
+
+def test_pharmacophores_by_id_withbadid():
+    frag_ids = pd.Series(['foo-bar'])
+
+    with pytest.raises(IncompletePharmacophores) as e:
+        pharmacophores_by_id(frag_ids, 'data/pharmacophores.h5')
+
+    expected = pd.Series([None], dtype=str)
+    assert_series_equal(e.value.pharmacophores, expected)
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_pharmacophores_by_id_withsomebadid(phar1):
+    frag_ids = pd.Series(['2n2k_MTN_frag1', 'foo-bar'])
+
+    with pytest.raises(IncompletePharmacophores) as e:
+        pharmacophores_by_id(frag_ids, 'data/pharmacophores.h5')
+
+    expected = pd.Series([phar1, None])
+    assert_series_equal(e.value.pharmacophores, expected)
+    assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_pharmacophores_by_id__ws(base_url, phar1):
+    frag_ids = pd.Series(['2n2k_MTN_frag1'])
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/' + frag_ids[0] + '.phar', text=phar1)
+
+        result = pharmacophores_by_id(frag_ids, base_url)
+
+        expected = pd.Series([phar1])
+        assert_series_equal(result, expected)
+
+
+def test_pharmocophores_by_id__ws_withbadid(base_url):
+    frag_ids = pd.Series(['foo-bar'])
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/' + frag_ids[0] + '.phar', status_code=404)
+
+        with pytest.raises(IncompletePharmacophores) as e:
+            pharmacophores_by_id(frag_ids, base_url)
+
+        expected = pd.Series([None], dtype=str)
+        assert_series_equal(e.value.pharmacophores, expected)
+        assert e.value.absent_identifiers == ['foo-bar']

@@ -14,20 +14,18 @@
 """Kripo datafiles wrapped in a webservice"""
 from __future__ import absolute_import
 
-from _ctypes import ArgumentError
-
-from pkg_resources import resource_filename
 import logging
 
+import connexion
+from flask import current_app
+from flask.json import JSONEncoder
+from pkg_resources import resource_filename
 from rdkit.Chem.AllChem import Mol
 from rdkit.Chem.AllChem import MolToMolBlock
 from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
-import connexion
-from flask import current_app
-from flask.json import JSONEncoder
-
+from kripodb.pharmacophores import as_phar, PharmacophoresDb
 from ..db import FragmentsDb
 from ..pairs import open_similarity_matrix
 from ..version import __version__
@@ -66,7 +64,7 @@ def get_similar_fragments(fragment_id, cutoff, limit):
         werkzeug.exceptions.NotFound: When the fragments_id could not be found
 
     """
-    similarity_matrix = current_app.config['matrix']
+    similarity_matrix = current_app.config['similarities']
     query_id = fragment_id
     hits = []
     try:
@@ -99,7 +97,7 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
     Raises:
         werkzeug.exceptions.NotFound: When one of the fragments_ids or pdb_code could not be found
     """
-    fragments_db_filename = current_app.config['db_fn']
+    fragments_db_filename = current_app.config['fragments']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         fragments = []
         missing_ids = []
@@ -153,7 +151,7 @@ def get_fragment_svg(fragment_id, width, height):
     Returns:
         str: SVG document
     """
-    fragments_db_filename = current_app.config['db_fn']
+    fragments_db_filename = current_app.config['fragments']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
         try:
             fragment = fragmentsdb[fragment_id]
@@ -168,6 +166,15 @@ def get_fragment_svg(fragment_id, width, height):
             return fragment_not_found(fragment_id)
 
 
+def get_fragment_phar(fragment_id):
+    pharmacophores_db = current_app.config['pharmacophores']
+    try:
+        points = pharmacophores_db[fragment_id]
+        return as_phar(fragment_id, points)
+    except LookupError:
+        return fragment_not_found(fragment_id)
+
+
 def get_version():
     """
     Returns:
@@ -177,12 +184,13 @@ def get_version():
     return {'version': __version__}
 
 
-def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'):
+def wsgi_app(similarities, fragments, pharmacophores, external_url='http://localhost:8084/kripo'):
     """Create wsgi app
 
     Args:
-        sim_matrix (SimilarityMatrix): Similarity matrix to use in webservice
-        frags_db_fn (FragmentsDb): Fragment database filename
+        similarities (SimilarityMatrix): Similarity matrix to use in webservice
+        fragments (FragmentsDb): Fragment database filename
+        pharmacophores: Filename of pharmacophores hdf5 file
         external_url (str): URL which should be used in Swagger spec
 
     Returns:
@@ -192,8 +200,9 @@ def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'
     url = urlparse(external_url)
     swagger_file = resource_filename(__name__, 'swagger.yaml')
     app.app.json_encoder = KripodbJSONEncoder
-    app.app.config['matrix'] = sim_matrix
-    app.app.config['db_fn'] = frags_db_fn
+    app.app.config['similarities'] = similarities
+    app.app.config['fragments'] = fragments
+    app.app.config['pharmacophores'] = pharmacophores
     arguments = {'hostport': url.netloc, 'scheme': url.scheme, 'version': __version__}
     # Keep validate_responses turned off, because of conflict with connexion.problem
     # see https://github.com/zalando/connexion/issues/266
@@ -201,17 +210,19 @@ def wsgi_app(sim_matrix, frags_db_fn, external_url='http://localhost:8084/kripo'
     return app
 
 
-def serve_app(matrix, db, internal_port=8084, external_url='http://localhost:8084/kripo'):
+def serve_app(similarities, fragments, pharmacophores, internal_port=8084, external_url='http://localhost:8084/kripo'):
     """Serve webservice forever
 
     Args:
-        matrix: Filename of similarity matrix hdf5 file
-        db: Filename of fragments database file
+        similarities: Filename of similarity matrix hdf5 file
+        fragments: Filename of fragments database file
+        pharmacophores: Filename of pharmacophores hdf5 file
         internal_port: TCP port on which to listen
         external_url (str): URL which should be used in Swagger spec
     """
-    sim_matrix = open_similarity_matrix(matrix)
-    app = wsgi_app(sim_matrix, db, external_url)
+    sim_matrix = open_similarity_matrix(similarities)
+    pharmacophores_db = PharmacophoresDb(pharmacophores)
+    app = wsgi_app(sim_matrix, fragments, pharmacophores_db, external_url)
     LOGGER.setLevel(logging.INFO)
     LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info(' * Swagger spec at {}/swagger.json'.format(external_url))

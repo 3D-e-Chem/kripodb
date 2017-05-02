@@ -21,6 +21,7 @@ from .fragments import make_fragments_parser
 from .similarities import make_similarities_parser
 from .dive import make_dive_parsers
 from ..webservice.server import serve_app
+from .pharmacophores import make_pharmacophores_parser
 from ..version import __version__
 
 
@@ -44,13 +45,16 @@ def make_parser():
 
     serve_sc(subparsers)
 
+    make_pharmacophores_parser(subparsers)
+
     return parser
 
 
 def serve_sc(subparsers):
     sc = subparsers.add_parser('serve', help='Serve similarity matrix and fragments db as webservice')
-    sc.add_argument('matrix', type=str, help='Filename of similarity matrix hdf5 file')
-    sc.add_argument('db', type=str, help='Filename of fragments sqlite database file')
+    sc.add_argument('similarities', type=str, help='Filename of similarity matrix hdf5 file')
+    sc.add_argument('fragments', type=str, help='Filename of fragments sqlite database file')
+    sc.add_argument('pharmacophores', type=str, help='Filename of pharmacophores hdf5 file')
     sc.add_argument('--internal_port',
                     type=int,
                     default=8084,

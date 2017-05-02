@@ -11,6 +11,13 @@ Formatted as described on http://keepachangelog.com/.
 - Similarities histogram can read frozen matrices using either lower or upper triangle
 - Similarities export can be filtered by frag1 and/or pdb codes
 - Use scripts in update steps
+- Pharmacophores
+  - Store pharmocophore points in pytables table (#29)
+  - Export pharmacophore points in [\*.phar format](http://silicos-it.be.s3-website-eu-west-1.amazonaws.com/software/align-it/1.0.4/align-it.html#format)
+  - Sub command to add points to table from a directory
+  - Sub command to filter the pharmacophores points based on a fragments database
+  - Sub command and webservice endpoint to fetch the pharmacophore points of a single fragment identifier (#30)
+  - Canned method to fetch pharmacophores of a list fragment identifiers
 
 ### Fixed
 
