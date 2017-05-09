@@ -16,6 +16,9 @@ Input datasets
 
 1. only fragment1 or whole unfragmented ligands
 2. all fragments
+3. only gpcr frag1
+4. only kinase frag1
+5. only gpcr and kinase frag1
 
 Output datasets
 
@@ -25,7 +28,7 @@ Output datasets
 1. LargeVis input file from Kripo similarity matrix
 ---------------------------------------------------
 
-Dump the similarity matrix to csv::
+Dump the similarity matrix to csv of \*frag1 fragments::
 
     kripodb similarities export --no_header --frag1 similarities.h5 similarities.frag1.txt
 
@@ -59,10 +62,8 @@ Compile using miniconda::
 
     conda install gsl gcc
     cd LargeVis/Linux
-    c++ LargeVis.cpp main.cpp -o LargeVis -lm -pthread -lgsl -lgslcblas -Ofast -march=native -ffast-math
-    LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+    c++ LargeVis.cpp main.cpp -o LargeVis -lm -pthread -lgsl -lgslcblas -Ofast -Wl,-rpath,$CONDA_PREFIX/lib -march=native -ffast-math
     cp LargeVis $CONDA_PREFIX/bin/
-
 
 Then embed frag1 similarity matrix in 3D with::
 
@@ -80,17 +81,22 @@ Then embed similarity matrix in 2D with::
 
     LargeVis -fea 0 -outdim 2 -threads $(nproc) -input similarities.txt -output largevis.2d.txt
 
+
+The `kripo export` in step 1 and the LargeVis command can be submitted to scheduler with::
+
+   sbatch -n 1 $SCRIPTS/dive_frag1.sh
+   sbatch -n 1 $SCRIPTS/dive_frag1_gpcr_kinase.sh
+
 3. Generate DiVE metadata datafiles
 -----------------------------------
 
 Command to generate properties files::
 
     wget -O uniprot.txt 'http://www.uniprot.org/uniprot/?query=database:pdb&format=tab&columns=id,genes(PREFERRED),families,database(PDB)'
-    kripodb dive export fragments.sqlite uniprot.txt
+    kripodb dive export --pdbtags pdb.gpcr.txt --pdbtags pdb.kinase.txt fragments.sqlite uniprot.txt
 
 Will generate in current working directory the following files:
 
-* kripo.meta.txt
 * kripo.props.txt
 * kripo.propnames.txt
 
@@ -102,11 +108,8 @@ Download the MakeVizDataWithProperMetadata.py script from https://github.com/NLe
 
 For more information about the script see https://github.com/NLeSC/DiVE#from-output-of-largevis-to-input-of-dive .
 
-Commands to generate new DiVE input file::
+Example command to generate new DiVE input file::
 
-    python MakeVizDataWithProperMetadata.py -coord largevis.frag1.2d.txt -metadata kripo.meta.txt -np -kripo.props.txt -pif kripo.propnames.txt -dir frag1.3d
-    python MakeVizDataWithProperMetadata.py -coord largevis.frag1.3d.txt -metadata kripo.meta.txt -np -kripo.props.txt -pif kripo.propnames.txt -dir frag1.2d
-    python MakeVizDataWithProperMetadata.py -coord largevis.2d.txt -metadata kripo.meta.txt -np -kripo.props.txt -pif kripo.propnames.txt -dir 2d
-    python MakeVizDataWithProperMetadata.py -coord largevis.3d.txt -metadata kripo.meta.txt -np -kripo.props.txt -pif kripo.propnames.txt -dir 3d
+    python MakeVizDataWithProperMetadata.py -coord largevis2.similarities.frag1.gpcr.kinase.txt -metadata kripo.props.txt -np kripo.propnames.txt -json largevis2.similarities.frag1.gpcr.kinase.json -dir .
 
-The generated file can be uploaded at https://nlesc.github.io/DiVE/ to visualize.
+The generated file (largevis2.similarities.frag1.gpcr.kinase.json) can be uploaded at https://nlesc.github.io/DiVE/ to visualize.

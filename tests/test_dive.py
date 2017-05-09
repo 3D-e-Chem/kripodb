@@ -17,51 +17,43 @@ import json
 import numpy as np
 from six import StringIO
 import pytest
+from mock import patch
 
-import kripodb.script.dive as dive
-from ..utils import FrozenSimilarityMatrixInMemory
-
-
-def uniprot_mapping():
-    return  StringIO('''Entry	Gene names  (primary )	Protein families	Cross-reference (PDB)
-P81186	napA	Prokaryotic molybdopterin-containing oxidoreductase family, NasA/NapA/NarB subfamily	2JIM;2JIO;2JIP;2JIQ;2JIR;2NAP;2V3V;2V45;
-''')
+import kripodb.dive as dive
+from .utils import FrozenSimilarityMatrixInMemory
 
 
-def test_add_uniprot():
-    data = {
-        "2v3v_LCP_frag1": {
-            "Path": [],
-            "Coordinates": [0.2864670506986739, -0.24369131639863245, -0.23773760870587482],
-            "Categories": [
-                "LCP",
-                "2v3v",
-                "frag1"
-            ],
-            "Properties": []
-        }
-    }
-    mapping = uniprot_mapping()
+@pytest.fixture
+def mock_fetch_response():
+    mresponse = StringIO()
+    mresponse.write('structureId,source\n')
+    mresponse.write('"2n2k","Homo sapiens"\n')
+    mresponse.seek(0)
+    return mresponse
 
-    dive.add_uniprot(data, mapping)
 
-    expected = {
-        "2v3v_LCP_frag1": {
-            "Path": [],
-            "Coordinates": [0.2864670506986739, -0.24369131639863245, -0.23773760870587482],
-            "Categories": [
-                "2v3v",
-                "LCP",
-                "frag1",
-                "P81186",
-                "gene:napA",
-                "Prokaryotic molybdopterin-containing oxidoreductase family",
-                "NasA/NapA/NarB subfamily",
-            ],
-            "Properties": []
-        }
-    }
-    assert data == expected
+@patch('kripodb.pdb.urlopen')
+def test_dive_export(mocked_urlopen, mock_fetch_response):
+    mocked_urlopen.return_value = mock_fetch_response
+
+    fragmentsdb = 'data/fragments.sqlite'
+    uniprot_annot = StringIO(
+        'Entry\tGene names  (primary )\tProtein families\tCross-reference (PDB)' + '\n' +
+        'P0CG48\tUBC\tUbiquitin family\t1C3T;2N2K' + '\n'
+    )
+    pdbtag = StringIO('2n2k' + '\n')
+    pdbtag.name = 'mytag'
+
+    propnames = StringIO()
+    props = StringIO()
+
+    dive.dive_export(fragmentsdb, uniprot_annot, [pdbtag], propnames, props)
+
+    assert '["pdb", "het", "fragment", "title", "smiles", "weight", "uniprot", "protein", "organism", "gene", "pdbtag", "family0", "family1", "family2", "family3", "family4"]' == propnames.getvalue()
+    props_lines = props.getvalue().split('\n')
+    result = filter(lambda d: d.startswith('2n2k'), props_lines)[0]
+    expected = '2n2k_MTN_frag1 pdb:2n2k het:MTN fragment:1 "title:Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand" smiles:CC1(C)C=C(C[S-])C(C)(C)[NH+]1O 170.17 uniprot:P0CG48 "protein:Polyubiquitin-C" "organism:Homo sapiens" "gene:UBC" pdbtag:mytag "family0:Ubiquitin family"'
+    assert result == expected
 
 
 def test_dense_dump_allfrags():
@@ -132,41 +124,6 @@ def test_dive_sphere_frag1():
         sphere['3wtj_TH4_frag2']
 
 
-def test_dive_merge_uniprot_nodata():
-    mapping = uniprot_mapping()
-    data = {}
-
-    dive.dive_merge_uniprot(mapping, data)
-
-    expected = {}
-    assert data == expected
-
-
-def test_dive_merge_uniprot():
-    mapping = uniprot_mapping()
-    data = {
-        '2v3v_LCP_frag1': {
-            'pdb': '2v3v',
-            'uniprot': 'P81186'
-        }
-    }
-
-    dive.dive_merge_uniprot(mapping, data)
-
-    expected = {
-        '2v3v_LCP_frag1': {
-            'pdb': '2v3v',
-            'uniprot': 'P81186',
-            'gene': 'napA',
-            'families': [
-                'Prokaryotic molybdopterin-containing oxidoreductase family',
-                'NasA/NapA/NarB subfamily'
-            ]
-        }
-    }
-    assert data == expected
-
-
 def test_dump_props():
     props = {
         '2v3v_LCP_frag1': {
@@ -190,5 +147,5 @@ def test_dump_props():
 
     dive.dump_props(props, props_file)
 
-    expected = '2v3v_LCP_frag1 pdb:2v3v het:LCP fragment:1 "title:A NEW CATALYTIC MECHANISM OF PERIPLASMIC NITRATE REDUCTASE FROM DESULFOVIBRIO DESULFURICANS ATCC 27774 FROM CRYSTALLOGRAPHIC AND EPR DATA AND BASED ON DETAILED ANALYSIS OF THE SIXTH LIGAND" smiles:Nc1nc2N[C@@H]3O[C@H](CO[P@@](O)(=O)O[P@@](O)(=O)OC[C@H]4O[C@H]([C@H](O)[C@@H]4O)n4cnc5c4nc(N)[nH]c5=O)C(S)=C(S)[C@@H]3Nc2c(=O)[nH]1 740.56 uniprot:P81186 "protein:Periplasmic nitrate reductase" "organism:Desulfovibrio desulfuricans" gene:napA "family0:Prokaryotic molybdopterin-containing oxidoreductase family" "family1:NasA/NapA/NarB subfamily"\n'
+    expected = '2v3v_LCP_frag1 pdb:2v3v het:LCP fragment:1 "title:A NEW CATALYTIC MECHANISM OF PERIPLASMIC NITRATE REDUCTASE FROM DESULFOVIBRIO DESULFURICANS ATCC 27774 FROM CRYSTALLOGRAPHIC AND EPR DATA AND BASED ON DETAILED ANALYSIS OF THE SIXTH LIGAND" smiles:Nc1nc2N[C@@H]3O[C@H](CO[P@@](O)(=O)O[P@@](O)(=O)OC[C@H]4O[C@H]([C@H](O)[C@@H]4O)n4cnc5c4nc(N)[nH]c5=O)C(S)=C(S)[C@@H]3Nc2c(=O)[nH]1 740.56 uniprot:P81186 "protein:Periplasmic nitrate reductase" "organism:Desulfovibrio desulfuricans" "gene:napA"  "family0:Prokaryotic molybdopterin-containing oxidoreductase family" "family1:NasA/NapA/NarB subfamily"\n'
     assert props_file.getvalue() == expected

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+import codecs
 import csv
 from six.moves import zip
 from six.moves.urllib.request import urlopen
@@ -30,7 +31,7 @@ def parse_csv_file(thefile):
          dict: Dictionary with column header name as key and cell as value
 
     """
-    reader = csv.reader(thefile)
+    reader = csv.reader(codecs.iterdecode(thefile, 'ISO-8859-1'))
     # read header
     colnames = next(reader)
     # data rows

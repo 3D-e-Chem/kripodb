@@ -15,8 +15,20 @@ from __future__ import absolute_import
 from six import StringIO
 
 from mock import patch
+import pytest
 
 from kripodb.pdb import PdbReport
+
+
+@pytest.fixture
+def mock_fetch_response():
+    mresponse = StringIO()
+    mresponse.write('structureId,chainId,structureTitle,compound,ecNo,uniprotAcc,uniprotRecommendedName\n')
+    mresponse.write(
+        '"104L","B","HOW AMINO-ACID INSERTIONS ARE ALLOWED IN AN ALPHA-HELIX OF T4 LYSOZYME","T4 LYSOZYME","3.2.1.17","P00720","Endolysin"\n')
+    mresponse.write('"12E8","H","2E8 FAB FRAGMENT","IGG1-KAPPA 2E8 FAB (HEAVY CHAIN)","","",""\n')
+    mresponse.seek(0)
+    return mresponse
 
 
 class TestPdbReport(object):
@@ -46,13 +58,8 @@ class TestPdbReport(object):
         assert url == expected
 
     @patch('kripodb.pdb.urlopen')
-    def test_fetch(self, mocked_urlopen):
-        mresponse = StringIO()
-        mresponse.write('structureId,chainId,structureTitle,compound,ecNo,uniprotAcc,uniprotRecommendedName\n')
-        mresponse.write('"104L","B","HOW AMINO-ACID INSERTIONS ARE ALLOWED IN AN ALPHA-HELIX OF T4 LYSOZYME","T4 LYSOZYME","3.2.1.17","P00720","Endolysin"\n')
-        mresponse.write('"12E8","H","2E8 FAB FRAGMENT","IGG1-KAPPA 2E8 FAB (HEAVY CHAIN)","","",""\n')
-        mresponse.seek(0)
-        mocked_urlopen.return_value = mresponse
+    def test_fetch(self, mocked_urlopen, mock_fetch_response):
+        mocked_urlopen.return_value = mock_fetch_response
 
         pdb_report = PdbReport(['104L', '12E8'])
 
