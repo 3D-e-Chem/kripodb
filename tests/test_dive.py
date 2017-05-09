@@ -15,7 +15,7 @@ from __future__ import absolute_import
 
 import json
 import numpy as np
-from six import StringIO
+from six import StringIO, BytesIO
 import pytest
 from mock import patch
 
@@ -25,9 +25,9 @@ from .utils import FrozenSimilarityMatrixInMemory
 
 @pytest.fixture
 def mock_fetch_response():
-    mresponse = StringIO()
-    mresponse.write('structureId,source\n')
-    mresponse.write('"2n2k","Homo sapiens"\n')
+    mresponse = BytesIO()
+    mresponse.write(b'structureId,source\n')
+    mresponse.write(b'"2n2k","Homo sapiens"\n')
     mresponse.seek(0)
     return mresponse
 
@@ -51,7 +51,7 @@ def test_dive_export(mocked_urlopen, mock_fetch_response):
 
     assert '["pdb", "het", "fragment", "title", "smiles", "weight", "uniprot", "protein", "organism", "gene", "pdbtag", "family0", "family1", "family2", "family3", "family4"]' == propnames.getvalue()
     props_lines = props.getvalue().split('\n')
-    result = filter(lambda d: d.startswith('2n2k'), props_lines)[0]
+    result = list(filter(lambda d: d.startswith('2n2k_MTN_frag1'), props_lines))[0]
     expected = '2n2k_MTN_frag1 pdb:2n2k het:MTN fragment:1 "title:Ensemble structure of the closed state of Lys63-linked diubiquitin in the absence of a ligand" smiles:CC1(C)C=C(C[S-])C(C)(C)[NH+]1O 170.17 uniprot:P0CG48 "protein:Polyubiquitin-C" "organism:Homo sapiens" "gene:UBC" pdbtag:mytag "family0:Ubiquitin family"'
     assert result == expected
 

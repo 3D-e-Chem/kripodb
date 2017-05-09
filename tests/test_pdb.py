@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-from six import StringIO
+from six import StringIO, BytesIO
 
 from mock import patch
 import pytest
@@ -22,11 +22,11 @@ from kripodb.pdb import PdbReport
 
 @pytest.fixture
 def mock_fetch_response():
-    mresponse = StringIO()
-    mresponse.write('structureId,chainId,structureTitle,compound,ecNo,uniprotAcc,uniprotRecommendedName\n')
+    mresponse = BytesIO()
+    mresponse.write(b'structureId,chainId,structureTitle,compound,ecNo,uniprotAcc,uniprotRecommendedName\n')
     mresponse.write(
-        '"104L","B","HOW AMINO-ACID INSERTIONS ARE ALLOWED IN AN ALPHA-HELIX OF T4 LYSOZYME","T4 LYSOZYME","3.2.1.17","P00720","Endolysin"\n')
-    mresponse.write('"12E8","H","2E8 FAB FRAGMENT","IGG1-KAPPA 2E8 FAB (HEAVY CHAIN)","","",""\n')
+        b'"104L","B","HOW AMINO-ACID INSERTIONS ARE ALLOWED IN AN ALPHA-HELIX OF T4 LYSOZYME","T4 LYSOZYME","3.2.1.17","P00720","Endolysin"\n')
+    mresponse.write(b'"12E8","H","2E8 FAB FRAGMENT","IGG1-KAPPA 2E8 FAB (HEAVY CHAIN)","","",""\n')
     mresponse.seek(0)
     return mresponse
 
