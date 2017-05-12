@@ -83,11 +83,11 @@ class TestFragmentsDBEmpty(object):
 
     def test_add_fragments_from_shelve_weirdid(self, fragmentsdb):
         result = fragmentsdb.add_fragment_from_shelve('1muu-GDX', {})
-        assert result == None
+        assert result is None
 
     def test_add_fragments_from_shelve_weirdid2(self, fragmentsdb):
         result = fragmentsdb.add_fragment_from_shelve('1muu-GDX-B', {})
-        assert result == None
+        assert result is None
 
     def test_len(self, fragmentsdb):
         assert len(fragmentsdb) == 0
@@ -235,7 +235,7 @@ class TestIntbitsetDictEmpty(object):
     def test_default_number_of_bits(self, fingerprintsdb):
         bitsets = db.IntbitsetDict(fingerprintsdb)
 
-        assert bitsets.number_of_bits == None
+        assert bitsets.number_of_bits is None
 
     def test_get_number_of_bits(self, bitsets):
         assert bitsets.number_of_bits == 100
@@ -248,7 +248,7 @@ class TestIntbitsetDictEmpty(object):
     def test_delete_number_of_bits(self, bitsets):
         del bitsets.number_of_bits
 
-        assert bitsets.number_of_bits == None
+        assert bitsets.number_of_bits is None
 
     def test_len_empty(self, bitsets):
         assert len(bitsets) == 0
