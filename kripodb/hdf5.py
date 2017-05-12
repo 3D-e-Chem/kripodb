@@ -128,6 +128,28 @@ class SimilarityMatrix(object):
         """
         return self.pairs.count(frame_size, raw_score)
 
+    def keep(self, other, keep):
+        """Copy content of self to other and only keep given fragment labels and the labels they pair with
+
+        Args:
+            other (SimilarityMatrix): Writable matrix to fill
+            keep (set[str]): Fragment labels to keep
+        """
+        frag_ids2keep = self.labels.by_labels(keep)
+        all_frag_ids2keep = self.pairs.keep(other.pairs, frag_ids2keep)
+        self.labels.keep(other.labels, all_frag_ids2keep)
+
+    def skip(self, other, skip):
+        """Copy content of self to other and skip all given fragment labels
+
+        Args:
+            other (SimilarityMatrix): Writable matrix to fill
+            skip (set[str]): Fragment labels to skip
+        """
+        frag_ids2skip = self.labels.by_labels(skip)
+        self.pairs.skip(other.pairs, frag_ids2skip)
+        self.labels.skip(other.labels, frag_ids2skip)
+
 
 class AbstractSimpleTable(object):
     """Abstract wrapper around a HDF5 table
@@ -326,6 +348,55 @@ class PairsTable(AbstractSimpleTable):
                 count = counts[raw_score]
                 yield (score, count)
 
+    def keep(self, other, keep):
+        """Copy pairs from self to other and keep given fragment identifiers and the identifiers they pair with.
+
+        Args:
+            other (PairsTable): Pairs table to fill
+            keep (set[int]): Fragment identifiers to keep
+
+        Returns:
+            set[int]: Fragment identifiers that have been copied to other
+        """
+        all_frags2keep = set(keep)
+        hit = other.table.row
+        for row in self.table:
+            if row['a'] in keep and row['b'] in keep:
+                hit['a'] = row['a']
+                hit['b'] = row['b']
+                hit['score'] = row['score']
+                hit.append()
+            elif row['a'] in keep:
+                hit['a'] = row['a']
+                hit['b'] = row['b']
+                hit['score'] = row['score']
+                hit.append()
+                all_frags2keep.add(row['b'])
+            elif row['a'] in keep:
+                hit['a'] = row['a']
+                hit['b'] = row['b']
+                hit['score'] = row['score']
+                hit.append()
+                all_frags2keep.add(row['a'])
+        other.table.flush()
+        return all_frags2keep
+
+    def skip(self, other, skip):
+        """Copy content from self to other and skip given fragment identifiers
+
+        Args:
+            other (PairsTable): Pairs table to fill
+            skip (set[int]): Fragment identifiers to skip
+        """
+        hit = other.table.row
+        for row in self.table:
+            if row['a'] not in skip and row['b'] not in skip:
+                hit['a'] = row['a']
+                hit['b'] = row['b']
+                hit['score'] = row['score']
+                hit.append()
+        other.table.flush()
+
 
 class Id2Label(tables.IsDescription):
     """Table description of id 2 label table."""
@@ -396,6 +467,24 @@ class LabelsLookup(AbstractSimpleTable):
         id_col = first_row[0]
         return id_col
 
+    def by_labels(self, labels):
+        """Look up ids of fragments by label
+
+        Args:
+            labels (set[str]): Set of fragment labels
+
+        Raises:
+            IndexError: When label of fragment is not found
+
+        Returns:
+            set[int]: Set of fragment identifiers
+        """
+        ids = set()
+        for frag_label, frag_id in six.iteritems(self.label2ids()):
+            if frag_label in labels:
+                ids.add(frag_id)
+        return ids
+
     def label2ids(self):
         """Return whole table as a dictionary
 
@@ -459,3 +548,30 @@ class LabelsLookup(AbstractSimpleTable):
     def __iter__(self):
         for r in self.table.__iter__():
             yield {'frag_id': r['frag_id'], 'label': r['label'].decode()}
+
+    def _copy(self, other, condition):
+        hit = other.table.row
+        for row in self.table:
+            if condition(row['frag_id']):
+                hit['frag_id'] = row['frag_id']
+                hit['label'] = row['label']
+                hit.append()
+        other.table.flush()
+
+    def keep(self, other, keep):
+        """Copy content of self to other and only keep given fragment identifiers
+
+        Args:
+            other (LabelsLookup): Labels table to fill
+            keep (set[int]): Fragment identifiers to keep
+        """
+        self._copy(other, lambda d: d in keep)
+
+    def skip(self, other, skip):
+        """Copy content of self to other and skip given fragment identifiers
+
+        Args:
+            other (LabelsLookup): Labels table to fill
+            skip (set[int]): Fragment identifiers to skip
+        """
+        self._copy(other, lambda d: d not in skip)

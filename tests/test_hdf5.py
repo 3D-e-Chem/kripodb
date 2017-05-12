@@ -28,6 +28,26 @@ def matrix():
     sim_matrix.close();
 
 
+@pytest.fixture
+def empty_matrix():
+    with SimilarityMatrixInMemory() as sim_matrix:
+        yield sim_matrix
+
+
+@pytest.fixture
+def example_matrix():
+    with SimilarityMatrixInMemory() as sim_matrix:
+        labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+        similarities = [
+            ('a', 'b', 0.9),
+            ('a', 'c', 0.6),
+            ('b', 'c', 0.6),
+            ('d', 'c', 0.7)
+        ]
+        sim_matrix.update(similarities, labels)
+        yield sim_matrix
+
+
 class TestSimilarityMatrix(object):
     def test_find_1(self, matrix):
         result = list(matrix.find('2n6i_4FU_frag1', 0.98))
@@ -56,55 +76,54 @@ class TestSimilarityMatrix(object):
         assert_almost_equal(result[2], expected[2], 5)
         assert result[:2] == expected[:2]
 
+    def test_keep(self, example_matrix, empty_matrix):
+        in_matrix = example_matrix
+        out_matrix = empty_matrix
+        frags2keep = {'a', 'b'}
+        in_matrix.keep(out_matrix, frags2keep)
+
+        expected_labels = {'a', 'b', 'c'}
+        assert set(out_matrix.labels.label2ids().keys()) == expected_labels
+        expected_similarities = {
+            ('a', 'b', 0.9),
+            ('a', 'c', 0.6),
+            ('b', 'c', 0.6)
+        }
+        assert set(out_matrix) == expected_similarities
+
+    def test_skip(self, example_matrix, empty_matrix):
+        in_matrix = example_matrix
+        out_matrix = empty_matrix
+        frags2skip = {'b'}
+        in_matrix.skip(out_matrix, frags2skip)
+
+        expected_labels = {'a', 'c', 'd'}
+        assert set(out_matrix.labels.label2ids().keys()) == expected_labels
+        expected_similarities = {
+            ('a', 'c', 0.6),
+            ('d', 'c', 0.7),
+        }
+        assert set(out_matrix) == expected_similarities
+
 
 class TestPairsTable(object):
-    def test_count(self):
-        with SimilarityMatrixInMemory() as matrix:
-            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
-            similarities = [
-                ('a', 'b', 0.9),
-                ('a', 'c', 0.6),
-                ('b', 'c', 0.6),
-                ('d', 'c', 0.7)
-            ]
-            matrix.update(similarities, labels)
+    def test_count(self, example_matrix):
+        counts = list(example_matrix.count(100000))
 
-            counts = list(matrix.count(100000))
+        expected = [(0.6,  2),
+                    (0.7,  1),
+                    (0.9,  1)]
+        assert_array_almost_equal(counts, expected, 6)
 
-            expected = [(0.6,  2),
-                        (0.7,  1),
-                        (0.9,  1)]
-            assert_array_almost_equal(counts, expected, 6)
-
-    def test_count_rawscore(self):
-        with SimilarityMatrixInMemory() as matrix:
-            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
-            similarities = [
-                ('a', 'b', 0.9),
-                ('a', 'c', 0.6),
-                ('b', 'c', 0.6),
-                ('d', 'c', 0.7)
-            ]
-            matrix.update(similarities, labels)
-
-            counts = list(matrix.count(100000, True))
+    def test_count_rawscore(self, example_matrix):
+            counts = list(example_matrix.count(100000, True))
             expected = [(39321,  2),
                         (45874,  1),
                         (58981,  1)]
             assert_array_almost_equal(counts, expected, 6)
 
-    def test_count_multiframe(self):
-        with SimilarityMatrixInMemory() as matrix:
-            labels = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
-            similarities = [
-                ('a', 'b', 0.9),
-                ('a', 'c', 0.6),
-                ('b', 'c', 0.6),
-                ('d', 'c', 0.7)
-            ]
-            matrix.update(similarities, labels)
-
-            counts = list(matrix.count(2))
+    def test_count_multiframe(self, example_matrix):
+            counts = list(example_matrix.count(2))
 
             expected = [(0.6,  2),
                         (0.7,  1),

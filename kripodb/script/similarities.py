@@ -189,66 +189,45 @@ def simmatrix_filter_sc(subparsers):
                     help='Input hdf5 similarity matrix file')
     sc.add_argument('output', type=str,
                     help='Output hdf5 similarity matrix file, will overwrite file if it exists')
-    sc.add_argument('--fragmentsdb',
-                    default='fragments.db',
-                    help='Name of fragments db file (default: %(default)s)')
+    group = sc.add_mutually_exclusive_group()
+    group.add_argument('--fragmentsdb',
+                    help='Name of fragments db file, '
+                         'fragments in it will be kept as well as their pair counter parts.')
+    group.add_argument('--skip', type=argparse.FileType('r'), help='File with fragment identifiers on each line to skip')
     sc.set_defaults(func=simmatrix_filter)
 
 
-def simmatrix_filter(input, output, fragmentsdb):
+def simmatrix_filter(input, output, fragmentsdb, skip):
     simmatrix_in = SimilarityMatrix(input)
-    frags = FragmentsDb(fragmentsdb)
-    print('Counting')
-    expectedlabelrows = len(frags)
-    labelsin = len(simmatrix_in.labels)
-    expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
+    if fragmentsdb:
+        frags = FragmentsDb(fragmentsdb)
+        expectedlabelrows = len(frags)
+        labelsin = len(simmatrix_in.labels)
+        expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
 
-    simmatrix_out = SimilarityMatrix(output,
-                                     'w',
-                                     expectedlabelrows=expectedlabelrows,
-                                     expectedpairrows=expectedpairrows,
-                                     )
+        simmatrix_out = SimilarityMatrix(output,
+                                         'w',
+                                         expectedlabelrows=expectedlabelrows,
+                                         expectedpairrows=expectedpairrows,
+                                         )
 
-    print('Building frag_id keep list')
-    frag_labels2keep = set(frags.id2label().values())
-    frag_ids2keep = set()
-    for frag_label, frag_id in six.iteritems(simmatrix_in.labels.label2ids()):
-        if frag_label in frag_labels2keep:
-            frag_ids2keep.add(frag_id)
+        frag_labels2keep = set(frags.id2label().values())
+        simmatrix_in.keep(simmatrix_out, frag_labels2keep)
+    if skip:
+        labels2skip = set()
+        for line in skip:
+            labels2skip.add(line.strip())
+        labelsin = len(simmatrix_in.labels)
+        expectedlabelrows = labelsin - len(labels2skip)
+        expectedpairrows = int(len(simmatrix_in.pairs) * (float(expectedlabelrows) / labelsin))
 
-    print('Copying subset of pairs table')
-    all_frags2keep = set(frag_ids2keep)
-    hit = simmatrix_out.pairs.table.row
-    for row in simmatrix_in.pairs.table:
-        if row[0] in frag_ids2keep and row[1] in frag_ids2keep:
-            hit['a'] = row[0]
-            hit['b'] = row[1]
-            hit['score'] = row[2]
-            hit.append()
-            hit['b'] = row[0]
-            hit['a'] = row[1]
-            hit['score'] = row[2]
-            hit.append()
-        elif row[0] in frag_ids2keep:
-            hit['a'] = row[0]
-            hit['b'] = row[1]
-            hit['score'] = row[2]
-            hit.append()
-            all_frags2keep.add(row[1])
-        elif row[1] in frag_ids2keep:
-            hit['a'] = row[1]
-            hit['b'] = row[0]
-            hit['score'] = row[2]
-            hit.append()
-            all_frags2keep.add(row[0])
+        simmatrix_out = SimilarityMatrix(output,
+                                         'w',
+                                         expectedlabelrows=expectedlabelrows,
+                                         expectedpairrows=expectedpairrows,
+                                         )
 
-    print('Copying subset of labels table')
-    hit = simmatrix_out.labels.table.row
-    for row in simmatrix_in.labels.table:
-        if row[0] in all_frags2keep:
-            hit['frag_id'] = row[0]
-            hit['label'] = row[1]
-            hit.append()
+        simmatrix_in.skip(simmatrix_out, labels2skip)
 
     simmatrix_in.close()
     simmatrix_out.close()
