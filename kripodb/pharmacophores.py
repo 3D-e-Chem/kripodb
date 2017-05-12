@@ -74,7 +74,7 @@ class PharmacophoresDb(object):
     Pharmacophore points of a fragment can be retrieved using::
 
         points = db['frag_id1']
-        
+
     `points` is a list of points, each point is a tuple with following columns feature type key, x, y and z coordinate.
     The feature type key is defined in FEATURE_TYPES.
 
@@ -90,9 +90,9 @@ class PharmacophoresDb(object):
 
     def close(self):
         """Closes the hdf5file
-        
+
         Instead of calling close() explicitly, use context manager::
-        
+
             with PharmacophoresDb('data/pharmacophores.h5') as db:
                 points = db['frag_id1']
         """
@@ -224,27 +224,27 @@ def as_phar(frag_id, points):
 
 class PharmacophorePointsTable(object):
     """Wrapper around pytables table to store pharmacohpore points
-    
+
     Args:
         h5file (tables.File):  Pytables hdf5 file object which contains the pharmacophores table
         expectedrows (int): Expected number of pharmacophores.
             Required when hdf5 file is created, helps optimize compression
-    
+
     Pharmacophore points of a fragment can be retrieved using::
-    
+
         points = table['frag_id1']
-        
+
     `points` is a list of points, each point is a tuple with following columns feature type key, x, y and z coordinate.
     The feature type key is defined in FEATURE_TYPES.
-    
+
     Number of pharmacophore points can be requested using::
-    
+
         nr_points = len(table)
-        
+
     To check whether fragment identifier is contained use::
-    
+
         'frag_id1' in table
-    
+
     Attributes:
         table (tables.Table): Pytables table with rows of type PharmacophoreRow
     """
