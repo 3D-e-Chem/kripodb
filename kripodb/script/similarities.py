@@ -1,7 +1,6 @@
 import argparse
 import csv
 
-import six
 from tables import parameters
 from .. import pairs
 from ..db import FragmentsDb

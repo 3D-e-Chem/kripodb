@@ -81,7 +81,7 @@ class PharmacophoresDb(object):
     Attributes:
         h5file (tables.File): Object representing an open hdf5 file
         points (PharmacophorePointsTable): HDF5 table that contains pharmacophore points
-        
+
     """
 
     def __init__(self, filename, mode='r', expectedrows=0, **kwargs):

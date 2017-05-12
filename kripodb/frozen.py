@@ -37,7 +37,7 @@ class FrozenSimilarityMatrix(object):
     Warning! Can not be enlarged.
 
     Compared find performance FrozenSimilarityMatrix with SimilarityMatrix::
-    
+
     >>> from kripodb.db import FragmentsDb
     >>> db = FragmentsDb('data/feb2016/Kripo20151223.sqlite')
     >>> ids = [v[0] for v in db.cursor.execute('SELECT frag_id FROM fragments ORDER BY RANDOM() LIMIT 20')]
