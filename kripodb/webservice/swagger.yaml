@@ -108,6 +108,8 @@ paths:
       responses:
         '200':
           description: SVG image
+          schema:
+            type: file
         '404':
           description: Fragment was not found
           schema:
@@ -143,6 +145,7 @@ paths:
       operationId: get_fragment_svg
       produces:
         - image/svg+xml
+        - application/problem+json
       summary: 2D drawing of fragment in SVG format
   '/fragments/{fragment_id}.phar':
     get:
@@ -150,6 +153,8 @@ paths:
       responses:
         '200':
           description: Pharmacophore
+          schema:
+            type: file
         '404':
           description: Pharmacophore of fragment was not found
           schema:
@@ -169,6 +174,7 @@ paths:
       operationId: get_fragment_phar
       produces:
         - text/plain
+        - application/problem+json
       summary: Pharmacophore of fragment in phar format
   /version:
     get:

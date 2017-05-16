@@ -13,6 +13,7 @@ sphinx-argparse==0.1.17
 # for faster pydev debugging
 cython==0.25.2
 # pinned deps
-connexion==1.1.8
+connexion==1.1.9
+swagger-spec-validator==2.1.0
 # install Kripodb itself
 -e .
