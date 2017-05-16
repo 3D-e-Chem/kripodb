@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import logging
 
 import connexion
+import flask
 from flask import current_app
 from flask.json import JSONEncoder
 from pkg_resources import resource_filename
@@ -149,7 +150,7 @@ def get_fragment_svg(fragment_id, width, height):
         height (int): Height of SVG in pixels
 
     Returns:
-        str: SVG document
+        flask.Response|connexion.lifecycle.ConnexionResponse: SVG document|problem
     """
     fragments_db_filename = current_app.config['fragments']
     with FragmentsDb(fragments_db_filename) as fragmentsdb:
@@ -161,16 +162,27 @@ def get_fragment_svg(fragment_id, width, height):
                 ext = {'identifier': fragment_id}
                 return connexion.problem(404, title, description, ext=ext)
             mol = fragment['mol']
-            return mol2svg(mol, width, height)
+            svg = mol2svg(mol, width, height)
+            return flask.Response(svg, mimetype='image/svg+xml')
         except LookupError:
             return fragment_not_found(fragment_id)
 
 
 def get_fragment_phar(fragment_id):
+    """Pharmacophore in phar format of fragment
+
+    Args:
+        fragment_id (str): Fragment identifier
+
+    Returns:
+        flask.Response|connexion.lifecycle.ConnexionResponse: Pharmacophore|problem
+
+    """
     pharmacophores_db = current_app.config['pharmacophores']
     try:
         points = pharmacophores_db[fragment_id]
-        return as_phar(fragment_id, points)
+        phar = as_phar(fragment_id, points)
+        return flask.Response(phar, mimetype='text/plain')
     except LookupError:
         return fragment_not_found(fragment_id)
 

@@ -172,9 +172,10 @@ def test_get_fragment_svg(app):
     fragment_id = '3j7u_NDP_frag24'
     with app.app.test_request_context():
         result = server.get_fragment_svg(fragment_id, 400, 150)
-        assert 'NH' in result
-        assert '400' in result
-        assert '150' in result
+        assert b'NH' in result.data
+        assert b'400' in result.data
+        assert b'150' in result.data
+        assert result.mimetype == 'image/svg+xml'
 
 
 def test_get_fragment_svg_notfound(app):
@@ -191,7 +192,8 @@ def test_get_fragment_phar(app):
     fragment_id = '3j7u_NDP_frag24'
     with app.app.test_request_context():
         result = server.get_fragment_phar(fragment_id)
-        assert 'LIPO' in result
+        assert b'LIPO' in result.data
+        assert result.mimetype == 'text/plain'
 
 
 def test_get_fragment_phar_notfound(app):
