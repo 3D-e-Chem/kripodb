@@ -5,12 +5,15 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [2.3.0] - 2017-05-17
+
 ### Added
 
-- Similarities histogram can output raw scores
-- Similarities histogram can read frozen matrices using either lower or upper triangle
-- Similarities export can be filtered by frag1 and/or pdb codes
-- Similarities filter can be filtered by skip list or keep db
+- Similarities 
+    - Histogram can output raw scores
+    - Histogram can read frozen matrices using either lower or upper triangle
+    - Export can be filtered by frag1 and/or pdb codes
+    - Filter can be filtered by skip list or keep db
 - Use scripts in update steps
 - Pharmacophores
   - Store pharmocophore points in pytables table (#29)
