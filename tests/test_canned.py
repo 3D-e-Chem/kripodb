@@ -404,6 +404,15 @@ def test_pharmacophores_by_id(phar1):
     assert_series_equal(result, expected)
 
 
+def test_pharmacophores_by_id_indexed(phar1):
+    frag_ids = pd.Series(['2n2k_MTN_frag1'], ['Row0'])
+
+    result = pharmacophores_by_id(frag_ids, 'data/pharmacophores.h5')
+
+    expected = pd.Series([phar1], ['Row0'])
+    assert_series_equal(result, expected)
+
+
 def test_pharmacophores_by_id_withbadid():
     frag_ids = pd.Series(['foo-bar'])
 
@@ -437,6 +446,17 @@ def test_pharmacophores_by_id__ws(base_url, phar1):
         assert_series_equal(result, expected)
 
 
+def test_pharmacophores_by_id__ws_indexed(base_url, phar1):
+    frag_ids = pd.Series(['2n2k_MTN_frag1'], ['Row0'])
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/' + frag_ids[0] + '.phar', text=phar1)
+
+        result = pharmacophores_by_id(frag_ids, base_url)
+
+        expected = pd.Series([phar1], ['Row0'])
+        assert_series_equal(result, expected)
+
+
 def test_pharmocophores_by_id__ws_withbadid(base_url):
     frag_ids = pd.Series(['foo-bar'])
     with requests_mock.mock() as m:
@@ -446,5 +466,19 @@ def test_pharmocophores_by_id__ws_withbadid(base_url):
             pharmacophores_by_id(frag_ids, base_url)
 
         expected = pd.Series([None], dtype=str)
+        assert_series_equal(e.value.pharmacophores, expected)
+        assert e.value.absent_identifiers == ['foo-bar']
+
+
+def test_pharmocophores_by_id__ws_someadid_indexed(base_url, phar1):
+    frag_ids = pd.Series(['foo-bar', '2n2k_MTN_frag1'], ['Row0', 'Row1'])
+    with requests_mock.mock() as m:
+        m.get(base_url + '/fragments/' + frag_ids[0] + '.phar', status_code=404)
+        m.get(base_url + '/fragments/' + frag_ids[1] + '.phar', text=phar1)
+
+        with pytest.raises(IncompletePharmacophores) as e:
+            pharmacophores_by_id(frag_ids, base_url)
+
+        expected = pd.Series([None, phar1], ['Row0', 'Row1'], dtype=str)
         assert_series_equal(e.value.pharmacophores, expected)
         assert e.value.absent_identifiers == ['foo-bar']

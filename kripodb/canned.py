@@ -250,7 +250,7 @@ def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url):
         Fragments similar to '3j7u_NDP_frag24' fragment.
 
         >>> from kripodb.canned import pharmacophores_by_id
-        >>> fragment_ids = pd.Series(['2n2k_MTN_frag1'])
+        >>> fragment_ids = pd.Series(['2n2k_MTN_frag1'], ['Row0'])
         >>> pharmacophores = pharmacophores_by_id(fragment_ids, 'data/pharmacophores.h5')
         >>> len(pharmacophores)
         1
@@ -259,30 +259,29 @@ def pharmacophores_by_id(fragment_ids, pharmacophores_db_filename_or_url):
         Make sure the web service is running,
         for example by `kripodb serve data/similarities.h5 data/fragments.sqlite data/pharmacophores.h5`.
 
-        >>> pharmacophores = pharmacophores_by_id(fragment_ids,, 'http://localhost:8084/kripo')
+        >>> pharmacophores = pharmacophores_by_id(fragment_ids, 'http://localhost:8084/kripo')
         >>> len(pharmacophores)
         1
     """
+    pphors = pd.Series([], dtype=str)
     if pharmacophores_db_filename_or_url.startswith('http'):
         client = WebserviceClient(pharmacophores_db_filename_or_url)
         try:
-            pphors = client.pharmacophores(fragment_ids)
+            pphorsarray = client.pharmacophores(fragment_ids)
+            pphors = pd.Series(pphorsarray, fragment_ids.index, dtype=str)
         except IncompletePharmacophores as e:
-            s = pd.Series(e.pharmacophores, dtype=str)
-            raise IncompletePharmacophores(e.absent_identifiers, s)
+            pphors = pd.Series(e.pharmacophores, fragment_ids.index, dtype=str)
+            raise IncompletePharmacophores(e.absent_identifiers, pphors)
     else:
         with PharmacophoresDb(pharmacophores_db_filename_or_url) as pharmacophoresdb:
-            pphors = []
             absent_identifiers = []
-            for frag_id in fragment_ids:
+            for row_id, frag_id in fragment_ids.iteritems():
                 try:
                     phar = as_phar(frag_id, pharmacophoresdb[frag_id])
-                    pphors.append(phar)
+                    pphors[row_id] = phar
                 except KeyError:
-                    pphors.append(None)
+                    pphors[row_id] = None
                     absent_identifiers.append(frag_id)
             if absent_identifiers:
-                s = pd.Series(pphors, dtype=str)
-                raise IncompletePharmacophores(absent_identifiers, s)
-    s = pd.Series(pphors, dtype=str)
-    return s
+                raise IncompletePharmacophores(absent_identifiers, pphors)
+    return pphors
