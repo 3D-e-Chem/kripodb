@@ -61,6 +61,57 @@ paths:
         Retrieve fragments similar to query based on Kripo fingerprint. Hits are
         ordered by decreasing similarity score (this score ranges from 0,
         completely dissimilar, to 1, identical).
+  '/fragments/{reference_fragment_id}/align/{probe_fragment_id}':
+    get:
+      x-swagger-router-controller: kripodb.webservice.server
+      operationId: align_pharmacophore
+      summary: Align probe pharmacophore to reference pharmacophore
+      description: >
+        Align pharmacophore of the probe fragment id to the pharmacophore of the reference fragment id.
+        Returns the transformation matrix and optionally the aligned probe pharmacophore in phar format.
+      tags:
+        - Pharmacophores
+      parameters:
+        - name: reference_fragment_id
+          required: true
+          in: path
+          type: string
+          description: Fragment identifier of reference pharmacophore to align to.
+        - description: Fragment identifiers of probe pharmacophores to align.
+          in: path
+          required: true
+          type: string
+          name: probe_fragment_id
+        - name: cutoff
+          in: query
+          default: 1.0
+          type: number
+          format: double
+          description: Tolerance threshold for considering two distances to be equivalent
+        - name: break_num_cliques
+          type: number
+          format: int
+          in: query
+          description: Break when {break_num_cliques} cliques found.
+          default: 3000
+        - name: phar
+          type: boolean
+          default: false
+          in: query
+          description: Include aligned probe pharmacophore in phar format.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/AlignedPharmacophore'
+        '404':
+          description: Some filter identifiers where not found
+          schema:
+            $ref: '#/definitions/FragmentNotFound'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /fragments:
     get:
       responses:
@@ -170,7 +221,7 @@ paths:
           in: path
           name: fragment_id
       tags:
-        - Fragments
+        - Pharmacophores
       operationId: get_fragment_phar
       produces:
         - text/plain
@@ -309,3 +360,21 @@ definitions:
       required:
       - absent_identifiers
       - fragments
+  AlignedPharmacophore:
+    type: object
+    properties:
+      transformation_matrix:
+        type: array
+        minItems: 4
+        maxItems: 4
+        items:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+            format: double
+      phar:
+        type: string
+    required:
+    - transformation_matrix

@@ -26,7 +26,8 @@ from rdkit.Chem.AllChem import MolToMolBlock
 from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
-from kripodb.pharmacophores import as_phar, PharmacophoresDb
+from ..pharmacophores import as_phar, PharmacophoresDb
+from ..pharmacophores.align import Aligner, align
 from ..db import FragmentsDb
 from ..pairs import open_similarity_matrix
 from ..version import __version__
@@ -185,6 +186,25 @@ def get_fragment_phar(fragment_id):
         return flask.Response(phar, mimetype='text/plain')
     except LookupError:
         return fragment_not_found(fragment_id)
+
+
+def align_pharmacophore(reference_fragment_id, probe_fragment_id, cutoff, break_num_cliques, phar):
+    pharmacophores_db = current_app.config['pharmacophores']
+    try:
+        ref = pharmacophores_db[reference_fragment_id]
+    except LookupError:
+        return fragment_not_found(reference_fragment_id)
+    try:
+        probe = pharmacophores_db[probe_fragment_id]
+    except LookupError:
+        return fragment_not_found(probe_fragment_id)
+    ssd, matrix = Aligner(ref, probe).transformation(cutoff, break_num_cliques)
+    response = {
+        'matrix': matrix
+    }
+    if phar:
+        response['phar'] = as_phar(probe_fragment_id, align(probe, matrix))
+    return response
 
 
 def get_version():

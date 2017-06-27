@@ -13,6 +13,7 @@
 # limitations under the License.
 from __future__ import absolute_import
 
+from numpy.testing import assert_array_almost_equal
 import pytest
 from rdkit.Chem.AllChem import MolFromSmiles
 
@@ -204,3 +205,38 @@ def test_get_fragment_phar_notfound(app):
         body = response_json(response)
         assert fragment_id in body['detail']
         assert fragment_id == body['identifier']
+
+
+def test_align_pharmacophore_defaultsWithSameFrag(app):
+    reference_fragment_id = probe_fragment_id = '3j7u_NDP_frag1'
+    with app.app.test_request_context():
+        response = server.align_pharmacophore(
+            reference_fragment_id,
+            probe_fragment_id,
+            cutoff=1.0,
+            break_num_cliques=3000,
+            phar=False
+        )
+        expected = [
+            [1., 0.03, 0.04, 3.03],
+            [-0.03, 1., -0.07, -5.91],
+            [-0.04, 0.07, 1., -0.44],
+            [0., 0., 0., 1.]
+        ]
+        assert_array_almost_equal(response['matrix'], expected, 2)
+
+
+def test_align_pharmacophore_defaultsWithSameFragWithPhar(app):
+    reference_fragment_id = probe_fragment_id = '3j7u_NDP_frag1'
+    with app.app.test_request_context():
+        response = server.align_pharmacophore(
+            reference_fragment_id,
+            probe_fragment_id,
+            cutoff=1.0,
+            break_num_cliques=3000,
+            phar=True
+        )
+        # look at shape not actual coordinates
+        assert probe_fragment_id in response['phar']
+        assert '$$$$' in response['phar']
+        assert response['phar'].count('\n') == 31
