@@ -363,6 +363,9 @@ definitions:
   AlignedPharmacophore:
     type: object
     properties:
+      rmsd:
+        type: number
+        format: double
       transformation_matrix:
         type: array
         minItems: 4

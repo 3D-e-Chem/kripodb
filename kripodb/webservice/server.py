@@ -27,7 +27,7 @@ from rdkit.Chem.Draw import rdMolDraw2D
 from six.moves.urllib_parse import urlparse
 
 from ..pharmacophores import as_phar, PharmacophoresDb
-from ..pharmacophores.align import Aligner, align
+from ..pharmacophores.align import Aligner, align, NoOverlapFound
 from ..db import FragmentsDb
 from ..pairs import open_similarity_matrix
 from ..version import __version__
@@ -198,9 +198,19 @@ def align_pharmacophore(reference_fragment_id, probe_fragment_id, cutoff, break_
         probe = pharmacophores_db[probe_fragment_id]
     except LookupError:
         return fragment_not_found(probe_fragment_id)
-    ssd, matrix = Aligner(ref, probe).transformation(cutoff, break_num_cliques)
+    try:
+        rmsd, matrix = Aligner(ref, probe).transformation(cutoff, break_num_cliques)
+    except NoOverlapFound:
+        matrix = [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ]
+        rmsd = 9999
     response = {
-        'matrix': matrix
+        'matrix': matrix,
+        'rmsd': rmsd
     }
     if phar:
         response['phar'] = as_phar(probe_fragment_id, align(probe, matrix))

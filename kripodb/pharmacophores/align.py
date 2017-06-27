@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 
 import copy
+from math import sqrt
 
 import numpy as np
 from rdkit.Numerics import Alignment
@@ -35,6 +36,10 @@ def transform_point(pt, data):
     y = data[1][0] * pt[0] + data[1][1] * pt[1] + data[1][2] * pt[2] + data[1][3]
     z = data[2][0] * pt[0] + data[2][1] * pt[1] + data[2][2] * pt[2] + data[2][3]
     return x, y, z
+
+
+class NoOverlapFound(ValueError):
+    pass
 
 
 class Aligner(object):
@@ -225,6 +230,8 @@ class Aligner(object):
         # PREPARE THE CLIQUE PHARMACOPHORES
         clique_reference = []
         clique_probe = []
+        if not self.clique_results:
+            raise NoOverlapFound()
         for pair in self.clique_results[-1]:
             clique_reference.append(self.reference[int(pair[0])])
             clique_probe.append(self.probe[int(pair[1])])
@@ -239,7 +246,7 @@ class Aligner(object):
                 Set to zero (0) for a complete search.
 
         Returns:
-            tuple: First item is the SSD value for the alignment and
+            tuple: First item is the RSMD value for the alignment and
                     second item is the 4x4 transform matrix
 
         """
@@ -249,7 +256,9 @@ class Aligner(object):
         (reference, probe) = self.cliqued_pharmacophores()
         reference_points = [r[1:] for r in reference]
         probe_points = [r[1:] for r in probe]
-        return Alignment.GetAlignmentTransform(reference_points, probe_points)
+        ssd, matrix = Alignment.GetAlignmentTransform(reference_points, probe_points)
+        rmsd = sqrt(ssd / len(reference_points))
+        return rmsd, matrix
 
 
 def align(pharmacophore, matrix):

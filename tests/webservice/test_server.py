@@ -240,3 +240,28 @@ def test_align_pharmacophore_defaultsWithSameFragWithPhar(app):
         assert probe_fragment_id in response['phar']
         assert '$$$$' in response['phar']
         assert response['phar'].count('\n') == 31
+
+
+@pytest.fixture
+def dud_transform():
+    return [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+
+
+def test_align_pharmacophore_nonOverlapping_dud(app, dud_transform):
+    reference_fragment_id = '3j7u_NDP_frag23'
+    probe_fragment_id = '3j7u_NDP_frag12'
+    with app.app.test_request_context():
+        response = server.align_pharmacophore(
+            reference_fragment_id,
+            probe_fragment_id,
+            cutoff=0.1,
+            break_num_cliques=3000,
+            phar=False
+        )
+        assert_array_almost_equal(response['matrix'], dud_transform)
+        assert response['rmsd'] == 9999

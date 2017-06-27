@@ -16,7 +16,7 @@ from __future__ import absolute_import
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from kripodb.pharmacophores.align import Aligner, align, distances
+from kripodb.pharmacophores.align import Aligner, NoOverlapFound, align, distances
 
 
 @pytest.fixture
@@ -155,15 +155,22 @@ class TestAligner_SomeContent(object):
         assert len(probe) > 0
 
     def test_transformation(self, aligner):
-        ssd, matrix = aligner.transformation()
+        rmsd, matrix = aligner.transformation()
 
-        assert ssd > 0
+        assert rmsd > 0
         assert len(matrix) == 4
 
 
+def test_aligner_transformation_SingleSamePoint():
+    ref = probe = [('LIPO', 1., 1., 1.)]
+    # TODO should return matrix which does nothing
+    aligner = Aligner(ref, probe)
+    with pytest.raises(NoOverlapFound):
+        aligner.transformation()
+
+
 def test_align(aligner, probe_pharmacophore):
-    ssd, matrix = aligner.transformation()
+    rmsd, matrix = aligner.transformation()
     aligned_probe = align(probe_pharmacophore, matrix)
 
     assert len(aligned_probe) == len(probe_pharmacophore)
-
