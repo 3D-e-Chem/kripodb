@@ -258,7 +258,7 @@ class Aligner(object):
         probe_points = [r[1:] for r in probe]
         ssd, matrix = Alignment.GetAlignmentTransform(reference_points, probe_points)
         rmsd = sqrt(ssd / len(reference_points))
-        return rmsd, matrix
+        return rmsd, matrix.tolist()
 
 
 def align(pharmacophore, matrix):

@@ -65,10 +65,13 @@ def filter_sc(sc):
 
 
 def align_sc(sc):
-    parser = sc.add_parser('align', help='Align pharmacophore to another pharmacophore')
-    parser.add_argument('pharmacophoresdb', help='Name of pharmacophore db file')
-    parser.add_argument('reference', type=str, help='Reference fragment identifier')
-    parser.add_argument('probe', type=str, help='Probe fragment identifier')
+    desc = 'Align probe pharmacophore to reference pharmacophore, returns transformation matrix and rsmd as json'
+    parser = sc.add_parser('align',
+                           help='Align pharmacophore',
+                           description=desc)
+    parser.add_argument('--pharmacophoresdb', help='Name of pharmacophore db file')
+    parser.add_argument('reference', type=str, help='fragment identifier of reference pharmacophore')
+    parser.add_argument('probe', type=str, help='fragment identifier of probe pharmacophore')
     parser.add_argument('--break_num_cliques',
                         type=int,
                         default=3000,
@@ -79,15 +82,18 @@ def align_sc(sc):
                         default=1.0,
                         help='Tolerance threshold for considering two distances to be equivalent (default: %(default)s)'
                         )
+    parser.add_argument('--output', type=argparse.FileType('w'), default='-')
     parser.set_defaults(func=align_run)
 
-def align_run(pharmacophoresdb, reference, probe, cutoff, break_num_cliques):
+
+def align_run(pharmacophoresdb, reference, probe, cutoff, break_num_cliques, output):
     with PharmacophoresDb(pharmacophoresdb) as db:
         reference_points = db[reference]
         probe_points = db[probe]
         aligner = Aligner(reference_points, probe_points)
         transform = aligner.transformation(cutoff, break_num_cliques)
-        print(json.dumps(transform))
+        json.dump(transform, output)
+
 
 def make_pharmacophores_parser(subparsers):
     """Creates a parser for pharmacophores sub commands
