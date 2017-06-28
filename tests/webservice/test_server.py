@@ -221,10 +221,10 @@ def test_align_pharmacophore_defaultsWithSameFrag(app):
         assert 1 > response['rmsd'] > 0
         assert len(response['matrix']) == 4
         # no scaling
-        assert response['matrix'][0][0] == 1
-        assert response['matrix'][1][1] == 1
-        assert response['matrix'][2][2] == 1
-        assert response['matrix'][3][3] == 1
+        assert response['matrix'][0][0] == pytest.approx(1)
+        assert response['matrix'][1][1] == pytest.approx(1)
+        assert response['matrix'][2][2] == pytest.approx(1)
+        assert response['matrix'][3][3] == pytest.approx(1)
 
 
 def test_align_pharmacophore_defaultsWithSameFragWithPhar(app):
