@@ -219,7 +219,7 @@ class Aligner(object):
     def cliques(self, break_num_cliques=3000):
         # BRON KERBOSCH CLIQUE DETECTION BETWEEN PHARMACOPHORES
         r = []
-        p = self.nodes.keys()
+        p = list(self.nodes.keys())
         x = []
 
         self.clique_results = []
