@@ -120,11 +120,13 @@ class FastInserter(object):
 
     def __enter__(self):
         # increase insert speed, this is less safe
+        self.cursor.connection.commit()
         self.cursor.execute('PRAGMA journal_mode=WAL')
         self.cursor.execute('PRAGMA synchronous=OFF')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # switch back to default journal, so db file can be read-only and is safe again
+        self.cursor.connection.commit()
         self.cursor.execute('PRAGMA journal_mode=DELETE')
         self.cursor.execute('PRAGMA synchronous=FULL')
 
