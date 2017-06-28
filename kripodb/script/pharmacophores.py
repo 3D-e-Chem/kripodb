@@ -1,7 +1,9 @@
 import argparse
+import json
 
 from kripodb.db import FragmentsDb
 from ..pharmacophores import PharmacophoresDb
+from ..pharmacophores.align import Aligner
 
 
 def dir2db_run(startdir, pharmacophoresdb, nrrows):
@@ -62,6 +64,31 @@ def filter_sc(sc):
     parser.set_defaults(func=filter_run)
 
 
+def align_sc(sc):
+    parser = sc.add_parser('align', help='Align pharmacophore to another pharmacophore')
+    parser.add_argument('pharmacophoresdb', help='Name of pharmacophore db file')
+    parser.add_argument('reference', type=str, help='Reference fragment identifier')
+    parser.add_argument('probe', type=str, help='Probe fragment identifier')
+    parser.add_argument('--break_num_cliques',
+                        type=int,
+                        default=3000,
+                        help='''Break when {break_num_cliques} cliques found
+                        (default: %(default)s)''')
+    parser.add_argument('--cutoff',
+                        type=float,
+                        default=1.0,
+                        help='Tolerance threshold for considering two distances to be equivalent (default: %(default)s)'
+                        )
+    parser.set_defaults(func=align_run)
+
+def align_run(pharmacophoresdb, reference, probe, cutoff, break_num_cliques):
+    with PharmacophoresDb(pharmacophoresdb) as db:
+        reference_points = db[reference]
+        probe_points = db[probe]
+        aligner = Aligner(reference_points, probe_points)
+        transform = aligner.transformation(cutoff, break_num_cliques)
+        print(json.dumps(transform))
+
 def make_pharmacophores_parser(subparsers):
     """Creates a parser for pharmacophores sub commands
 
@@ -73,3 +100,4 @@ def make_pharmacophores_parser(subparsers):
     add_sc(sc)
     get_sc(sc)
     filter_sc(sc)
+    align_sc(sc)
