@@ -89,8 +89,7 @@ paths:
           format: double
           description: Tolerance threshold for considering two distances to be equivalent
         - name: break_num_cliques
-          type: number
-          format: int
+          type: integer
           in: query
           description: Break when {break_num_cliques} cliques found.
           default: 3000
