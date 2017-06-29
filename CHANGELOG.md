@@ -5,6 +5,10 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Added
+
+- Align 2 pharmacophores
+
 ### Fixed
 
 - clients for *.phar and *.svg endpoints have no response (#49) 

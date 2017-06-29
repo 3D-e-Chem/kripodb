@@ -163,7 +163,6 @@ class TestAligner_SomeContent(object):
 
 def test_aligner_transformation_SingleSamePoint():
     ref = probe = [('LIPO', 1., 1., 1.)]
-    # TODO should return matrix which does nothing
     aligner = Aligner(ref, probe)
     with pytest.raises(NoOverlapFound):
         aligner.transformation()
