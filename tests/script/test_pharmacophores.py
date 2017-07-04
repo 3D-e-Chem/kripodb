@@ -17,6 +17,9 @@ import json
 import sys
 from six import StringIO
 
+import pytest
+from numpy.testing import assert_array_almost_equal
+
 import kripodb.script as script
 import kripodb.script.pharmacophores as pscript
 
@@ -54,8 +57,11 @@ def test_align_run():
 
     pscript.align_run('data/pharmacophores.h5', '3jat_G2P_frag1', '2n2k_MTN_frag1', 1.0, 3000, out)
 
-    result = json.loads(out.getvalue())
+    (rmsd, matrix) = json.loads(out.getvalue())
 
-    assert len(result) == 2
-    assert 1 > result[0] > 0
-    assert len(result[1]) == 4
+    assert rmsd == pytest.approx(0.19767105)
+    expected = [[5.253691e-01, -8.392010e-01, 1.404603e-01, 3.040672e+02],
+                [-8.467798e-01, -4.994923e-01, 1.829521e-01, 4.662223e+02],
+                [-8.337473e-02, -2.150564e-01, -9.730362e-01, 2.896292e+02],
+                [0.000000e+00, 0.000000e+00, 0.000000e+00, 1.000000e+00]]
+    assert_array_almost_equal(matrix, expected, 4)

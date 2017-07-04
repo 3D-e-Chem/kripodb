@@ -144,7 +144,7 @@ class TestAligner_SomeContent(object):
         aligner.calculate_possible_pairs()
 
         cliques = aligner.cliques()
-        assert len(cliques) > 0
+        assert len(cliques) > 1
 
     def test_cliqued_pharmacophores(self, aligner):
         aligner.calculate_possible_pairs()
@@ -157,8 +157,12 @@ class TestAligner_SomeContent(object):
     def test_transformation(self, aligner):
         rmsd, matrix = aligner.transformation()
 
-        assert rmsd > 0
-        assert len(matrix) == 4
+        assert rmsd == pytest.approx(0.94635628)
+        expected = [[-0.314313, -0.945074, 0.089677, 22.624344],
+                    [-0.466816, 0.071614, -0.88145, 36.577085],
+                    [0.826614, -0.318914, -0.463685, 18.486471],
+                    [0., 0., 0., 1.]]
+        assert_array_almost_equal(matrix, expected)
 
 
 def test_aligner_transformation_SingleSamePoint():
@@ -173,3 +177,6 @@ def test_align(aligner, probe_pharmacophore):
     aligned_probe = align(probe_pharmacophore, matrix)
 
     assert len(aligned_probe) == len(probe_pharmacophore)
+    aligned_types = [d[0] for d in aligned_probe]
+    probe_types = [d[0] for d in probe_pharmacophore]
+    assert aligned_types == probe_types

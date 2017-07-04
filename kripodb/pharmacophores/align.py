@@ -220,6 +220,7 @@ class Aligner(object):
         # BRON KERBOSCH CLIQUE DETECTION BETWEEN PHARMACOPHORES
         r = []
         p = list(self.nodes.keys())
+        p.sort()  # make order of keys predictable
         x = []
 
         self.clique_results = []
