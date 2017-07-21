@@ -5,6 +5,8 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [2.3.1] - 2017-07-21
+
 ### Fixed
 
 - clients for *.phar and *.svg endpoints have no response (#49) 
