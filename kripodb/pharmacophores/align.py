@@ -69,10 +69,10 @@ class Aligner(object):
 
         # IDENTIFY EACH PAIR IN PHARMACOPHORE A
         for a in range(len(self.reference) - 1):
-            for b in range(a + 1, len(self.probe)):
+            for b in range(a + 1, len(self.reference)):
                 # RECORD THE FEATURE TYPES AND THE DISTANCE BETWEEN THE FEATURES
                 a_type_a = self.reference[a][0]
-                a_type_b = self.probe[b][0]
+                a_type_b = self.reference[b][0]
                 a_distance = reference_distances[a][b]
 
                 # CHECK WHETHER FEATURE PAIR IS SYMMETRICAL
@@ -233,7 +233,8 @@ class Aligner(object):
         clique_probe = []
         if not self.clique_results:
             raise NoOverlapFound()
-        for pair in self.clique_results[-1]:
+        max_clique = self.clique_results[-1]
+        for pair in max_clique:
             clique_reference.append(self.reference[int(pair[0])])
             clique_probe.append(self.probe[int(pair[1])])
         return clique_reference, clique_probe

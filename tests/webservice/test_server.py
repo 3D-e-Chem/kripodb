@@ -265,4 +265,4 @@ def test_align_pharmacophore_nonOverlapping_dud(app, dud_transform):
             phar=False
         )
         assert_array_almost_equal(response['matrix'], dud_transform)
-        assert response['rmsd'] == 9999
+        assert response['rmsd'] == 0.0

@@ -157,10 +157,10 @@ class TestAligner_SomeContent(object):
     def test_transformation(self, aligner):
         rmsd, matrix = aligner.transformation()
 
-        assert rmsd == pytest.approx(0.94635628)
-        expected = [[-0.314313, -0.945074, 0.089677, 22.624344],
-                    [-0.466816, 0.071614, -0.88145, 36.577085],
-                    [0.826614, -0.318914, -0.463685, 18.486471],
+        assert rmsd == pytest.approx(1.152618)
+        expected = [[-0.713227, -0.295122, -0.635775, 39.335105],
+                    [0.133739, 0.83308, -0.536742, 27.010553],
+                    [0.688056, -0.467847, -0.554705, 19.31634],
                     [0., 0., 0., 1.]]
         assert_array_almost_equal(matrix, expected)
 
