@@ -41,7 +41,7 @@ class KripodbJSONEncoder(JSONEncoder):
     def default(self, obj):
         try:
             if isinstance(obj, Mol):
-                return MolToMolBlock(obj).encode()
+                return MolToMolBlock(obj)
             iterable = iter(obj)
         except TypeError:
             pass

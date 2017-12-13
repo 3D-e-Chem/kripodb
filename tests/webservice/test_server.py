@@ -28,7 +28,7 @@ class TestKripodbJSONEncoder(object):
         encoder = KripodbJSONEncoder()
         obj = MolFromSmiles('[*]C1OC(COP(=O)([O-])OP(=O)([O-])OCC2OC(N3C=CCC(C(N)=O)=C3)C(O)C2O)C(O)C1[*]')
         result = encoder.default(obj)
-        assert result.decode().endswith('END\n')
+        assert result.endswith('END\n')
 
 
 @pytest.fixture
