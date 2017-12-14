@@ -24,7 +24,7 @@ before_install:
     bash $INSTALLER -f -b -p $HOME/conda;
     fi
   - source $HOME/conda/bin/activate root
-  - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit setuptools pytables pandas coverage sphinx $CONDA_INSTALL
+  - conda install -y -q -c https://conda.anaconda.org/rdkit rdkit setuptools pytables pandas coverage $CONDA_INSTALL
 install:
   - pip install -r requirements.txt
 script: py.test --cov
