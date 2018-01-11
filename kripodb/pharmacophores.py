@@ -20,14 +20,14 @@ FEATURE_TYPES = [{
     'color': '376092',
     'element': 'Ne'
 }, {
-    'key': 'HDON',
-    'label': 'H-bond donor',
-    'color': '00ff00',
-    'element': 'As'
-}, {
     'key': 'HACC',
     'label': 'H-bond acceptor',
     'color': 'bfbfbf',
+    'element': 'As'
+}, {
+    'key': 'HDON',
+    'label': 'H-bond donor',
+    'color': '00ff00',
     'element': 'O'
 }, {
     'key': 'AROM',
