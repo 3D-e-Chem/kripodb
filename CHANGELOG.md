@@ -5,6 +5,10 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+### Fixed
+
+- Donor and acceptor features are swapped (#50)
+
 ## [2.3.1] - 2017-07-21
 
 ### Fixed
