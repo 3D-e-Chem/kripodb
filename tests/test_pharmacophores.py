@@ -201,3 +201,11 @@ def test_iter(filled_PharmacophorePointsTable):
     assert result == expected
 
 
+def test_len(filled_PharmacophorePointsTable):
+    assert len(filled_PharmacophorePointsTable) == 6
+
+
+def test_append(filled_PharmacophorePointsTable):
+    with PharmacophoresDbInMemory() as db:
+        db.points.append(filled_PharmacophorePointsTable)
+        assert len(db) == 6

@@ -62,6 +62,25 @@ def filter_sc(sc):
     parser.set_defaults(func=filter_run)
 
 
+def merge_sc(sc):
+    parser = sc.add_parser('merge', help='')
+    parser.add_argument('ins', nargs='+', help='Input pharmacophore database files')
+    parser.add_argument('out', help='Output pharmacophore database file')
+    parser.set_defaults(func=merge_pharmacophore_dbs)
+
+
+def merge_pharmacophore_dbs(ins, out):
+    nr_rows = 0
+    for in_fn in ins:
+        with PharmacophoresDb(in_fn) as in_db:
+            nr_rows += len(in_db)
+
+    with PharmacophoresDb(out, 'a', expectedrows=nr_rows) as db:
+        for in_fn in ins:
+            with PharmacophoresDb(in_fn) as in_db:
+                db.append(in_db)
+
+
 def make_pharmacophores_parser(subparsers):
     """Creates a parser for pharmacophores sub commands
 
@@ -73,3 +92,4 @@ def make_pharmacophores_parser(subparsers):
     add_sc(sc)
     get_sc(sc)
     filter_sc(sc)
+    merge_sc(sc)

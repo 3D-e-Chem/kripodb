@@ -5,6 +5,8 @@ import tables
 import gzip
 from rdkit.Chem import ForwardSDMolSupplier
 
+from .hdf5 import AbstractSimpleTable
+
 FEATURE_TYPES = [{
     'key': 'LIPO',
     'label': 'Hydrophobe',
@@ -128,6 +130,21 @@ class PharmacophoresDb(object):
     def __iter__(self):
         return iter(self.points)
 
+    def __len__(self):
+        """Returns number of points
+
+        Not the number of pharmacophores
+        """
+        return len(self.points)
+
+    def append(self, other):
+        """Append pharmacophores in other db to self
+
+        Args:
+            other (PharmacophoresDb): The other pharmacophores database
+        """
+        self.points.append(other.points)
+
 
 def read_pphore_gzipped_sdfile(sdfile):
     """Read a gzipped sdfile which contains pharmacophore points as atoms
@@ -226,7 +243,7 @@ def as_phar(frag_id, points):
     return '\n'.join(lines) + '\n'
 
 
-class PharmacophorePointsTable(object):
+class PharmacophorePointsTable(AbstractSimpleTable):
     """Wrapper around pytables table to store pharmacohpore points
 
     Args:
@@ -264,7 +281,7 @@ class PharmacophorePointsTable(object):
                                         'Pharmacophore points of Kripo sub-pockets',
                                         expectedrows=expectedrows)
             table.cols.frag_id.create_index(filters=PYTABLE_FILTERS)
-        self.table = table
+        super(PharmacophorePointsTable, self).__init__(table)
 
     def add_dir(self, startdir):
         """Find \*_pphore.sd.gz \*_pphores.txt file pairs recursively in start directory and add them.
@@ -303,9 +320,6 @@ class PharmacophorePointsTable(object):
         binds = {'z': item}
         nr_hits = len(self.table.get_where_list(query, binds))
         return nr_hits > 0
-
-    def __len__(self):
-        return len(self.table)
 
     def __getitem__(self, key):
         points = []
