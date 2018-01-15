@@ -1,3 +1,4 @@
+from itertools import groupby
 from os import path, walk
 
 import tables
@@ -123,6 +124,9 @@ class PharmacophoresDb(object):
             frag_id (str): Fragment identifier
         """
         outfile.write(as_phar(frag_id, self[frag_id]))
+
+    def __iter__(self):
+        self.points.__iter__()
 
 
 def read_pphore_gzipped_sdfile(sdfile):
@@ -318,3 +322,14 @@ class PharmacophorePointsTable(object):
         if len(points) == 0:
             raise KeyError(key)
         return points
+
+    def __iter__(self):
+        types = self.table.get_enum('type')
+        for frag_id, raw_points in groupby(self.table, lambda r: r['frag_id']):
+            points = [(
+                types(row['type']),
+                row['x'],
+                row['y'],
+                row['z'],
+            ) for row in raw_points]
+            yield frag_id.decode(), points

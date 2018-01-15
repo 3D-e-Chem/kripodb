@@ -179,3 +179,25 @@ def test_read_fragtxtfile_as_file(example4fragtxtfile):
         'frag4': [0]
     }
     assert result == expected
+
+
+def test_iter(filled_PharmacophorePointsTable):
+    result = [r for r in filled_PharmacophorePointsTable]
+    expected = [
+        ('frag1', [
+            ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469)
+        ]),
+        ('frag2', [
+            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
+            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094)
+        ]),
+        ('frag3', [
+            ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469),
+            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
+            ('AROM', 22.36079978942871, -5.167900085449219, 39.234500885009766)
+        ])
+    ]
+
+    assert result == expected
+
+
