@@ -20,6 +20,7 @@ def make_fingerprints_parser(subparsers):
     meanbitdensity_sc(fp_sc)
     similarity2query_sc(fp_sc)
     pairs_sc(fp_sc)
+    merge_fingerprintsdb_sc(fp_sc)
 
 
 def pairs_sc(subparsers):
@@ -199,3 +200,22 @@ def meanbitdensity_run(fingerprintsdb, out):
     bitsets = FingerprintsDb(fingerprintsdb).as_dict()
     density = calc_mean_onbit_density(bitsets.values(), bitsets.number_of_bits)
     out.write("{0:.5}\n".format(density))
+
+
+def merge_fingerprintsdb_sc(subparsers):
+    sc = subparsers.add_parser('merge', help='Combine fingerprints databases into a single new one')
+    sc.add_argument('ins', nargs='+', help='Input fingerprints database files')
+    sc.add_argument('out', help='Output fingerprints database file')
+    sc.set_defaults(func=merge_fingerprintsdb)
+
+
+def merge_fingerprintsdb(ins, out):
+    with FingerprintsDb(out) as output_db:
+        c = output_db.cursor
+        c.execute('SELECT name FROM sqlite_master WHERE type="table"')
+        tables = [table[0] for table in c.fetchall()]
+        for input_fn in ins:
+            c.execute('ATTACH DATABASE ? AS other', (input_fn,))
+            for table in tables:
+                c.execute('INSERT INTO {0} SELECT * FROM other.{0}'.format(table))
+            c.execute('DETACH DATABASE other')
