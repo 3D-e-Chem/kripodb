@@ -20,6 +20,7 @@ def make_fragments_parser(subparsers):
     sdf2fragmentsdb_sc(sc)
     pdb2fragmentsdb_sc(sc)
     fragmentsdb_filter_sc(sc)
+    merge_fragmentsdb_sc(sc)
 
 
 def shelve2fragmentsdb_sc(subparsers):
@@ -149,4 +150,22 @@ def fragmentsdb_filter_pdbs(input, output, pdbs):
 
     print('Wrote: ' + output)
 
+
+def merge_fragmentsdb_sc(subparsers):
+    sc = subparsers.add_parser('merge', help='Combine fragments databases into a single new one')
+    sc.add_argument('ins', nargs='+', help='Input fragments database files')
+    sc.add_argument('out', help='Output fragments database file')
+    sc.set_defaults(func=merge_fragmentsdb)
+
+
+def merge_fragmentsdb(ins, out):
+    with FragmentsDb(out) as output_db:
+        c = output_db.cursor
+        c.execute('SELECT name FROM sqlite_master WHERE type="table"')
+        tables = [table[0] for table in c.fetchall()]
+        for input_fn in ins:
+            c.execute('ATTACH DATABASE ? AS other', (input_fn,))
+            for table in tables:
+                c.execute('INSERT INTO {0} SELECT * FROM other.{0}'.format(table))
+            c.execute('DETACH DATABASE other')
 

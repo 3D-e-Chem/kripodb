@@ -126,7 +126,7 @@ class PharmacophoresDb(object):
         outfile.write(as_phar(frag_id, self[frag_id]))
 
     def __iter__(self):
-        self.points.__iter__()
+        return iter(self.points)
 
 
 def read_pphore_gzipped_sdfile(sdfile):
