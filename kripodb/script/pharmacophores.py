@@ -63,7 +63,7 @@ def filter_sc(sc):
 
 
 def merge_sc(sc):
-    parser = sc.add_parser('merge', help='')
+    parser = sc.add_parser('merge', help='Merge pharmacophore database files into new one')
     parser.add_argument('ins', nargs='+', help='Input pharmacophore database files')
     parser.add_argument('out', help='Output pharmacophore database file')
     parser.set_defaults(func=merge_pharmacophore_dbs)
@@ -76,9 +76,22 @@ def merge_pharmacophore_dbs(ins, out):
             nr_rows += len(in_db)
 
     with PharmacophoresDb(out, 'a', expectedrows=nr_rows) as db:
+
         for in_fn in ins:
             with PharmacophoresDb(in_fn) as in_db:
                 db.append(in_db)
+
+
+def phar2db_sc(sc):
+    parser = sc.add_parser('import', type=argparse.FileType('r'), help='Convert phar formatted file to pharmacophore database file')
+    parser.add_argument('infile', help='Input phar formatted file')
+    parser.add_argument('outfile', help='Output pharmacophore database file')
+    parser.set_defaults(func=phar2db)
+
+
+def phar2db(infile, outfile):
+    with PharmacophoresDb(outfile, 'a') as out_db:
+        out_db.read_phar(infile)
 
 
 def make_pharmacophores_parser(subparsers):
@@ -93,3 +106,4 @@ def make_pharmacophores_parser(subparsers):
     get_sc(sc)
     filter_sc(sc)
     merge_sc(sc)
+    phar2db_sc(sc)

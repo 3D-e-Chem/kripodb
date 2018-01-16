@@ -54,8 +54,6 @@ PYTABLE_FILTERS = tables.Filters(complevel=6, complib='blosc')
 class PharmacophoreRow(tables.IsDescription):
     """Table description for similarity pair
 
-    Attributes:
-        frag_id (str): Fragment identifier
     """
     frag_id = tables.StringCol(16)
     type = tables.EnumCol(FEATURE_TYPE_KEYS, FEATURE_TYPE_KEYS[0], base='uint8')
@@ -126,6 +124,22 @@ class PharmacophoresDb(object):
             frag_id (str): Fragment identifier
         """
         outfile.write(as_phar(frag_id, self[frag_id]))
+
+    def read_phar(self, infile):
+        record_sep = '$$$$'
+        points = []
+        frag_id = None
+        for line in infile:
+            line = line.strip()
+            if line == record_sep and points and frag_id:
+                for point in points:
+                    self.points.add_point(frag_id, point)
+                points = []
+                frag_id = None
+            else:
+                point = line.split(' ')
+                if len(point) != 8:
+                    frag_id = line
 
     def __iter__(self):
         return iter(self.points)
@@ -265,9 +279,6 @@ class PharmacophorePointsTable(AbstractSimpleTable):
     To check whether fragment identifier is contained use::
 
         'frag_id1' in table
-
-    Attributes:
-        table (tables.Table): Pytables table with rows of type PharmacophoreRow
     """
     table_name = 'pharmacophores'
 
@@ -314,6 +325,16 @@ class PharmacophorePointsTable(AbstractSimpleTable):
             row['y'] = point[2]
             row['z'] = point[3]
             row.append()
+
+    def add_point(self, frag_id, point):
+        row = self.table.row
+        types = self.table.get_enum('type')
+        row['frag_id'] = frag_id
+        row['type'] = types[point[0]]
+        row['x'] = point[1]
+        row['y'] = point[2]
+        row['z'] = point[3]
+        row.append()
 
     def __contains__(self, item):
         query = 'frag_id == z'
