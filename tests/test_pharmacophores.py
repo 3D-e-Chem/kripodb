@@ -14,11 +14,9 @@ def example1_sdfile():
     body = b'''
  OpenBabel07051617103D
 
- 14  0  0  0  0  0  0  0  0  0999 V2000
+ 12  0  0  0  0  0  0  0  0  0999 V2000
    22.5699   -6.3076   36.8593 O   0  6  0  0  0
    23.7871   -3.9004   36.3395 P   0  7  0  0  0
-   23.7871   -3.9004   36.3395 P   0  7  0  0  0
-   23.1923   -6.6223   36.0325 P   0  7  0  0  0
    23.1923   -6.6223   36.0325 P   0  7  0  0  0
    18.7201   -9.8937   40.4312 As  0  7  0  0  0
    18.3503   -9.5392   39.3836 Ne  0  0  0  0  0
@@ -29,7 +27,6 @@ def example1_sdfile():
    15.4420   -8.2931   36.1398 Ne  0  0  0  0  0
    14.4007   -6.8416   35.2404 Ne  0  0  0  0  0
    22.3608   -5.1679   39.2345 Rn  0  0  0  0  0
-M  CHG  8   1  -2   2  -3   3  -3   4  -3   5  -3   6  -3  10  -2  11  -3
 M  END
 $$$$
 '''
@@ -41,8 +38,6 @@ def example1_points():
     return [
         ('HDON', 22.5699, -6.3076, 36.8593),
         ('POSC', 23.7871, -3.9004, 36.3395),
-        ('POSC', 23.7871, -3.9004, 36.3395),
-        ('POSC', 23.1923, -6.6223, 36.0325),
         ('POSC', 23.1923, -6.6223, 36.0325),
         ('HACC', 18.7201, -9.8937, 40.4312),
         ('NEGC', 18.3503, -9.5392, 39.3836),
@@ -92,13 +87,18 @@ def test_read_pphore_sdfile(example1_sdfile, example1_points):
 
 
 @pytest.fixture
-def filled_PharmacophorePointsTable(example1_points):
+def filled_PharmacophorePointsDb(example1_points):
     with PharmacophoresDbInMemory() as db:
         db.points.add_fragment('frag1', [0], example1_points)
-        db.points.add_fragment('frag2', [1, 2], example1_points)
-        db.points.add_fragment('frag3', [0, 2, 13], example1_points)
+        db.points.add_fragment('frag2', [1, 3], example1_points)
+        db.points.add_fragment('frag3', [0, 1, 11], example1_points)
         db.points.table.flush()
-        yield db.points
+        yield db
+
+
+@pytest.fixture
+def filled_PharmacophorePointsTable(filled_PharmacophorePointsDb):
+    return filled_PharmacophorePointsDb.points
 
 
 class TestPharmacophorePointsTable(object):
@@ -142,6 +142,15 @@ $$$$
 
 
 @pytest.fixture
+def example2_phar():
+    return '''frag2
+POSC 23.7871 -3.9004 36.3395 0 0 0 0 0
+HACC 18.7201 -9.8937 40.4312 0 0 0 0 0
+$$$$
+'''
+
+
+@pytest.fixture
 def example3_phar():
     return '''frag3
 HDON 22.5699 -6.3076 36.8593 0 0 0 0 0
@@ -149,6 +158,11 @@ POSC 23.7871 -3.9004 36.3395 0 0 0 0 0
 AROM 22.3608 -5.1679 39.2345 0 0 0 0 0
 $$$$
 '''
+
+
+@pytest.fixture
+def example_phar(example1_phar, example2_phar, example3_phar):
+    return example1_phar + example2_phar + example3_phar
 
 
 def test_as_phar(filled_PharmacophorePointsTable, example3_phar):
@@ -181,31 +195,52 @@ def test_read_fragtxtfile_as_file(example4fragtxtfile):
     assert result == expected
 
 
-def test_iter(filled_PharmacophorePointsTable):
-    result = [r for r in filled_PharmacophorePointsTable]
-    expected = [
-        ('frag1', [
-            ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469)
-        ]),
-        ('frag2', [
-            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
-            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094)
-        ]),
-        ('frag3', [
-            ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469),
-            ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
-            ('AROM', 22.36079978942871, -5.167900085449219, 39.234500885009766)
-        ])
-    ]
+class TestPharmacophorDb(object):
+    def test_len(self, filled_PharmacophorePointsTable):
+        assert len(filled_PharmacophorePointsTable) == 6
 
-    assert result == expected
+    def test_append(self, filled_PharmacophorePointsTable):
+        with PharmacophoresDbInMemory() as db:
+            db.points.append(filled_PharmacophorePointsTable)
+            assert len(db) == 6
 
+    def test_read_phar(self, example1_phar, example3_phar):
+        phar_content = example1_phar + example3_phar
+        with PharmacophoresDbInMemory() as db, StringIO(phar_content) as infile:
+            db.read_phar(infile)
+            assert len(db) == 4  # number of points in db
 
-def test_len(filled_PharmacophorePointsTable):
-    assert len(filled_PharmacophorePointsTable) == 6
+    def test_write_phar_with_frag_id(self, filled_PharmacophorePointsDb, example3_phar):
+        db = filled_PharmacophorePointsDb
 
+        frag_id = 'frag3'
+        with StringIO() as outfile:
+            db.write_phar(outfile, frag_id)
 
-def test_append(filled_PharmacophorePointsTable):
-    with PharmacophoresDbInMemory() as db:
-        db.points.append(filled_PharmacophorePointsTable)
-        assert len(db) == 6
+            assert outfile.getvalue() == example3_phar
+
+    def test_write_phar_without_frag_id(self, filled_PharmacophorePointsDb, example_phar):
+        db = filled_PharmacophorePointsDb
+        with StringIO() as outfile:
+            db.write_phar(outfile)
+
+            assert outfile.getvalue() == example_phar
+
+    def test_iter(self, filled_PharmacophorePointsDb):
+        result = [r for r in filled_PharmacophorePointsDb]
+        expected = [
+            ('frag1', [
+                ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469)
+            ]),
+            ('frag2', [
+                ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
+                ('HACC', 18.72010040283203, -9.893699645996094, 40.43119812011719)
+            ]),
+            ('frag3', [
+                ('HDON', 22.569900512695312, -6.307600021362305, 36.85929870605469),
+                ('POSC', 23.787099838256836, -3.900399923324585, 36.339500427246094),
+                ('AROM', 22.36079978942871, -5.167900085449219, 39.234500885009766)
+            ])
+        ]
+
+        assert result == expected

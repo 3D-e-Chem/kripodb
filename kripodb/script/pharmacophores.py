@@ -30,8 +30,8 @@ def get_run(pharmacophoresdb, query, output):
 def get_sc(sc):
     parser = sc.add_parser('get', help='Retrieve pharmacophore of a fragment')
     parser.add_argument('pharmacophoresdb', help='Name of pharmacophore db file')
-    parser.add_argument('query', type=str, help='Query fragment identifier')
-    parser.add_argument('--output', type=argparse.FileType('w'), default='-')
+    parser.add_argument('--query', type=str, help='Query fragment identifier', default=None)
+    parser.add_argument('--output', type=argparse.FileType('w'), default='-', help="Phar formatted text file")
     parser.set_defaults(func=get_run)
 
 
@@ -83,14 +83,20 @@ def merge_pharmacophore_dbs(ins, out):
 
 
 def phar2db_sc(sc):
-    parser = sc.add_parser('import', type=argparse.FileType('r'), help='Convert phar formatted file to pharmacophore database file')
-    parser.add_argument('infile', help='Input phar formatted file')
+    parser = sc.add_parser('import', help='Convert phar formatted file to pharmacophore database file')
+    parser.add_argument('infile', type=argparse.FileType('r'), help='Input phar formatted file')
     parser.add_argument('outfile', help='Output pharmacophore database file')
+    parser.add_argument('--nrrows',
+                        type=int,
+                        default=2 ** 16,
+                        help='''Number of expected pharmacophores,
+                            only used when database is created
+                            (default: %(default)s)''')
     parser.set_defaults(func=phar2db)
 
 
-def phar2db(infile, outfile):
-    with PharmacophoresDb(outfile, 'a') as out_db:
+def phar2db(infile, outfile, nrrows):
+    with PharmacophoresDb(outfile, 'a', expectedrows=nrrows) as out_db:
         out_db.read_phar(infile)
 
 

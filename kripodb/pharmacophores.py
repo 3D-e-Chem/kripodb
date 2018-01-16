@@ -116,30 +116,26 @@ class PharmacophoresDb(object):
     def __getitem__(self, item):
         return self.points[item]
 
-    def write_phar(self, outfile, frag_id):
+    def write_phar(self, outfile, frag_id=None):
         """Write pharmacophore of frag_id as phar format to outfile
 
         Args:
             outfile (file): File object to write to
-            frag_id (str): Fragment identifier
+            frag_id (str): Fragment identifier, if None all pharmacophores are written
         """
-        outfile.write(as_phar(frag_id, self[frag_id]))
+        if frag_id:
+            outfile.write(as_phar(frag_id, self[frag_id]))
+        else:
+            for frag_id, points in self.points:
+                outfile.write(as_phar(frag_id, points))
 
     def read_phar(self, infile):
-        record_sep = '$$$$'
-        points = []
-        frag_id = None
-        for line in infile:
-            line = line.strip()
-            if line == record_sep and points and frag_id:
-                for point in points:
-                    self.points.add_point(frag_id, point)
-                points = []
-                frag_id = None
-            else:
-                point = line.split(' ')
-                if len(point) != 8:
-                    frag_id = line
+        """Read phar formatted file and add pharmacophore to self
+
+        Args:
+            infile: File object of phar formatted file
+        """
+        self.points.read_phar(infile)
 
     def __iter__(self):
         return iter(self.points)
@@ -325,6 +321,30 @@ class PharmacophorePointsTable(AbstractSimpleTable):
             row['y'] = point[2]
             row['z'] = point[3]
             row.append()
+
+    def read_phar(self, infile):
+        """Read phar formatted file and add pharmacophore to self
+
+        Args:
+            infile: File object of phar formatted file
+        """
+        record_sep = '$$$$'
+        points = []
+        frag_id = None
+        for line in infile:
+            line = line.strip()
+            if line == record_sep and points and frag_id:
+                for point in points:
+                    self.add_point(frag_id, point)
+                points = []
+                frag_id = None
+            else:
+                point = line.split(' ')
+                if len(point) != 9:
+                    frag_id = line
+                else:
+                    points.append(point)
+        self.table.flush()
 
     def add_point(self, frag_id, point):
         row = self.table.row
