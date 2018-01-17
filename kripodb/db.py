@@ -400,7 +400,7 @@ class FragmentsDb(SqliteDb):
         """
         fragments = []
         sql = self.select_sql + 'WHERE pdb_code=? ORDER BY frag_id'
-        for row in self.cursor.execute(sql, (pdb_code,)):
+        for row in self.cursor.execute(sql, (pdb_code.lower(),)):
             fragments.append(_row2fragment(row))
 
         if len(fragments) == 0:

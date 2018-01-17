@@ -144,6 +144,14 @@ def test_get_fragments__pdbcode(app):
         assert len(result) == 32
 
 
+def test_get_fragments__uppercase_pdbcode(app):
+    pdb_code = '3J7U'
+
+    with app.app.test_request_context():
+        result = server.get_fragments(pdb_codes=[pdb_code])
+        assert len(result) == 32
+
+
 def test_get_fragments__pdbcode_notfound(app):
     pdb_code = 'foo-bar'
     with app.app.test_request_context():

@@ -180,6 +180,14 @@ class TestFragmentsDBFilled(object):
         del fragments[0]['mol']
         assert fragments == [expected_fragment]
 
+    def test_by_uppercase_pdb_code(self, filled_fragmentsdb, expected_fragment):
+        pdb_code = '1MUU'
+
+        fragments = filled_fragmentsdb.by_pdb_code(pdb_code)
+
+        del fragments[0]['mol']
+        assert fragments == [expected_fragment]
+
     def test_len(self, filled_fragmentsdb):
         assert len(filled_fragmentsdb) == 1
 

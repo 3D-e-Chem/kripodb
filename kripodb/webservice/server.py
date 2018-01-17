@@ -112,7 +112,7 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
         if pdb_codes:
             for pdb_code in pdb_codes:
                 try:
-                    for fragment in fragmentsdb.by_pdb_code(pdb_code):
+                    for fragment in fragmentsdb.by_pdb_code(pdb_code.lower()):
                         fragments.append(fragment)
                 except LookupError:
                     missing_ids.append(pdb_code)
