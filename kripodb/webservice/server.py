@@ -215,7 +215,7 @@ def wsgi_app(similarities, fragments, pharmacophores, external_url='http://local
     app.app.config['similarities'] = similarities
     app.app.config['fragments'] = fragments
     app.app.config['pharmacophores'] = pharmacophores
-    arguments = {'hostport': url.netloc, 'scheme': url.scheme, 'version': __version__}
+    arguments = {'basepath': url.path, 'version': __version__}
     # Keep validate_responses turned off, because of conflict with connexion.problem
     # see https://github.com/zalando/connexion/issues/266
     app.add_api(swagger_file, base_path=url.path, arguments=arguments)
