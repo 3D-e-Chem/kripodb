@@ -89,6 +89,12 @@ class FrozenSimilarityMatrix(object):
         """Closes the hdf5file"""
         self.h5file.close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def find(self, query, cutoff, limit=None):
         """Find similar fragments to query.
 
@@ -114,23 +120,41 @@ class FrozenSimilarityMatrix(object):
         return sorted_hits
 
     def __getitem__(self, item):
-        """Get all similarities of fragment.
+        """Get all similarities of fragment or the similarity score between to 2 fragments.
 
-        Self is excluded.
+        Self is excluded in list of similarity scores.
 
         Args:
-            item (STR): Label of a fragment
+            item (str|Tuple[str, str]): Label of a fragment or tuple of 2 fragment labels
 
         Returns:
-            list[tuple[str, float]]: list of (fragment_label, score)
+            list[tuple[str, float]]|float: list of (fragment_label, score) or the score
 
+
+        Raises:
+            KeyError: When item can not be found
         """
+        if isinstance(item, tuple):
+            return self._fetch_cell(item[0], item[1])
+
         precision = float(self.score_precision)
         precision10 = float(10**(floor(log10(precision))))
         query_id = self.cache_l2i[item]
         subjects = self.h5file.root.scores[query_id, ...]
         hits = [(self.cache_i2l[k], ceil(precision10 * v / precision) / precision10) for k, v in enumerate(subjects) if k != query_id]
         return hits
+
+    def _fetch_cell(self, frag_label1, frag_label2):
+        frag_id1 = self.cache_l2i[frag_label1]
+        frag_id2 = self.cache_l2i[frag_label2]
+
+        if frag_id1 == frag_id2:
+            return 1.0
+
+        raw_score = self.h5file.root.scores[frag_id1, frag_id2]
+        precision = float(self.score_precision)
+        precision10 = float(10**(floor(log10(precision))))
+        return ceil(precision10 * raw_score / precision) / precision10
 
     def build_label_cache(self):
         self.cache_i2l = {k: v.decode() for k, v in enumerate(self.labels)}

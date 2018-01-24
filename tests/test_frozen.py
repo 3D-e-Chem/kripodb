@@ -46,6 +46,17 @@ def frozen_similarity_matrix():
     matrix_inmem.close()
 
 
+def fillit(frozen_similarity_matrix):
+    labels = ['a', 'b', 'c', 'd']
+    data = [
+        [0.0, 0.9, 0.5, 0.0],
+        [0.9, 0.0, 0.6, 0.0],
+        [0.5, 0.6, 0.0, 0.7],
+        [0.0, 0.0, 0.7, 0.0],
+    ]
+    frozen_similarity_matrix.from_array(np.array(data), labels)
+
+
 class TestFrozenSimilarityMatrix(object):
     def test_from_pairs_defaults(self, similarity_matrix, frozen_similarity_matrix):
         frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
@@ -148,7 +159,7 @@ class TestFrozenSimilarityMatrix(object):
         expected = pd.DataFrame(data, index=labels, columns=labels)
         pdt.assert_almost_equal(result, expected)
 
-    def test_getitem(self, similarity_matrix, frozen_similarity_matrix):
+    def test_getitem_row(self, similarity_matrix, frozen_similarity_matrix):
         labels = ['a', 'b', 'c', 'd']
         data = [
             [0.0, 0.9, 0.5, 0.0],
@@ -168,6 +179,32 @@ class TestFrozenSimilarityMatrix(object):
             [(u'a', 0.0), (u'b', 0.0), (u'c', 0.7)],
         ]
         assert result == expected
+
+    @pytest.mark.parametrize('frag1,frag2,expected', (
+        ('a', 'a', 1.0),
+        ('a', 'b', 0.9),
+        ('a', 'c', 0.5),
+        ('b', 'c', 0.6),
+        ('d', 'c', 0.7),
+    ))
+    def test_getitem_cell(self, frozen_similarity_matrix, frag1, frag2, expected):
+        fillit(frozen_similarity_matrix)
+
+        score = frozen_similarity_matrix[frag1, frag2]
+
+        assert score == expected
+
+    def test_getitem_row_unknownfrag_keyerror(self, frozen_similarity_matrix):
+        fillit(frozen_similarity_matrix)
+
+        with pytest.raises(KeyError):
+            frozen_similarity_matrix['z']
+
+    def test_getitem_cell_unknownfrag_keyerror(self, frozen_similarity_matrix):
+        fillit(frozen_similarity_matrix)
+
+        with pytest.raises(KeyError):
+            frozen_similarity_matrix['z', 'z']
 
     def test_to_pairs(self, similarity_matrix, frozen_similarity_matrix):
         frozen_similarity_matrix.from_pairs(similarity_matrix, 10)
