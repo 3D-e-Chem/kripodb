@@ -206,7 +206,8 @@ class TestPharmacophorDb(object):
 
     def test_read_phar(self, example1_phar, example3_phar):
         phar_content = example1_phar + example3_phar
-        with PharmacophoresDbInMemory() as db, StringIO(phar_content) as infile:
+        infile = StringIO(phar_content)
+        with PharmacophoresDbInMemory() as db:
             db.read_phar(infile)
             assert len(db) == 4  # number of points in db
 
@@ -214,17 +215,17 @@ class TestPharmacophorDb(object):
         db = filled_PharmacophorePointsDb
 
         frag_id = 'frag3'
-        with StringIO() as outfile:
-            db.write_phar(outfile, frag_id)
+        outfile = StringIO()
+        db.write_phar(outfile, frag_id)
 
-            assert outfile.getvalue() == example3_phar
+        assert outfile.getvalue() == example3_phar
 
     def test_write_phar_without_frag_id(self, filled_PharmacophorePointsDb, example_phar):
         db = filled_PharmacophorePointsDb
-        with StringIO() as outfile:
-            db.write_phar(outfile)
+        outfile = StringIO()
+        db.write_phar(outfile)
 
-            assert outfile.getvalue() == example_phar
+        assert outfile.getvalue() == example_phar
 
     def test_iter(self, filled_PharmacophorePointsDb):
         result = [r for r in filled_PharmacophorePointsDb]
