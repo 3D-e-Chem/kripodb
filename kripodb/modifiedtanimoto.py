@@ -75,7 +75,7 @@ def similarity(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
 
     .. math::
 
-        S_{T0} = \\frac{n - a - b - c}{n -c}
+        S_{T0} = \\frac{n - a - b + c}{n -c}
 
     Args:
         bitset1 (intbitset.intbitset): First fingerprint
@@ -92,7 +92,7 @@ def similarity(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     c = len(bitset1 & bitset2)
     n = number_of_bits
     st = float(c) / (a + b - c)
-    st0 = (n - a - b - + c) / float(n - c)
+    st0 = (n - a - b + c) / float(n - c)
     smt = corr_st * st + corr_sto * st0
     return smt
 
