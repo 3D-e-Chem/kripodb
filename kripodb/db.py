@@ -23,6 +23,7 @@ import logging
 import zlib
 import re
 
+import blosc
 from pyroaring import BitMap
 from rdkit.Chem import MolToMolBlock, MolFromMolBlock, MolToSmiles
 from rdkit.Chem.rdchem import Mol
@@ -46,7 +47,7 @@ def adapt_BitMap(ibs):
     Returns:
         str: serialized BitMap
     """
-    return sqlite3.Binary(ibs.serialize())
+    return sqlite3.Binary(blosc.compress(ibs.serialize(), cname='zstd'))
 
 
 def convert_BitMap(s):
@@ -64,7 +65,7 @@ def convert_BitMap(s):
     Returns:
         BitMap: bitset
     """
-    return BitMap.deserialize(s)
+    return BitMap.deserialize(blosc.decompress(s))
 
 
 def adapt_molblockgz(mol):
