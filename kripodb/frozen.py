@@ -14,6 +14,7 @@
 """Similarity matrix using pytables carray"""
 from __future__ import absolute_import, print_function
 from math import log10, ceil, floor
+
 try:
     # for Python >3.3
     from time import process_time
@@ -143,6 +144,23 @@ class FrozenSimilarityMatrix(object):
         subjects = self.h5file.root.scores[query_id, ...]
         hits = [(self.cache_i2l[k], ceil(precision10 * v / precision) / precision10) for k, v in enumerate(subjects) if k != query_id]
         return hits
+
+    def __iter__(self):
+        """
+        Yields: Tuple[str, str, float] Fragment id 1, Fragment id 2, similarity score of lower triangle of matrix
+        """
+        precision = float(self.score_precision)
+        precision10 = float(10**(floor(log10(precision))))
+        for row_id, row in enumerate(self.h5file.root.scores.iterrows()):
+            row_label = self.cache_i2l[row_id]
+            # loop through raw scores below triangle
+            for col_id, raw_score in enumerate(row[:row_id]):
+                if raw_score == 0:
+                    # skip if below cutoff
+                    continue
+                col_label = self.cache_i2l[col_id]
+                score = ceil(precision10 * raw_score / precision) / precision10
+                yield row_label, col_label, score
 
     def _fetch_cell(self, frag_label1, frag_label2):
         frag_id1 = self.cache_l2i[frag_label1]

@@ -194,6 +194,20 @@ class TestFrozenSimilarityMatrix(object):
 
         assert score == expected
 
+    def test__iter__(self, frozen_similarity_matrix):
+        fillit(frozen_similarity_matrix)
+
+        result = set(frozen_similarity_matrix)
+
+        expected = {
+            ('c', 'b', 0.6),
+            ('b', 'a', 0.9),
+            ('d', 'c', 0.7),
+            ('c', 'a', 0.5),
+        }
+
+        assert result == expected
+
     def test_getitem_row_unknownfrag_keyerror(self, frozen_similarity_matrix):
         fillit(frozen_similarity_matrix)
 
