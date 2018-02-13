@@ -160,7 +160,7 @@ class FrozenSimilarityMatrix(object):
                     continue
                 col_label = self.cache_i2l[col_id]
                 score = ceil(precision10 * raw_score / precision) / precision10
-                yield row_label, col_label, score
+                yield col_label, row_label, score
 
     def _fetch_cell(self, frag_label1, frag_label2):
         frag_id1 = self.cache_l2i[frag_label1]

@@ -106,8 +106,8 @@ def test_simmatrix_export_run_frozen():
     output = outputfile.getvalue()
     assert output.count('\n') == 11951
     assert 'frag_id1\tfrag_id2\tscore\n' in output
-    assert '2mlm_2W7_frag1\t2mlm_2W7_frag2\t0.5878\n' in output
-    assert '3wvm_STE_frag1\t2mlm_2W7_frag2\t0.4634\n' in output
+    assert '2mlm_2W7_frag2\t2mlm_2W7_frag1\t0.5878\n' in output
+    assert '2mlm_2W7_frag2\t3wvm_STE_frag1\t0.4634\n' in output
 
 
 def test_simmatrix_export_run_noheader():

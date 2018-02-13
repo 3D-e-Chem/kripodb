@@ -200,10 +200,10 @@ class TestFrozenSimilarityMatrix(object):
         result = set(frozen_similarity_matrix)
 
         expected = {
-            ('c', 'b', 0.6),
-            ('b', 'a', 0.9),
-            ('d', 'c', 0.7),
-            ('c', 'a', 0.5),
+            ('a', 'b', 0.9),
+            ('a', 'c', 0.5),
+            ('b', 'c', 0.6),
+            ('c', 'd', 0.7),
         }
 
         assert result == expected
