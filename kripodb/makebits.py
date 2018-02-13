@@ -14,7 +14,7 @@
 """Module to read/write fingerprints in Makebits file format"""
 
 from __future__ import absolute_import
-from intbitset import intbitset
+from pyroaring import BitMap
 import six
 
 
@@ -35,7 +35,7 @@ def read_bitset(line, fp_size):
     # ignore 0, is seperator between metadata and data
     row.pop()
     bits = [int(d) for d in row]
-    bitset = intbitset(bits)
+    bitset = BitMap(bits)
     if len(bitset) != nr_onbits:
         raise Exception('On bit checksum incorrect for {}'.format(fid))
     return fid, bitset
@@ -54,11 +54,11 @@ def read_file(infile):
 
 def iter_file(infile):
     """Reads Makebits formatted file
-    Yields header first then tuples of idenfitier and intbitset object
+    Yields header first then tuples of identifier and BitMap object
 
     Yields:
         first header (format name, format version, number of bits, description),
-        then tuples of the fingerprint identifier and an intbitset object
+        then tuples of the fingerprint identifier and an BitMap object
 
     Args:
         infile (File): File object of Makebits formatted file to read
@@ -70,7 +70,7 @@ def iter_file(infile):
         >>> read_fp_size(next(f))
         4
         >>> {frag_id: fp for frag_id, fp in f}
-        {'id1': intbitset([1, 2, 3, 4])}
+        {'id1': BitMap([1, 2, 3, 4])}
 
     """
     header = read_header(infile.readline())
@@ -96,13 +96,13 @@ def write_file(fp_size, bitsets, fn):
 
     Args:
         fp_size (int): Number of bits
-        bitsets (dict): Dict with fingerprint identifier as key and intbitset object as value
+        bitsets (dict): Dict with fingerprint identifier as key and BitMap object as value
         fn (File): File object to write to
 
     Examples:
         Write a file
 
-        >>> write_file(4, {'id1': intbitset([1, 2, 3, 4])}, open('fingerprints01.fp', 'w'))
+        >>> write_file(4, {'id1': BitMap([1, 2, 3, 4])}, open('fingerprints01.fp', 'w'))
 
     """
     fn.write(write_header(fp_size))

@@ -78,8 +78,8 @@ def similarity(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
         S_{T0} = \\frac{n - a - b + c}{n -c}
 
     Args:
-        bitset1 (intbitset.intbitset): First fingerprint
-        bitset2 (intbitset.intbitset): Second fingerprint
+        bitset1 (pyroaring.BitMap): First fingerprint
+        bitset2 (pyroaring.BitMap): Second fingerprint
         number_of_bits (int): Number of bits for all fingerprints
         corr_st (float): St correction
         corr_sto (float): Sto correction
@@ -89,7 +89,7 @@ def similarity(bitset1, bitset2, number_of_bits, corr_st, corr_sto):
     """
     a = len(bitset1)
     b = len(bitset2)
-    c = len(bitset1 & bitset2)
+    c = bitset1.intersection_cardinality(bitset2)
     n = number_of_bits
     st = float(c) / (a + b - c)
     st0 = (n - a - b + c) / float(n - c)
@@ -103,10 +103,10 @@ def similarities(bitsets1, bitsets2, number_of_bits, corr_st, corr_sto, cutoff, 
     Excludes similarity of the same fingerprint.
 
     Args:
-        bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
-            with fingerprint label as key and intbitset as value
-        bitsets2 (Dict{str, intbitset.intbitset}): Second dict of fingerprints
-            with fingerprint label as key and intbitset as value
+        bitsets1 (Dict{str, pyroaring.BitMap}): First dict of fingerprints
+            with fingerprint label as key and pyroaring.BitMap as value
+        bitsets2 (Dict{str, pyroaring.BitMap}): Second dict of fingerprints
+            with fingerprint label as key and pyroaring.BitMap as value
         number_of_bits (int): Number of bits for all fingerprints
         corr_st (float): St correction
         corr_sto (float): Sto correction

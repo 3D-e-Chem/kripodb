@@ -41,10 +41,10 @@ def dump_pairs(bitsets1,
     A pairs are rows of the bitset identifier of both bitsets with a similarity score.
 
     Args:
-        bitsets1 (Dict{str, intbitset.intbitset}): First dict of fingerprints
-            with fingerprint label as key and intbitset as value
-        bitsets2 (Dict{str, intbitset.intbitset}): Second dict of fingerprints
-            with fingerprint label as key and intbitset as value
+        bitsets1 (Dict{str, pyroaring.BitMap}): First dict of fingerprints
+            with fingerprint label as key and pyroaring.BitMap as value
+        bitsets2 (Dict{str, pyroaring.BitMap}): Second dict of fingerprints
+            with fingerprint label as key and pyroaring.BitMap as value
         out_format: 'tsv' or 'hdf5'
         out_file: Filename of output file where 'hdf5' format is written to.
         out (File): File object where 'tsv' format is written to.

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Fragments and fingerprints sqlite based data storage.
 
-Registers `intbitset` and `molblockgz` data types in sqlite.
+Registers `BitMap` and `molblockgz` data types in sqlite.
 """
 
 from __future__ import absolute_import
@@ -23,7 +23,7 @@ import logging
 import zlib
 import re
 
-from intbitset import intbitset
+from pyroaring import BitMap
 from rdkit.Chem import MolToMolBlock, MolFromMolBlock, MolToSmiles
 from rdkit.Chem.rdchem import Mol
 import six
@@ -31,42 +31,40 @@ import six
 ATTR_NUMBER_OF_BITS = 'number_of_bits'
 
 
-def adapt_intbitset(ibs):
-    """Convert intbitset to fast dumped intbitset
+def adapt_BitMap(ibs):
+    """Convert BitMap to it's serialized format
 
     Args:
-        ibs (intbitset): bitset
+        ibs (BitMap): bitset
 
     Examples:
-        Serialize intbitset
+        Serialize BitMap
 
-        >>> adapt_intbitset(intbitset([1, 2, 3, 4]))
+        >>> adapt_BitMap(BitMap([1, 2, 3, 4]))
         'x\x9c\x93c@\x05\x00\x01\xf0\x00\x1f'
 
     Returns:
-        str: Fast dumped intbitset
+        str: serialized BitMap
     """
-    return ibs.fastdump()
+    return sqlite3.Binary(ibs.serialize())
 
 
-def convert_intbitset(s):
-    """Convert fast dumped intbitset to intbitset
+def convert_BitMap(s):
+    """Convert serialized BitMap to BitMap
 
     Args:
-        s (str): Fast dumped intbitset
+        s (str): serialized BitMap
 
     Examples:
-        Deserialize intbitset
+        Deserialize BitMap
 
-        >>> ibs = convert_intbitset('x\x9c\x93c@\x05\x00\x01\xf0\x00\x1f')
-        intbitset([1, 2, 3, 4])
+        >>> ibs = convert_BitMap('x\x9c\x93c@\x05\x00\x01\xf0\x00\x1f')
+        BitMap([1, 2, 3, 4])
 
     Returns:
-        intbitset: bitset
+        BitMap: bitset
     """
-    ibs = intbitset()
-    ibs.fastload(s)
-    return ibs
+    return BitMap.deserialize(s)
 
 
 def adapt_molblockgz(mol):
@@ -94,8 +92,8 @@ def convert_molblockgz(molgz):
     return MolFromMolBlock(zlib.decompress(molgz))
 
 
-sqlite3.register_adapter(intbitset, adapt_intbitset)
-sqlite3.register_converter('intbitset', convert_intbitset)
+sqlite3.register_adapter(BitMap, adapt_BitMap)
+sqlite3.register_converter('BitMap', convert_BitMap)
 sqlite3.register_adapter(Mol, adapt_molblockgz)
 sqlite3.register_converter('molblockgz', convert_molblockgz)
 
@@ -438,7 +436,7 @@ class FingerprintsDb(SqliteDb):
     def create_tables(self):
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS bitsets (
             frag_id TEXT PRIMARY KEY,
-            bitset intbitset
+            bitset BitMap
         )''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS attributes (
             key TEXT PRIMARY KEY,
@@ -452,7 +450,7 @@ class FingerprintsDb(SqliteDb):
             number_of_bits (Optional[int]): Number of bits that all fingerprints have
 
         Returns:
-            IntbitsetDict
+            BitMapDict
         """
         return IntbitsetDict(self, number_of_bits)
 
@@ -584,7 +582,7 @@ class SqliteDict(MutableMapping):
 
 
 class IntbitsetDict(SqliteDict):
-    """Dictionary of intbitset with sqlite3 backend.
+    """Dictionary of BitMaps with sqlite3 backend.
 
     Args:
         db (FingerprintsDb): Fingerprints db
