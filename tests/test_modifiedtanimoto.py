@@ -63,8 +63,8 @@ class TestAlgorithm(object):
         bitset2 = intbitset([1, 2, 4, 8])
 
         result = modifiedtanimoto.similarity(bitset1, bitset2,
-                                           self.number_of_bits,
-                                           self.corr_st, self.corr_sto)
+                                             self.number_of_bits,
+                                             self.corr_st, self.corr_sto)
 
         expected = 0.5779523809525572
         pytest.approx(result, expected)
@@ -77,9 +77,9 @@ class TestAlgorithm(object):
         }
 
         iterator = modifiedtanimoto.similarities(bitsets, bitsets,
-                                              self.number_of_bits,
-                                              self.corr_st, self.corr_sto,
-                                              0.55, True)
+                                                 self.number_of_bits,
+                                                 self.corr_st, self.corr_sto,
+                                                 0.55, True)
         result = [r for r in iterator]
 
         expected = [
@@ -96,9 +96,9 @@ class TestAlgorithm(object):
         }
 
         iterator = modifiedtanimoto.similarities(bitsets, bitsets,
-                                              self.number_of_bits,
-                                              self.corr_st, self.corr_sto,
-                                              0.55, False)
+                                                 self.number_of_bits,
+                                                 self.corr_st, self.corr_sto,
+                                                 0.55, False)
         result = [r for r in iterator]
 
         expected = [
@@ -108,3 +108,25 @@ class TestAlgorithm(object):
             ('b', 'c', 0.8357708333333689)]
         # pair a-c is below cutoff with similarity of 0.53
         assert_similarities(result, expected)
+
+
+@pytest.mark.parametrize("bitset2,expected_score", (
+    (intbitset((1, 2, 3, 4)), 1.0),
+    (intbitset((5, 6, 7, 8)), 0.33),
+    (intbitset((3, 4, 5, 6)), 0.55),
+    (intbitset((1, 2, 5, 6)), 0.55),
+    (intbitset((2, 3, 4, 5)), 0.73),
+    (intbitset((1, 5, 6, 7)), 0.424),
+    (intbitset((1, 2, 3, 4, 5)), 0.86),
+    (intbitset((1, 2, 3)), 0.83),
+))
+def test_similarity_numberofbits400(bitset2, expected_score):
+    number_of_bits = 400
+    corr_st, corr_sto = modifiedtanimoto.corrections(0.01)
+    bitset1 = intbitset([1, 2, 3, 4])
+
+    result = modifiedtanimoto.similarity(bitset1, bitset2,
+                                         number_of_bits,
+                                         corr_st, corr_sto)
+
+    assert result == pytest.approx(expected_score, rel=1e-2)
