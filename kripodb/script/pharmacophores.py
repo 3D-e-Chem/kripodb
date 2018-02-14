@@ -1,6 +1,6 @@
 import argparse
 
-from kripodb.db import FragmentsDb
+from ..db import FragmentsDb
 from ..pharmacophores import PharmacophoresDb
 
 
