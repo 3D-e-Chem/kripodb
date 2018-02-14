@@ -199,8 +199,8 @@ class Testpairs(object):
                          )
         result = out.getvalue()
 
-        expected = 'a\tc\t0.44667\na\tb\t0.33333\nb\tc\t0.77667\n'
-        assert result == expected
+        expected = {'a\tc\t0.44667', 'a\tb\t0.33333','b\tc\t0.77667'}
+        assert set(result.rstrip().split('\n')) == expected
 
     def test_dump_pairs_astsv_nomem(self, bitsets, number_of_bits, label2id):
         out = StringIO()
@@ -219,8 +219,8 @@ class Testpairs(object):
                          )
         result = out.getvalue()
 
-        expected = 'a\tc\t0.44667\na\tb\t0.33333\nb\tc\t0.77667\n'
-        assert result == expected
+        expected = {'a\tc\t0.44667', 'a\tb\t0.33333','b\tc\t0.77667'}
+        assert set(result.rstrip().split('\n')) == expected
 
     def test_similarity2query(self, bitsets):
         out = StringIO()
