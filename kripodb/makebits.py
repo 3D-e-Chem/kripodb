@@ -19,8 +19,11 @@ import six
 
 
 def read_header(line):
-    (format_name, format_version, fp_size, label) = line.strip().split(' ')
-    fp_size = int(fp_size)
+    cols = line.strip().split(' ')
+    format_name = cols.pop(0)
+    format_version = cols.pop(0)
+    fp_size = int(cols.pop(0))
+    label = ' '.join(cols)
     return format_name, format_version, fp_size, label
 
 
