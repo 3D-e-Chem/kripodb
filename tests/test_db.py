@@ -195,6 +195,12 @@ class TestFragmentsDBFilled(object):
         with pytest.raises(sqlite3.IntegrityError):
             filled_fragmentsdb.add_fragments_from_shelve(myshelve)
 
+    def test_iterate(self, filled_fragmentsdb, expected_fragment):
+        fragments = [f for f in filled_fragmentsdb]
+
+        del fragments[0]['mol']
+        assert fragments == [expected_fragment]
+
 
 class TestHetSeqNr(object):
     def test_isnumber(self, filled_fragmentsdb):

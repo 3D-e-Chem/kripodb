@@ -431,6 +431,11 @@ class FragmentsDb(SqliteDb):
         row = self.cursor.fetchone()
         return row[0]
 
+    def __iter__(self):
+        self.cursor.execute(self.select_sql)
+        for row in self.cursor.fetchall():
+            yield _row2fragment(row)
+
 
 class FingerprintsDb(SqliteDb):
     """Fingerprints database"""
