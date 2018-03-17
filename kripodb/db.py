@@ -168,6 +168,13 @@ class SqliteDb(object):
         """Close database"""
         self.connection.close()
 
+    def create_tables(self):
+        """Abstract method which is called after connecting to database so tables can be created.
+
+        Use `CREATE TABLE IF NOT EXISTS ...` in method to prevent duplicate create errors.
+        """
+        raise NotImplementedError("Please Implement this method")
+
 
 def _row2fragment(row):
     fragment = {}
@@ -179,7 +186,7 @@ def _row2fragment(row):
 class FragmentsDb(SqliteDb):
     """Fragments database"""
     select_sql = '''SELECT f.rowid, * FROM fragments f
-                    JOIN pdbs USING (pdb_code, prot_chain)
+                    LEFT JOIN pdbs USING (pdb_code, prot_chain)
                     LEFT JOIN molecules USING (frag_id)'''
 
     def create_tables(self):
@@ -256,6 +263,8 @@ class FragmentsDb(SqliteDb):
     def add_molecule(self, mol):
         """Adds molecule to molecules table
 
+        Uses the name of the molecule as the primary key.
+
         Args:
             mol (rdkit.Chem.AllChem.Mol): the rdkit molecule
 
@@ -275,6 +284,55 @@ class FragmentsDb(SqliteDb):
         self.connection.commit()
 
     def add_fragment_from_shelve(self, frag_id, fragment, skipdups=False):
+        splitted_frag_id = frag_id.split('-')
+        if len(splitted_frag_id) != 3:
+            logging.warning('Weird id {}, skipping'.format(frag_id))
+            return
+
+        try:
+            frag_nr = int(splitted_frag_id[2].replace('frag', ''))
+        except ValueError:
+            logging.warning('Weird id {}, skipping'.format(frag_id))
+            return
+
+        lig_id = fragment['ligID'].split('-')
+        het_seq_nr = int(re.sub('[A-Z]$', '', lig_id[3]))
+
+        frag_id = frag_id.replace('-', '_')
+
+        try:
+            self.add_fragment(
+                frag_id=frag_id,
+                pdb_code=splitted_frag_id[0],
+                prot_chain=lig_id[1],
+                het_code=splitted_frag_id[1],
+                het_seq_nr=het_seq_nr,
+                het_chain=lig_id[4],
+                frag_nr=frag_nr,
+                hash_code=fragment['hashcode'],
+                atom_codes=fragment['atomCodes'],
+                nr_r_groups=int(fragment['numRgroups']),
+            )
+        except sqlite3.IntegrityError as e:
+            logging.warning('Duplicate ID: {}, skipping'.format(frag_id))
+            if not skipdups:
+                raise e
+
+    def add_fragment(self, frag_id, pdb_code, prot_chain, het_code, frag_nr, atom_codes, hash_code, het_chain, het_seq_nr, nr_r_groups):
+        """Add fragment to database
+
+        Args:
+            frag_id (str): Fragment identifier
+            pdb_code (str): Protein databank identifier
+            prot_chain (str): Major chain of pdb on which pharmacophore is based
+            het_code (str): Ligand/Hetero code
+            frag_nr (int): Fragment number, whole ligand has number 1, fragments are >1
+            atom_codes (str): Comma separated list of HETATOM atom names which make up the fragment (hydrogens are excluded)
+            hash_code (str): Unique identifier for fragment
+            het_chain (str): Chain ligand is part of
+            het_seq_nr (int): Residue sequence number of ligand the fragment is a part of
+            nr_r_groups (int): Number of R groups in fragment
+        """
         sql = '''INSERT INTO fragments (
             frag_id,
             pdb_code,
@@ -299,40 +357,19 @@ class FragmentsDb(SqliteDb):
             :nr_r_groups
         )'''
 
-        splitted_frag_id = frag_id.split('-')
-        if len(splitted_frag_id) != 3:
-            logging.warning('Weird id {}, skipping'.format(frag_id))
-            return
-
-        try:
-            frag_nr = int(splitted_frag_id[2].replace('frag', ''))
-        except ValueError:
-            logging.warning('Weird id {}, skipping'.format(frag_id))
-            return
-
-        lig_id = fragment['ligID'].split('-')
-        het_seq_nr = int(re.sub('[A-Z]$', '', lig_id[3]))
-
-        frag_id = frag_id.replace('-', '_')
-        row = {
+        fragment_row = {
             'frag_id': frag_id,
-            'pdb_code': splitted_frag_id[0],
-            'prot_chain': lig_id[1],
-            'het_code': splitted_frag_id[1],
-            'het_seq_nr': het_seq_nr,
-            'het_chain': lig_id[4],
+            'pdb_code': pdb_code,
+            'prot_chain': prot_chain,
+            'het_code': het_code,
             'frag_nr': frag_nr,
-            'hash_code': fragment['hashcode'],
-            'atom_codes': fragment['atomCodes'],
-            'nr_r_groups': int(fragment['numRgroups']),
+            'atom_codes': atom_codes,
+            'hash_code': hash_code,
+            'het_chain': het_chain,
+            'het_seq_nr': het_seq_nr,
+            'nr_r_groups': nr_r_groups,
         }
-
-        try:
-            self.cursor.execute(sql, row)
-        except sqlite3.IntegrityError as e:
-            logging.warning('Duplicate ID: {}, skipping'.format(frag_id))
-            if not skipdups:
-                raise e
+        self.cursor.execute(sql, fragment_row)
 
     def add_pdb(self, pdb):
         sql = '''INSERT OR REPLACE INTO pdbs (
@@ -429,6 +466,26 @@ class FragmentsDb(SqliteDb):
         self.cursor.execute('SELECT count(*) FROM fragments')
         row = self.cursor.fetchone()
         return row[0]
+
+    def __iter__(self):
+        self.cursor.execute(self.select_sql)
+        for row in self.cursor.fetchall():
+            yield _row2fragment(row)
+
+    def is_ligand_stored(self, pdb_code, het_code):
+        """Check whether ligand is already in database
+
+        Args:
+            pdb_code (str): Protein databank identifier
+            het_code (str): Ligand/hetero identifier
+
+        Returns:
+            bool
+        """
+        sql = 'SELECT 1 FROM fragments WHERE pdb_code=? AND het_code=?'
+        self.cursor.execute(sql, (pdb_code.lower(), het_code))
+        res = self.cursor.fetchone()
+        return res is not None
 
 
 class FingerprintsDb(SqliteDb):

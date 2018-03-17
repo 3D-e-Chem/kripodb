@@ -2,7 +2,7 @@ import argparse
 import logging
 import shelve
 
-from rdkit.Chem.rdmolfiles import SDMolSupplier
+from rdkit.Chem.rdmolfiles import SDMolSupplier, MolToMolBlock
 
 from ..db import FragmentsDb
 from ..hdf5 import SimilarityMatrix
@@ -21,6 +21,7 @@ def make_fragments_parser(subparsers):
     pdb2fragmentsdb_sc(sc)
     fragmentsdb_filter_sc(sc)
     merge_fragmentsdb_sc(sc)
+    export_sdf_sc(sc)
 
 
 def shelve2fragmentsdb_sc(subparsers):
@@ -169,3 +170,17 @@ def merge_fragmentsdb(ins, out):
                 c.execute('INSERT INTO {0} SELECT * FROM other.{0}'.format(table))
             c.execute('DETACH DATABASE other')
 
+
+def export_sdf_sc(subparsers):
+    sc = subparsers.add_parser('export_sd', help='Export molblocks of all fragments as SDF file')
+    sc.add_argument('fragmentsdb', help='Input fragments database file')
+    sc.add_argument('sdfile', type=argparse.FileType('w'), help='Output SDF file')
+    sc.set_defaults(func=export_sdf)
+
+
+def export_sdf(fragmentsdb, sdfile):
+    with FragmentsDb(fragmentsdb) as db:
+        for fragment in db:
+            molblock = MolToMolBlock(fragment['mol'])
+            sdfile.write(molblock)
+            sdfile.write('$$$$\n')

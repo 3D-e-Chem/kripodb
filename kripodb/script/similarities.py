@@ -278,7 +278,7 @@ def read_fpneighpairs_file(inputfile, ignore_upper_triangle=False):
     """Read fpneigh formatted similarity matrix file.
 
     Args:
-        inputfile (file): File object to read
+        inputfile (File): File object to read
         ignore_upper_triangle (bool): Ignore upper triangle of input
 
     Yields:

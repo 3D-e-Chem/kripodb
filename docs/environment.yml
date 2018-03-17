@@ -8,4 +8,4 @@ dependencies:
 - coverage
 - bsddb
 - pip:
-  - sphinx-argparse==0.1.17
+  - sphinx-argparse==0.2.1

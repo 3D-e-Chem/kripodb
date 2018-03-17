@@ -116,6 +116,7 @@ def get_fragments(fragment_ids=None, pdb_codes=None):
                         fragments.append(fragment)
                 except LookupError:
                     missing_ids.append(pdb_code)
+
         # TODO if fragment_ids and pdb_codes are both None then return paged list of all fragments
         if missing_ids:
             title = 'Not found'

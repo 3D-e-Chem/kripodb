@@ -30,6 +30,15 @@ def test_read_header():
     assert result == expected
 
 
+def test_read_header_labelwithspace():
+    line = 'MAKEBITS 1.0 574331 foo bar\n'
+
+    result = makebits.read_header(line)
+
+    expected = ('MAKEBITS', '1.0', 574331, 'foo bar')
+    assert result == expected
+
+
 def test_read_bitset():
     line = '3frb_TOP_frag24 1 2 3 4 6 10 11 12 15 0 9'
 

@@ -92,6 +92,43 @@ class TestFragmentsDBEmpty(object):
     def test_len(self, fragmentsdb):
         assert len(fragmentsdb) == 0
 
+    def test_add_fragment(self, fragmentsdb):
+        fragmentsdb.add_fragment(
+            nr_r_groups=1,
+            pdb_code='1muu',
+            atom_codes='C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+            het_code='GDX',
+            hash_code='0d6ced7ce686f4da',
+            frag_nr=7,
+            frag_id='1muu_GDX_frag7',
+            het_seq_nr=1005,
+            het_chain='B',
+            prot_chain='A',
+        )
+
+        expected = {
+            'nr_r_groups': 1,
+            'smiles': None,
+            'mol': None,
+            'pdb_code': '1muu',
+            'atom_codes': 'C5D,O5D,PA,O1A,O2A,O3A,PB,O2B,O3B,O1B,C1*,O5*,C5*,C6*,O6A,O6B,C2*,O2*,C3*,O3*,C4*,O4*',
+            'het_code': 'GDX',
+            'hash_code': '0d6ced7ce686f4da',
+            'frag_nr': 7,
+            'frag_id': '1muu_GDX_frag7',
+            'rowid': 1,
+            'het_seq_nr': 1005,
+            'het_chain': 'B',
+            'prot_chain': 'A',
+            'pdb_title': None,
+            'prot_name': None,
+            'ec_number': None,
+            'uniprot_acc': None,
+            'uniprot_name': None,
+        }
+        frag = fragmentsdb['1muu_GDX_frag7']
+        assert frag == expected
+
 
 @pytest.fixture
 def myshelve():
@@ -194,6 +231,18 @@ class TestFragmentsDBFilled(object):
     def test_duplicate(self, filled_fragmentsdb, myshelve):
         with pytest.raises(sqlite3.IntegrityError):
             filled_fragmentsdb.add_fragments_from_shelve(myshelve)
+
+    def test_iterate(self, filled_fragmentsdb, expected_fragment):
+        fragments = [f for f in filled_fragmentsdb]
+
+        del fragments[0]['mol']
+        assert fragments == [expected_fragment]
+
+    def test_is_ligand_stored_exists_true(self, filled_fragmentsdb):
+        assert filled_fragmentsdb.is_ligand_stored('1muu', 'GDX')
+
+    def test_is_ligand_stored_absent_false(self, filled_fragmentsdb):
+        assert not filled_fragmentsdb.is_ligand_stored('1muu', '111')
 
 
 class TestHetSeqNr(object):

@@ -1,7 +1,7 @@
 import argparse
 
-from kripodb.db import FragmentsDb
-from ..pharmacophores import PharmacophoresDb
+from ..db import FragmentsDb
+from ..pharmacophores import PharmacophoresDb, read_pphore_sdfile, as_phar
 
 
 def dir2db_run(startdir, pharmacophoresdb, nrrows):
@@ -100,6 +100,20 @@ def phar2db(infile, outfile, nrrows):
         out_db.read_phar(infile)
 
 
+def sd2phar_sc(sc):
+    parser = sc.add_parser('sd2phar', help='Convert sd formatted pharmacophore file to phar formatted file')
+    parser.add_argument('infile', type=argparse.FileType('rb'), help='Input sd formatted file')
+    parser.add_argument('outfile', type=argparse.FileType('w'), help='Output phar formatted file')
+    parser.add_argument('--frag_id', type=str, help='Fragment identifier', default='frag')
+    parser.set_defaults(func=sd2phar)
+
+
+def sd2phar(infile, outfile, frag_id):
+    points = read_pphore_sdfile(infile)
+    phar = as_phar(frag_id, points)
+    outfile.write(phar)
+
+
 def make_pharmacophores_parser(subparsers):
     """Creates a parser for pharmacophores sub commands
 
@@ -113,3 +127,4 @@ def make_pharmacophores_parser(subparsers):
     filter_sc(sc)
     merge_sc(sc)
     phar2db_sc(sc)
+    sd2phar_sc(sc)

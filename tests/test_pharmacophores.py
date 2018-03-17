@@ -1,5 +1,5 @@
 import os
-from six import BytesIO, StringIO
+from six import StringIO
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
@@ -7,30 +7,6 @@ import pytest
 
 from .utils import tmpname
 from kripodb.pharmacophores import PharmacophoresDb, read_pphore_sdfile, as_phar, read_fragtxtfile_as_file
-
-
-@pytest.fixture
-def example1_sdfile():
-    body = b'''
- OpenBabel07051617103D
-
- 12  0  0  0  0  0  0  0  0  0999 V2000
-   22.5699   -6.3076   36.8593 O   0  6  0  0  0
-   23.7871   -3.9004   36.3395 P   0  7  0  0  0
-   23.1923   -6.6223   36.0325 P   0  7  0  0  0
-   18.7201   -9.8937   40.4312 As  0  7  0  0  0
-   18.3503   -9.5392   39.3836 Ne  0  0  0  0  0
-   20.4171  -10.6185   40.3362 Ne  0  0  0  0  0
-   19.7922   -6.5243   39.4320 He  0  0  0  0  0
-   17.9406   -2.4043   34.9401 O   0  6  0  0  0
-   14.6641   -7.4275   36.2138 As  0  7  0  0  0
-   15.4420   -8.2931   36.1398 Ne  0  0  0  0  0
-   14.4007   -6.8416   35.2404 Ne  0  0  0  0  0
-   22.3608   -5.1679   39.2345 Rn  0  0  0  0  0
-M  END
-$$$$
-'''
-    return BytesIO(body)
 
 
 @pytest.fixture

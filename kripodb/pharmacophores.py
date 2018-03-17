@@ -170,7 +170,7 @@ def read_pphore_gzipped_sdfile(sdfile):
 
 
 def read_pphore_sdfile(sdfile):
-    """Read a gzipped sdfile which contains pharmacophore points as atoms
+    """Read a sdfile which contains pharmacophore points as atoms
 
     Args:
         sdfile (file): File object with sdfile contents
