@@ -10,7 +10,7 @@ setup(
     url='https://github.com/3D-e-Chem/kripodb',
     author='Stefan Verhoeven',
     author_email='s.verhoeven@esciencecenter.nl',
-    install_requires=['intbitset', 'tables', 'pandas', 'connexion', 'requests', 'scipy', 'progressbar2', 'six'],
+    install_requires=['pyroaring', 'blosc', 'tables', 'pandas', 'connexion', 'requests', 'scipy', 'progressbar2', 'six'],
     setup_requires=['pytest-runner'],
     package_data={
       'kripodb.webservice': ['swagger.yaml'],
