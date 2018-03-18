@@ -5,7 +5,7 @@ matrix:
       env:
         - INSTALLER=Miniconda-latest-Linux-x86_64.sh
         - CONDA_INSTALL="bsddb"
-    - python: 3.5
+    - python: 3.6
       env:
         - INSTALLER=Miniconda3-latest-Linux-x86_64.sh
         - CONDA_INSTALL=""
@@ -16,7 +16,7 @@ matrix:
       # pretend to be another language which does not error
       language: objective-c
       env:
-        - INSTALLER=Miniconda2-latest-MacOSX-x86_64.sh
+        - INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
         - CONDA_INSTALL=""
 before_install:
   - if [ ! -e $HOME/conda/bin/activate ]; then
