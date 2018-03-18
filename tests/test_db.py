@@ -15,7 +15,9 @@
 from __future__ import absolute_import
 import sqlite3
 
-from intbitset import intbitset
+from pyroaring import BitMap
+
+import blosc
 from mock import call, Mock
 import pytest
 from rdkit.Chem import MolFromSmiles, MolToSmiles
@@ -24,19 +26,19 @@ import six
 import kripodb.db as db
 
 
-def test_adapt_intbitset():
-    bs = intbitset([1, 3, 5, 8])
+def test_adapt_BitMap():
+    bs = BitMap([1, 3, 5, 8])
 
-    result = db.adapt_intbitset(bs)
+    result = db.adapt_BitMap(bs)
 
-    expected = bs.fastdump()
+    expected = blosc.compress(bs.serialize(), cname='zstd')
     assert result == expected
 
 
-def test_convert_intbitset():
-    bs = intbitset([1, 3, 5, 8])
+def test_convert_BitMap():
+    bs = BitMap([1, 3, 5, 8])
 
-    result = db.convert_intbitset(bs.fastdump())
+    result = db.convert_BitMap(blosc.compress(bs.serialize(), cname='zstd'))
 
     assert result == bs
 
@@ -288,7 +290,7 @@ def bitsets(fingerprintsdb):
     return fingerprintsdb.as_dict(100)
 
 
-class TestIntbitsetDictEmpty(object):
+class TestBitMapDictEmpty(object):
     def test_default_number_of_bits(self, fingerprintsdb):
         bitsets = db.IntbitsetDict(fingerprintsdb)
 
@@ -314,7 +316,7 @@ class TestIntbitsetDictEmpty(object):
         assert 'id1' not in bitsets
 
     def test_update(self, bitsets):
-        bs = intbitset([1, 3, 5, 8])
+        bs = BitMap([1, 3, 5, 8])
         other = {'id1': bs}
 
         bitsets.update(other)
@@ -329,23 +331,23 @@ class TestIntbitsetDictEmpty(object):
 
 
 @pytest.fixture
-def sample_intbitset():
-    return intbitset([1, 3, 5, 8])
+def sample_BitMap():
+    return BitMap([1, 3, 5, 8])
 
 
 @pytest.fixture
-def filled_bitsets(bitsets, sample_intbitset):
+def filled_bitsets(bitsets, sample_BitMap):
     bid = 'id1'
-    bitsets[bid] = sample_intbitset
+    bitsets[bid] = sample_BitMap
     return bitsets
 
 
-class TestIntbitsetDictFilled(object):
+class TestBitMapDictFilled(object):
 
-    def test_getitem(self, filled_bitsets, sample_intbitset):
+    def test_getitem(self, filled_bitsets, sample_BitMap):
         result = filled_bitsets['id1']
 
-        assert result == sample_intbitset
+        assert result == sample_BitMap
 
     def test_len_filled(self, filled_bitsets):
         assert len(filled_bitsets) == 1
@@ -364,29 +366,29 @@ class TestIntbitsetDictFilled(object):
         expected = ['id1']
         assert result == expected
 
-    def test_iteritems(self, filled_bitsets, sample_intbitset):
+    def test_iteritems(self, filled_bitsets, sample_BitMap):
         result = {k: v for k, v in six.iteritems(filled_bitsets)}
 
-        expected = {'id1': sample_intbitset}
+        expected = {'id1': sample_BitMap}
         assert result == expected
 
-    def test_iteritems_startswith(self, filled_bitsets, sample_intbitset):
-        filled_bitsets['someid'] = sample_intbitset
+    def test_iteritems_startswith(self, filled_bitsets, sample_BitMap):
+        filled_bitsets['someid'] = sample_BitMap
 
         result = {k: v for k, v in filled_bitsets.iteritems_startswith('id')}
 
-        expected = {'id1': sample_intbitset}
+        expected = {'id1': sample_BitMap}
         assert result == expected
         assert 'someid' not in result
 
-    def test_itervalues(self, filled_bitsets, sample_intbitset):
+    def test_itervalues(self, filled_bitsets, sample_BitMap):
         result = [v for v in six.itervalues(filled_bitsets)]
 
-        expected = [sample_intbitset]
+        expected = [sample_BitMap]
         assert result == expected
 
-    def test_materialize(self, filled_bitsets, sample_intbitset):
+    def test_materialize(self, filled_bitsets, sample_BitMap):
         result = filled_bitsets.materialize()
 
-        expected = {'id1': sample_intbitset}
+        expected = {'id1': sample_BitMap}
         assert result == expected

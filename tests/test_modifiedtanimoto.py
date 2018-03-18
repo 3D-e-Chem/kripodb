@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 import pytest
-from intbitset import intbitset
+from pyroaring import BitMap
 
 from kripodb import modifiedtanimoto
 
@@ -42,12 +42,12 @@ class TestAlgorithm(object):
 
     def test_calc_mean_onbit_density(self):
         bitsets = {
-            'a': intbitset([1, 2, 3]),
-            'b': intbitset([1, 2, 4, 5, 8]),
-            'c': intbitset([1, 2, 4, 8])
+            'a': BitMap([1, 2, 3]),
+            'b': BitMap([1, 2, 4, 5, 8]),
+            'c': BitMap([1, 2, 4, 8])
         }
 
-        result = modifiedtanimoto.calc_mean_onbit_density(bitsets.values(), self.number_of_bits)
+        result = modifiedtanimoto.calc_mean_onbit_density(list(bitsets), self.number_of_bits)
 
         expected = 0.04
         assert result == expected
@@ -59,8 +59,8 @@ class TestAlgorithm(object):
         pytest.approx(corr_sto, 0.336666666667)
 
     def test_similarity(self):
-        bitset1 = intbitset([1, 2, 3])
-        bitset2 = intbitset([1, 2, 4, 8])
+        bitset1 = BitMap([1, 2, 3])
+        bitset2 = BitMap([1, 2, 4, 8])
 
         result = modifiedtanimoto.similarity(bitset1, bitset2,
                                              self.number_of_bits,
@@ -71,9 +71,9 @@ class TestAlgorithm(object):
 
     def test_similarities_ignore_upper_triangle(self):
         bitsets = {
-            'a': intbitset([1, 2, 3]),
-            'b': intbitset([1, 2, 4, 5, 8]),
-            'c': intbitset([1, 2, 4, 8])
+            'a': BitMap([1, 2, 3]),
+            'b': BitMap([1, 2, 4, 5, 8]),
+            'c': BitMap([1, 2, 4, 8])
         }
 
         iterator = modifiedtanimoto.similarities(bitsets, bitsets,
@@ -90,9 +90,9 @@ class TestAlgorithm(object):
 
     def test_similarities(self):
         bitsets = {
-            'a': intbitset([1, 2, 3]),
-            'b': intbitset([1, 2, 4, 5, 8]),
-            'c': intbitset([1, 2, 4, 8])
+            'a': BitMap([1, 2, 3]),
+            'b': BitMap([1, 2, 4, 5, 8]),
+            'c': BitMap([1, 2, 4, 8])
         }
 
         iterator = modifiedtanimoto.similarities(bitsets, bitsets,
@@ -111,19 +111,19 @@ class TestAlgorithm(object):
 
 
 @pytest.mark.parametrize("bitset2,expected_score", (
-    (intbitset((1, 2, 3, 4)), 1.0),
-    (intbitset((5, 6, 7, 8)), 0.33),
-    (intbitset((3, 4, 5, 6)), 0.55),
-    (intbitset((1, 2, 5, 6)), 0.55),
-    (intbitset((2, 3, 4, 5)), 0.73),
-    (intbitset((1, 5, 6, 7)), 0.424),
-    (intbitset((1, 2, 3, 4, 5)), 0.86),
-    (intbitset((1, 2, 3)), 0.83),
+    (BitMap((1, 2, 3, 4)), 1.0),
+    (BitMap((5, 6, 7, 8)), 0.33),
+    (BitMap((3, 4, 5, 6)), 0.55),
+    (BitMap((1, 2, 5, 6)), 0.55),
+    (BitMap((2, 3, 4, 5)), 0.73),
+    (BitMap((1, 5, 6, 7)), 0.424),
+    (BitMap((1, 2, 3, 4, 5)), 0.86),
+    (BitMap((1, 2, 3)), 0.83),
 ))
 def test_similarity_numberofbits400(bitset2, expected_score):
     number_of_bits = 400
     corr_st, corr_sto = modifiedtanimoto.corrections(0.01)
-    bitset1 = intbitset([1, 2, 3, 4])
+    bitset1 = BitMap([1, 2, 3, 4])
 
     result = modifiedtanimoto.similarity(bitset1, bitset2,
                                          number_of_bits,

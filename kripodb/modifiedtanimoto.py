@@ -23,7 +23,7 @@ def calc_mean_onbit_density(bitsets, number_of_bits):
     """Calculate the mean density of bits that are on in bitsets collection.
 
     Args:
-        bitsets (list[intbitset.intbitset]): List of fingerprints
+        bitsets (list[pyroaring.BitMap]): List of fingerprints
         number_of_bits: Number of bits for all fingerprints
 
     Returns:

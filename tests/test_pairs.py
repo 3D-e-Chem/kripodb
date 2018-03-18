@@ -18,7 +18,7 @@ import os
 
 import tables
 from six import StringIO
-from intbitset import intbitset
+from pyroaring import BitMap
 import pytest
 
 import kripodb.hdf5
@@ -27,7 +27,7 @@ from kripodb.hdf5 import SimilarityMatrix
 from .utils import tmpname
 
 
-class MockedIntbitsetDict(Mapping):
+class MockedBitMapDict(Mapping):
     dict = {}
     number_of_bits = 0
 
@@ -63,10 +63,10 @@ def number_of_bits():
 
 @pytest.fixture
 def bitsets():
-    return MockedIntbitsetDict({
-        'a': intbitset([1, 2, 3]),
-        'b': intbitset([1, 2, 4, 5, 8]),
-        'c': intbitset([1, 2, 4, 8])
+    return MockedBitMapDict({
+        'a': BitMap([1, 2, 3]),
+        'b': BitMap([1, 2, 4, 5, 8]),
+        'c': BitMap([1, 2, 4, 8])
     }, 8)
 
 
@@ -226,12 +226,12 @@ class Testpairs(object):
         out = StringIO()
 
         pairs.similarity2query(bitsets,
-                             'a',
-                             out,
-                             0.4,
-                             0.05,
-                             True
-                             )
+                               'a',
+                               out,
+                               0.4,
+                               0.05,
+                               True
+                               )
         result = out.getvalue()
 
         expected = 'a\tc\t0.44667\na\tb\t0.33333\n'

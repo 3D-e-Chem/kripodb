@@ -89,7 +89,7 @@ def write_header(fp_size):
 
 
 def write_bitset(fid, bitset):
-    bits = bitset.extract_finite_list()
+    bits = list(bitset)
     bits.extend([0, len(bitset)])
     return fid + " " + " ".join([str(d) for d in bits]) + "\n"
 

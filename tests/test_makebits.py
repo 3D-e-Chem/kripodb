@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 from six import StringIO
-from intbitset import intbitset
+from pyroaring import BitMap
 import pytest
 
 from kripodb import makebits as makebits
@@ -44,7 +44,7 @@ def test_read_bitset():
 
     (fid, bitset) = makebits.read_bitset(line, 100)
 
-    expected = intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])
+    expected = BitMap([1, 2, 3, 4, 6, 10, 11, 12, 15])
     assert fid == '3frb_TOP_frag24'
     assert bitset == expected
 
@@ -65,7 +65,7 @@ def test_read_file():
 
     (bitsets, fp_size) = makebits.read_file(infile)
 
-    expected = {'3frb_TOP_frag24': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])}
+    expected = {'3frb_TOP_frag24': BitMap([1, 2, 3, 4, 6, 10, 11, 12, 15])}
     assert fp_size == 574331
     assert bitsets == expected
 
@@ -80,14 +80,14 @@ def test_iter_file():
 
     expected_header = ('MAKEBITS', '1.0', 574331, 'BigGrid')
     assert next(iterator) == expected_header
-    expected = ('3frb_TOP_frag24', intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15]))
+    expected = ('3frb_TOP_frag24', BitMap([1, 2, 3, 4, 6, 10, 11, 12, 15]))
     assert next(iterator) == expected
     is_exhausted = 'Iterator exhausted'
     assert next(iterator, is_exhausted) == is_exhausted
 
 
 def test_write_file():
-    bitsets = {'3frb_TOP_frag24': intbitset([1, 2, 3, 4, 6, 10, 11, 12, 15])}
+    bitsets = {'3frb_TOP_frag24': BitMap([1, 2, 3, 4, 6, 10, 11, 12, 15])}
     outfile = StringIO()
     fp_size = 574331
 
