@@ -47,7 +47,7 @@ class TestAlgorithm(object):
             'c': BitMap([1, 2, 4, 8])
         }
 
-        result = modifiedtanimoto.calc_mean_onbit_density(list(bitsets), self.number_of_bits)
+        result = modifiedtanimoto.calc_mean_onbit_density(bitsets.values(), self.number_of_bits)
 
         expected = 0.04
         assert result == expected
