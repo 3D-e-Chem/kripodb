@@ -8,7 +8,9 @@
 [![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/3dechem/kripodb/)
 [![Documentation Status](https://readthedocs.org/projects/kripodb/badge/?version=latest)](http://kripodb.readthedocs.io/en/latest/?badge=latest)
 
-Library to interact with Kripo fragment, fingerprint and similarity data files.
+Library to interact with Kripo fragment, fingerprint, pharmacophore and similarity data files.
+
+Use [kripo](https://github.com/3D-e-Chem/kripo) to generate fragments, pharmacophores and fingerprints from PDB files.
 
 KRIPO stands for Key Representation of Interaction in POckets, see [reference](http://dx.doi.org/10.1186/1758-2946-6-S1-O26) for more information.
 
