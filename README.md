@@ -77,6 +77,7 @@ The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/
 All fragments form all proteins-ligand complexes in PDB compared with all.
 
 * Fragments sqlite database - Download from http://3d-e-chem.vu-compmedchem.nl/kripodb/fragments.sqlite
+* Pharmacophores database - Download from http://3d-e-chem.vu-compmedchem.nl/kripodb/pharmacophores.h5
 * Similarity matrix - Can be queried on webservice at http://3d-e-chem.vu-compmedchem.nl/kripodb. For build instructions see http://kripodb.readthedocs.io/en/latest/data-update.html
 * Fragment fingerprints - See http://kripodb.readthedocs.io/en/latest/data-update.html for instructions how to convert to a similarity matrix
 
