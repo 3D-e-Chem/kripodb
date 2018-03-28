@@ -23,6 +23,7 @@ Overview of steps involved in updating Kripo:
 7. Calculate similarity scores between fingerprints
 8. Convert pairs file into dense similarity matrix
 9. Switch staging to current
+10. Update web service
 
 .. note:: Steps 2 through 3 require undisclosed scripts
 .. note:: Steps 4 and 6 through 7 can be done using the KripoDB Python library.
@@ -40,7 +41,7 @@ Directories for Kripo:
 
 Files and directories for a data set (inside current, staging and old directories):
 
-* **FRAGMENT_PPHORES/**, directory with pharmacophores
+* **pharmacophores.h5**, pharmacophores database file
 * **out.fp.sqlite**, fingerprints file
 * **fragments.sqlite**, fragment information database file
 * **similarities.h5**, similarities as pairs table
@@ -55,4 +56,4 @@ Requirements
 
 * Slurm batch scheduler
 * KripoDB and it's dependencies installed and in path
-* Posix filesystem, NFS of Virtualbox share dp not accept writing of hdf5 or sqlite files
+* Posix filesystem, NFS of Virtualbox share do not accept writing of hdf5 or sqlite files

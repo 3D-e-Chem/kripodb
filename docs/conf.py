@@ -295,7 +295,7 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None,
                        'tables': ('http://www.pytables.org/', None),
-                       'intbitset': ('http://intbitset.readthedocs.org/en/latest/', None),
+                       'pyroaring': ('http://pyroaringbitmap.readthedocs.org/en/latest/', None),
                        'pandas': ('http://pandas.pydata.org/pandas-docs/version/0.17.1/', None),
 # RDkit doesn't have API docs as sphinx docs
 #                       'rdkit': ('http://rdkit.org/docs/', None),

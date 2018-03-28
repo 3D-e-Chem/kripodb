@@ -20,11 +20,15 @@ Create a new directory::
 2. Create sub-pocket pharmacophore fingerprints
 -----------------------------------------------
 
-Use directory listing of new pdb files as input::
+The `ids.txt` file must contain a list of PDB identifiers which have not been processed before.
+It can be fetched from https://www.rcsb.org/.
 
-  ls $PDBS_ADDED_DIR | pdblist2fps_final_local.py
+Adjust the PDB save location in the `singleprocess.py` script to the staging directory.
 
-.. note:: The process can run out of memory, so rerun can be required
+Run the following command to generate fragments/pharmacophores/fingerprints for each PDB listed in `ids.txt`::
+
+  python singleprocess.py
+
 
 3. Create fragment information
 ------------------------------
@@ -43,7 +47,7 @@ It can be generated from the pharmacophore files using::
 The data generated thus far contains the molblocks of the ligands and atom nrs of each fragment.
 The fragment molblocks can be generated into a fragment sdf file with::
 
-  fragid2sd.py > fragments.sd
+  fragid2sd.py fragments.shelve > fragments.sd
 
 
 3. Pharmacophores
@@ -138,3 +142,18 @@ The incremental fingerprint files are named like `out.<year><week>.fp.gz`, to ge
 
     sbatch --parsable -n 1 -J merge_fp $SCRIPTS/incremental_merge_fp.sh <year>
 
+10.0 Update web service
+-----------------------
+
+The webservice running at http://3d-e-chem.vu-compmedchem.nl/kripodb must be updated with the new datafiles.
+
+The following files must copied to the server
+
+* fragments.sqlite
+* pharmacophores.h5
+* similarities.packedfrozen.h5
+
+The webservice must be restarted.
+
+To show how up to date the webservice is the release date of the latest PDB is stored in `version.txt` which can be reached at http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
+The content `version.txt` must be updated.
