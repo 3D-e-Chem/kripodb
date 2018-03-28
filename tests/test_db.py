@@ -14,9 +14,9 @@
 
 from __future__ import absolute_import
 import sqlite3
+from sys import version_info
 
 from pyroaring import BitMap
-
 import blosc
 from mock import call, Mock
 import pytest
@@ -26,6 +26,8 @@ import six
 import kripodb.db as db
 
 
+@pytest.mark.skipif(version_info < (3,),
+                    reason="requires python3")
 def test_adapt_BitMap():
     bs = BitMap([1, 3, 5, 8])
 
