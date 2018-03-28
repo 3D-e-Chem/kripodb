@@ -43,7 +43,7 @@ It can be generated from the pharmacophore files using::
 The data generated thus far contains the molblocks of the ligands and atom nrs of each fragment.
 The fragment molblocks can be generated into a fragment sdf file with::
 
-  fragid2sd.py > fragments.sd
+  fragid2sd.py fragments.shelve > fragments.sd
 
 
 3. Pharmacophores
