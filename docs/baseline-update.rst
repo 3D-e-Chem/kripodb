@@ -93,7 +93,7 @@ The similarities between fingerprints can be calculated with::
 
     all_chunks=$(ls *fp.gz |wc -l)
     jid_fpunzip=$(sbatch --parsable -n $all_chunks -J fpunzip --dependency=afterok:$jid_dups $SCRIPTS/baseline_fpunzip.sh)
-    nr_chunks=($(ls *.fp.gz|wc -l) * $(ls *.fp.gz|wc -l)/2 - $(ls *.fp.gz|wc -l))
+    nr_chunks="$(($all_chunks * $all_chunks / 2 - $all_chunks))"
     jid_fpneigh=$(sbatch --parsable -n $nr_chunks -J fpneigh --dependency=afterok:$jid_fpunzip $SCRIPTS/baseline_similarities.sh)
     jid_fpzip=$(sbatch --parsable -n $all_chunks -J fpzip --dependency=afterok:$jid_fpneigh $SCRIPTS/baseline_fpzip.sh)
     jid_merge_matrices=$(sbatch --parsable -n 1 -J merge_matrices --dependency=afterok:$jid_fpneigh $SCRIPTS/baseline_merge_similarities.sh)
@@ -122,3 +122,19 @@ The staging can be made current with the following commands::
 
     mv current old
     mv staging current
+
+10.0 Update web service
+-----------------------
+
+The webservice running at http://3d-e-chem.vu-compmedchem.nl/kripodb must be updated with the new datafiles.
+
+The following files must copied to the server
+
+* fragments.sqlite
+* pharmacophores.h5
+* similarities.packedfrozen.h5
+
+The webservice must be restarted.
+
+To show how up to date the webservice is the release date of the latest PDB is stored in `version.txt` which can be reached at http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
+The content `version.txt` must be updated.

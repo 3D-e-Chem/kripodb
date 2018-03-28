@@ -77,6 +77,7 @@ The data set has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/
 All fragments form all proteins-ligand complexes in PDB compared with all.
 
 * Fragments sqlite database - Download from http://3d-e-chem.vu-compmedchem.nl/kripodb/fragments.sqlite
+* Pharmacophores database - Download from http://3d-e-chem.vu-compmedchem.nl/kripodb/pharmacophores.h5
 * Similarity matrix - Can be queried on webservice at http://3d-e-chem.vu-compmedchem.nl/kripodb. For build instructions see http://kripodb.readthedocs.io/en/latest/data-update.html
 * Fragment fingerprints - See http://kripodb.readthedocs.io/en/latest/data-update.html for instructions how to convert to a similarity matrix
 
@@ -130,6 +131,7 @@ It will print the urls for the swagger spec and UI.
 Note! The webservice returns a limited amount of results. To get all results use local files.
 
 On http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/ there is a KripoDB webservice with the full PDB fragment all vs all matrix.
+The date of the latest PDB record included in the webservice can be found in http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
 
 # Documentation
 
