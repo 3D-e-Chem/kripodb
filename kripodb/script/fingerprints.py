@@ -85,7 +85,11 @@ def pairs_run(fingerprintsfn1, fingerprintsfn2,
         label2id = FragmentsDb(fragmentsdbfn).label2id().materialize()
 
     bitsets1 = FingerprintsDb(fingerprintsfn1).as_dict()
-    bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
+    if fingerprintsfn1 == fingerprintsfn2:
+        bitsets2 = bitsets1
+        ignore_upper_triangle = True
+    else:
+        bitsets2 = FingerprintsDb(fingerprintsfn2).as_dict()
 
     if bitsets1.number_of_bits != bitsets2.number_of_bits:
         raise Exception('Number of bits is not the same')
