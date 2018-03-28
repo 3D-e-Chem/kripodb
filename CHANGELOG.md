@@ -11,6 +11,13 @@ Formatted as described on http://keepachangelog.com/.
 
 * Fingerprints changed format from intbitset to Roaring bitmap (#52)
 
+Fingerprint data files created with KripoDB < 3 will not work anymore.
+They must be exported to makebits with old version of KripoDB and imported in new version.
+
+### Fixed
+
+* When generating similarities of the same fingerprints force ignore upper triangle
+
 ## [2.4.0] - 2018-03-28
 
 ### Added
