@@ -122,3 +122,19 @@ The staging can be made current with the following commands::
 
     mv current old
     mv staging current
+
+10.0 Update web service
+-----------------------
+
+The webservice running at http://3d-e-chem.vu-compmedchem.nl/kripodb must be updated with the new datafiles.
+
+The following files must copied to the server
+
+* fragments.sqlite
+* pharmacophores.h5
+* similarities.packedfrozen.h5
+
+The webservice must be restarted.
+
+To show how up to date the webservice is the release date of the latest PDB is stored in `version.txt` which can be reached at http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
+The content `version.txt` must be updated.

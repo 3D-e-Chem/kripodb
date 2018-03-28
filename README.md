@@ -130,6 +130,7 @@ It will print the urls for the swagger spec and UI.
 Note! The webservice returns a limited amount of results. To get all results use local files.
 
 On http://3d-e-chem.vu-compmedchem.nl/kripodb/ui/ there is a KripoDB webservice with the full PDB fragment all vs all matrix.
+The date of the latest PDB record included in the webservice can be found in http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
 
 # Documentation
 
