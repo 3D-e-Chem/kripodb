@@ -5,8 +5,19 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [2.4.0] - 2018-03-28
+
+### Added
+
+- Commands to
+    - Merge fingerprint/fragment/pharmacophore database files
+    - Merge fragment database files
+    - Convert phar formatted file from/to pharmacophore database file
+- Methods required by kripo (https://github.com/3D-e-Chem/kripo)
+
 ### Fixed
 
+- GET /fragments should accept PDB codes in uppercase (#51)
 - Donor and acceptor features are swapped (#50)
 
 ## [2.3.1] - 2017-07-21
