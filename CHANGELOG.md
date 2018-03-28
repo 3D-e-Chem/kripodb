@@ -5,6 +5,12 @@ Formatted as described on http://keepachangelog.com/.
 
 ## Unreleased
 
+## [3.0.0] - 2018-03-28
+
+### Changed
+
+* Fingerprints changed format from intbitset to Roaring bitmap (#52)
+
 ## [2.4.0] - 2018-03-28
 
 ### Added
