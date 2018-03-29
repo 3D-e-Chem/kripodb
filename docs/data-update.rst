@@ -25,7 +25,7 @@ Overview of steps involved in updating Kripo:
 9. Switch staging to current
 10. Update web service
 
-.. note:: Steps 2 through 3 require undisclosed scripts
+.. note:: Steps 2 through 3 require undisclosed scripts or https://github.com/3D-e-Chem/kripo
 .. note:: Steps 4 and 6 through 7 can be done using the KripoDB Python library.
 
 .. todo:: Remove Kripo fragment/fingerprints of obsolete PDBs (ftp://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat)
