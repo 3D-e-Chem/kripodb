@@ -9,7 +9,7 @@ init:
 - "ECHO %PYTHON_VERSION% %MINICONDA%"
 install:
 - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-- conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf
+- conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf setuptools
 # TODO cache conda and pip installs
 build_script:
 - cmd: pip install -r requirements.txt

@@ -4,7 +4,7 @@ matrix:
     - python: 2.7
       env:
         - INSTALLER=Miniconda-latest-Linux-x86_64.sh
-        - CONDA_INSTALL="bsddb"
+        - CONDA_INSTALL="bsddb enum34"
     - python: 3.6
       env:
         - INSTALLER=Miniconda3-latest-Linux-x86_64.sh

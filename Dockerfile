@@ -6,8 +6,8 @@ FROM continuumio/miniconda3
 
 MAINTAINER Stefan Verhoeven <s.verhoeven@esciencecenter.nl>
 
-RUN /opt/conda/bin/conda install -y -q -c conda-forge -c rdkit rdkit pytables coverage pandas numpy scipy gxx_linux-64 && \
-conda update conda -y -q
+RUN conda update conda -y -q && \
+conda install -y -q -c conda-forge -c rdkit rdkit pytables coverage pandas numpy scipy gxx_linux-64
 
 ENV PATH /opt/conda/bin:$PATH
 
