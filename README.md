@@ -83,6 +83,8 @@ All fragments form all proteins-ligand complexes in PDB compared with all.
 * Similarity matrix - Can be queried on webservice at http://3d-e-chem.vu-compmedchem.nl/kripodb. For build instructions see http://kripodb.readthedocs.io/en/latest/data-update.html
 * Fragment fingerprints - See http://kripodb.readthedocs.io/en/latest/data-update.html for instructions how to convert to a similarity matrix
 
+Date at which the data of the 3d-e-chem.vu-compmedchem.nl webservice was last updated can found at http://3d-e-chem.vu-compmedchem.nl/kripodb/version.txt
+
 A data set with PDB entries till 23 December 2015 has been published at [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.55254.svg)](http://dx.doi.org/10.5281/zenodo.55254)
 
 # KNIME
