@@ -12,10 +12,10 @@ install:
 - conda install -y -q -c rdkit -c conda-forge rdkit pytables pandas coverage sphinx scipy protobuf setuptools
 # TODO cache conda and pip installs
 build_script:
-- cmd: %PYTHON_ROOT%\Scripts\pip install -r requirements.txt
+- "%MINICONDA%\bin\pip install -r requirements.txt"
 test_script:
 # TODO dont exclude files
-- cmd: %PYTHON_ROOT%\Scripts\pytest  --ignore .\tests\test_frozen.py --ignore .\tests\test_dive.py --junitxml=junit-results.xml
+- "%MINICONDA%\bin\pytest  --ignore .\tests\test_frozen.py --ignore .\tests\test_dive.py --junitxml=junit-results.xml"
 on_finish:
 - ps: >-
     $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
